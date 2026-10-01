@@ -14,7 +14,6 @@ raw/
 *.pt
 *.parquet
 .pytest_cache/
-/logs/
 
 # Local agent tooling (ClaudeKit) — not part of the reproduction code
 .claude/
@@ -32,7 +31,6 @@ logs-data-prep.txt
 /_models/
 
 # root-level run logs and model weights
-/logs_*.txt
 *.safetensors
 *.bin
 *.zip
