@@ -1,0 +1,634 @@
+\documentclass[11pt]{article}
+
+% Change "review" to "final" to generate the final (sometimes called camera-ready) version.
+% Change to "preprint" to generate a non-anonymous version with page numbers.
+\usepackage[review]{acl}
+
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
+
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+
+% This assumes your files are encoded as UTF8
+\usepackage[utf8]{inputenc}
+
+% This is not strictly necessary, and may be commented out,
+% but it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary, and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+
+%Including images in your LaTeX document requires adding
+%additional package(s)
+\usepackage{graphicx}
+
+% Added for this manuscript
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{array}
+
+\newcommand{\boxedtok}{\texttt{\textbackslash boxed\{\}}}
+\newcommand{\eop}{\texttt{<End\_of\_Prefix>}}
+\newcommand{\sd}[1]{$_{\pm #1}$}
+\newcommand{\gain}{\delta}
+
+\title{Decisive, Not Difficult: Allocating Learning Effort\\across Reasoning Steps in Long-CoT Distillation}
+
+\author{First Author \\
+  Affiliation / Address line 1 \\
+  \texttt{email@domain} \\\And
+  Second Author \\
+  Affiliation / Address line 1 \\
+  \texttt{email@domain} \\}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+Distilling long chain-of-thought (CoT) into a small student involves two decisions: \emph{what} to learn, and \emph{how much} learning effort each part of it should receive.
+Existing methods address the first.
+Data-side methods such as P-ALIGN align teacher traces with what the student can learn, and objective-side methods such as spectral-guided learning keep only selected steps; both then train uniformly on whatever they keep.
+We study the second decision, \emph{allocation}, on top of P-ALIGN, a strong data-side selection method: every token stays supervised, each trace keeps its total learning mass, and only the split across reasoning steps changes.
+Allocation generalizes selection: pruning a step, as step-entropy compression does, is the limit in which its weight goes to zero.
+Selection saturates on these data: a spectral gate added on top of P-ALIGN removes 41\% of tokens and hurts.
+Allocation helps, but not by difficulty.
+Step entropy, spectral strength and step loss rank steps almost identically (Spearman 0.80--0.88), and allocating by entropy is matched by the same weights shuffled across steps.
+Entropy bounds Shannon information, whereas a small student needs \emph{usable} information, which computation creates; the steps that most raise the student's belief in the answer are mostly low-entropy.
+We therefore allocate by \emph{answer-information gain}, the change in the frozen student's log-probability of the gold answer when a step is appended, computed in one teacher-forced pass (12 GPU-minutes for 966 traces).
+On DeepSeek-R1-Distill-Qwen-1.5B, answer-gain allocation reaches 42.46\,$\pm$\,0.17 average pass@1 on AIME24, AIME25, AMC12 and MATH500, +1.70 over P-ALIGN.
+It is the only allocation that beats uniform training on both pass@1 and pass@3 under every sampling seed; on pass@3 it ties the controls.
+\end{abstract}
+
+\section{Introduction}
+
+Small reasoning models are commonly obtained by supervised fine-tuning (SFT) on long CoT traces written by a stronger model \citep{deepseek2025r1,muennighoff2025s1,ye2025limo}.
+Doing this well involves two decisions: which parts of a teacher trace the student should learn from, and how much learning effort each part should receive.
+Recent work has made progress on the first.
+On the data side, P-ALIGN \citep{liu2026palign} truncates each teacher trace to the shortest prefix the student needs and lets the student write the rest, so that the trace matches what the student can learn.
+On the objective side, spectral-guided learning (SGL; \citealp{fan2026sgl}) keeps the steps whose gradients align with a low-rank consensus subspace, and Rho-1 \citep{lin2024rho1} and critical-token fine-tuning \citep{ruan2025criticaltoken} keep selected tokens.
+These methods answer \emph{what} to learn with a binary decision and then train with uniform likelihood on whatever they keep.
+A restatement, a hedge and the step that derives the answer all receive the same weight, although only a few steps decide the answer \citep{bogdan2025thoughtanchors}.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/figure1.pdf}
+  \caption{(a) Within-trace entropy percentile of the step with the largest answer gain, excluding steps that write \boxedtok{}. Mass concentrates on low-entropy steps: 63\% lie below the median. (b) Difference to uniform training (NLL) of each allocation, one dot per sampling seed; bars mark the mean. Only answer gain is positive on all six comparisons.}
+  \label{fig:main}
+\end{figure*}
+
+We study the second decision, which we call \emph{allocation}: given what a method keeps, how should a fixed learning budget be split among its steps?
+We make the question precise with mass-preserving step weights.
+Every token of a trace stays supervised, the trace's total token weight is fixed, and only its distribution across steps changes.
+Under this constraint, a change in accuracy can come only from where the effort goes, not from dropping data or from a larger effective learning rate.
+Selection is the special case in which every weight is 0 or 1: a step whose weight goes to zero is no longer learned.
+The resulting objective is advantage-weighted regression \citep{peng2019awr} at the step level, so a good allocation signal should behave like a step advantage.
+
+\paragraph{Why build on P-ALIGN.}
+We study allocation on top of P-ALIGN for three reasons.
+First, P-ALIGN is a strong answer to \emph{what} to learn, with the best pass@3 among the baselines we compare: it keeps the teacher prefix the student needs and replaces the rest with the student's own continuation, so every trace already contains content the student can learn and produce.
+Second, it then trains with uniform likelihood, which leaves allocation fully open.
+Its stitched traces make the gap visible: the teacher's exploration, the stitching marker and the student's derivation all count the same.
+Third, well-selected data separate the two decisions.
+A method that improves P-ALIGN by removing more of its data is doing selection; a method that improves it while keeping every token and the token budget is doing allocation.
+We find that further selection hurts on these data (\S\ref{sec:iwc-test}), so allocation is the remaining lever.
+
+\paragraph{Which signal should allocate?}
+A natural candidate is step entropy, which upper-bounds a step's information about the answer \citep{li2026stepentropy}.
+\citet{li2026stepentropy} use it for selection and prune low-entropy steps; allocating by entropy generalizes that pruning, which it recovers when the weight of low-entropy steps goes to zero (\S\ref{sec:weights}).
+Combined with SGL's gate, it gives a two-level design we set out to build: selection by gradient consensus and allocation by information content, which we call \emph{Information-Weighted Consensus} (IWC).
+We test it with the data, model, training recipe and evaluation fixed and shared with a set of baselines, and with a control that step-weighting papers rarely report: the same weights shuffled across the steps of each trace.
+Its three hypotheses fail.
+(H1) The gate removes 41\% of P-ALIGN's response tokens, including the final-answer step in 38\% of traces, and scores below uniform training.
+(H3) Within a trace, step entropy, spectral strength and step loss rank steps almost identically (median Spearman 0.80--0.88); the selection signal and the allocation signal measure one thing, how \emph{difficult} a step is for the student.
+(H2) Without the gate, allocating by entropy improves on uniform training, but so does the shuffled control: the benefit comes from reallocation itself, not from entropy.
+
+The failure has a clear cause.
+Step entropy bounds \emph{Shannon} information, which an ideal observer could extract.
+A 1.5B student is not an ideal observer: it learns from \emph{usable} information \citep{xu2020usable}, and computation creates usable information.
+A step that carries out a calculation is predictable, so its entropy is low, yet it can turn an answer the student could not read off into one it can.
+We therefore allocate by what entropy only bounds.
+The \emph{answer-information gain} of a step is the change in the frozen student's log-probability of the gold answer when the step is appended, read with a fixed answer probe in one teacher-forced pass.
+It is uncorrelated with the difficulty signals ($|\rho|<0.03$), and the step it ranks highest is usually a low-entropy one (Figure~\ref{fig:main}a).
+With the same mass-preserving weights, answer-gain allocation reaches the best average pass@1 of all methods we compare (42.46\,$\pm$\,0.17), +1.70 over P-ALIGN on the same data, and it is the only allocation that beats uniform training on both pass@1 and pass@3 under all three sampling seeds (Figure~\ref{fig:main}b).
+On pass@3 it ties the entropy and shuffled controls within one standard deviation.
+
+Our contributions are:
+\begin{itemize}
+  \setlength\itemsep{0pt}
+  \item \textbf{Allocation as a separate problem.} We separate \emph{how much} to learn from each step from \emph{what} to learn, and formalize it as mass-preserving step allocation, a step-level advantage-weighted objective that keeps every token and the token budget fixed. It contains selection as a limit: entropy pruning is entropy allocation at zero temperature. On P-ALIGN data, further selection hurts while allocation helps (\S\ref{sec:iwc}, \S\ref{sec:weights}, \S\ref{sec:iwc-test}).
+  \item \textbf{Difficulty is the wrong allocation signal.} Entropy, spectral strength and loss rank steps as a single difficulty signal and allocate no better than shuffled weights. The steps that decide the answer are low-entropy computations, which we explain with usable information (\S\ref{sec:iwc-test}, \S\ref{sec:what-gain}).
+  \item \textbf{Answer-gain allocation.} A sampling-free allocation signal computed with one teacher-forced pass of the frozen student. On top of P-ALIGN it gives the best pass@1 in our comparison and the only gains over uniform training that hold on every seed (\S\ref{sec:gain}, \S\ref{sec:results}).
+\end{itemize}
+
+\section{Related Work}
+
+\paragraph{Selecting what to learn.}
+s1 \citep{muennighoff2025s1} and LIMO \citep{ye2025limo} show that about a thousand curated R1-style traces transfer strong reasoning to a student.
+P-ALIGN \citep{liu2026palign} goes inside the trace: it truncates each teacher trace to a minimal sufficient prefix and lets the student write the continuation.
+At the token and step level, Rho-1 \citep{lin2024rho1} trains on tokens with high excess loss against a reference model, critical-token fine-tuning \citep{ruan2025criticaltoken} keeps tokens whose substitution flips correctness, SGL \citep{fan2026sgl} keeps steps with high spectral gradient strength, and KPOD \citep{feng2024kpod} learns token masks from an answer-prediction loss.
+SPIRIT \citep{cui2025spirit} and step-entropy pruning \citep{li2026stepentropy} delete steps from the data, and EDIT \citep{dai2024edit} finds key steps by contrasting dual CoTs.
+All of them decide which content receives gradient and weight the kept content uniformly.
+
+\paragraph{Allocating learning effort.}
+Soft objectives reweight tokens instead of removing them.
+VCORE \citep{gong2026vcore} reweights tokens by gradient utility.
+Probability-shaped objectives rescale each token's loss by the model's own confidence: DFT \citep{wu2026dft} multiplies it by the detached token probability, ASFT \citep{zhu2026asft} anchors DFT with a KL term, and DEFT \citep{wang2026deft} and TrimSFT \citep{jia2026trimsft} generalize or trim the gate; \citet{li2026beyondll} find that such objectives help only when the model is already strong.
+iw-SFT \citep{qin2025iwsft} reads SFT on curated data as a bound on an RL objective, and Step Rejection Fine-Tuning \citep{slinko2026srft} scores steps with teacher rollouts.
+The sampling-free signals in this group measure difficulty or confidence, and none is compared with a shuffled-weight control.
+
+\paragraph{Answer-likelihood step credit.}
+The quantity we allocate by is not new; its use as an offline distillation weight is, as far as our search found.
+\citet{ton2025infogain} define step-wise information gain as the drop in cross-entropy of the correct answer after a step, and use it to evaluate CoT.
+MIG \citep{wang2026mig} uses the teacher-forced likelihood of the reference answer as an intrinsic process reward for RL, and TRACE \citep{tao2026trace} rewards agent turns by the change in a frozen model's answer log-probability.
+DCSD \citep{li2026dcsd} reads the sign of step credit from answer-belief changes in on-policy self-distillation, and MCNIG \citep{royer2026mcnig} estimates net information gain from sampled completions to label steps for process reward models.
+These methods score the policy's own samples or evaluate CoT; none allocates learning effort over fixed teacher traces.
+
+\paragraph{Usable information.}
+\citet{xu2020usable} define $\mathcal{V}$-information, the information a computationally bounded predictor family $\mathcal{V}$ can extract, and show that unlike Shannon information it can be created by computation.
+\citet{ethayarajh2022pvi} use its pointwise form to measure how hard an example is for a model.
+Answer gain is a conditional, pointwise analogue for one reasoning step and one frozen predictor.
+
+\section{Selection and Allocation}
+\label{sec:iwc}
+
+A training example is a prompt $x$ and a response $y$, split into steps $s_1,\dots,s_K$ with token lengths $\ell_1,\dots,\ell_K$.
+We write a step-level distillation objective as
+\begin{equation}
+  \mathcal{L}=-\frac{1}{Z}\sum_i M_i\,\alpha_i\sum_{t\in s_i}\log p_\theta(y_t\mid x,y_{<t}),
+  \label{eq:iwc}
+\end{equation}
+where $Z$ counts supervised tokens.
+\emph{Selection} sets the mask $M_i\in\{0,1\}$ and decides what is learned.
+\emph{Allocation} sets the weight $\alpha_i>0$ of each kept step and decides how much of the learning effort it receives.
+Uniform SFT uses $M_i=\alpha_i=1$.
+
+\paragraph{Selection in P-ALIGN and SGL.}
+P-ALIGN selects at the data level: it keeps the shortest teacher prefix from which the student can reach the answer, marks the cut with \eop{}, and replaces the rest of the teacher trace with the student's own continuation; training then uses $\alpha_i=1$.
+SGL selects at the step level.
+It stacks the per-token loss gradients $g_t=\nabla_{h_t}\ell_t$ of a response into $G=[g_1,\dots,g_T]^\top$, takes its SVD $G=U\Sigma V^\top$, and keeps the rank $k^*$ that holds 95\% of the spectral energy.
+The spectral strength of a step is its mean leverage on this subspace,
+\begin{equation}
+  S(s_i)=\frac{1}{\ell_i}\sum_{t\in s_i}\big\|(U_{1:k^*})_t\big\|_2^2 ,
+\end{equation}
+and $M_i=1$ for the smallest set of strongest steps whose total strength reaches a fraction $p=0.95$ of the trace's total.
+
+\paragraph{Step entropy as an allocation signal.}
+\citet{li2026stepentropy} define the entropy of a step as the sum of its token entropies, $H(s_i\mid s_{<i})=\sum_{t\in s_i}H(y_t\mid x,y_{<t})$, and show that it bounds the step's information about the answer $A$:
+\begin{equation}
+  I(S_i;A\mid \bar S_i)\;\le\; H(S_i\mid S_{<i}),
+  \label{eq:bound}
+\end{equation}
+where $\bar S_i$ are the other steps.
+They use the bound for selection and prune low-entropy steps, which in Eq.~\ref{eq:iwc} is the binary allocation $\alpha_i=\mathbf{1}[\bar H_i\ge\theta]$ for a threshold $\theta$.
+Replacing the step function by a smooth increasing $f$ gives \emph{entropy allocation}, $\alpha_i=f(\bar H_i)$: every step stays, and low-entropy steps receive less effort instead of none.
+As $f$ sharpens, the weight of low-entropy steps goes to zero, they are no longer learned, and pruning is recovered; the only difference is that a zero-weight step stays in the context the student conditions on.
+Entropy allocation is therefore the soft generalization of step-entropy pruning, and the same holds for any hard selection, including SGL's gate.
+We use the length-normalized entropy $\bar H_i=H(s_i\mid s_{<i})/\ell_i$.
+
+\paragraph{Information-weighted consensus.}
+Selecting with SGL and allocating with $\alpha_i=f(\bar H_i)$, increasing in entropy, gives IWC.
+It suppresses steps with low spectral strength, learns weakly from kept steps with low entropy, and learns strongly from kept steps with high entropy.
+It rests on three hypotheses: (H1) a second selection stage on top of P-ALIGN removes harmful supervision; (H2) allocating more effort to high-entropy steps helps; and (H3) the selection signal and the allocation signal are complementary.
+Section~\ref{sec:iwc-test} tests them.
+
+\section{Method}
+\label{sec:method}
+
+We keep every step ($M_i=1$), make the allocation weights of Eq.~\ref{eq:iwc} mass-preserving, and replace the entropy signal with answer-information gain.
+
+\subsection{Mass-preserving allocation}
+\label{sec:weights}
+
+Every token of step $k$ receives weight $w_k$, and the end-of-sequence token keeps weight 1:
+\begin{equation}
+  \mathcal{L}=-\frac{1}{Z}\sum_{(x,y)\in\mathcal{B}}\sum_{k=1}^{K} w_k\sum_{t\in s_k}\log p_\theta(y_t\mid x,y_{<t}),
+\end{equation}
+where $Z$ counts the supervised tokens in the optimizer step.
+Given a per-step signal $u_k$, we standardize it within the trace, clip it and exponentiate:
+\begin{equation}
+  z_k=\frac{u_k-\mu_u}{\sigma_u+\epsilon},\quad r_k=e^{\mathrm{clip}(z_k,-c,c)/\tau}.
+\end{equation}
+We then rescale so that the trace keeps its token mass, and shrink toward uniform weights:
+\begin{equation}
+  \hat w_k=r_k\,\frac{\sum_j\ell_j}{\sum_j\ell_j r_j},\qquad w_k=(1-\lambda)+\lambda\,\hat w_k .
+  \label{eq:weights}
+\end{equation}
+By construction $\sum_k\ell_k w_k=\sum_k\ell_k$, so every trace keeps an average token weight of exactly 1: the weights move learning effort between steps without adding or removing any.
+Setting $\lambda=0$ recovers standard SFT (NLL).
+At the other end, with $\lambda=1$ and $\tau\to0$, every step with $z_k<c$ has $r_k e^{-c/\tau}\to0$ and receives zero weight, while the steps at the clip share the trace's token mass.\footnote{If no step reaches $c$, the step with the largest $z_k$ takes all the mass.}
+The weights then select exactly the steps whose standardized signal reaches $c$.
+With $u_k=\bar H_k$ this is step-entropy pruning at threshold $\mu_u+c\,\sigma_u$, and placing $c$ at the 80th percentile of $z$ matches the 80\% pruning ratio of \citet{li2026stepentropy}.
+Intermediate $\tau$ and $\lambda$ interpolate between uniform training and pruning; with our $\tau=2$ and $\lambda=0.5$, every step keeps at least half of its uniform weight.
+A plain softmax normalized to a unit \emph{step} mean does not have this property: because long continuation steps have low entropy, it shrinks the token mass of a trace to 0.90 on average (0.77 at worst).
+We use $c=2$, $\tau=2$, $\lambda=0.5$ and $\epsilon=10^{-8}$ throughout.
+
+\paragraph{An advantage-weighted reading.}
+Advantage-weighted regression \citep{peng2019awr} solves a KL-constrained policy improvement problem whose optimum is $\pi^*(a\mid s)\propto\pi_{\text{data}}(a\mid s)\exp(A(s,a)/\beta)$, and fits it by likelihood weighted with $\exp(A/\beta)$.
+With the prefix as the state and step $k$ as the action, Eq.~\ref{eq:weights} is this estimator with a standardized, clipped signal in place of the advantage $A$ and $\tau$ in place of $\beta$ \citep[see also][]{qin2025iwsft}.
+The objective can help only as far as $u_k$ approximates a step advantage.
+Entropy, loss and gradient strength measure how surprising a step is, not how much it advances the solution.
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{3.2pt}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lcccccccccc}
+    \toprule
+    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
+    Method & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    \midrule
+    \multicolumn{11}{l}{\textit{Shared results table (single evaluation, sampling seed 42)}} \\
+    Zero-shot & 10.00 & 20.00 & 15.56 & 33.33 & 49.80 & 63.86 & 72.33 & 81.80 & 36.92 & 49.75 \\
+    SFT (answers only) & 0.00 & 0.00 & 2.22 & 3.33 & 7.63 & 14.46 & 24.20 & 41.80 & 8.51 & 14.90 \\
+    SFT (long CoT)$^\dagger$ & 10.00 & 20.00 & 15.56 & 30.00 & 44.58 & 61.45 & 68.40 & 83.00 & 34.63 & 48.61 \\
+    SGL \citep{fan2026sgl} & 16.67 & 23.33 & 17.78 & 23.33 & 48.59 & 59.04 & 74.13 & 86.00 & 39.29 & 47.93 \\
+    Segment-Selective SFT & 21.11 & 30.00 & 16.67 & 23.33 & 50.60 & 65.06 & 74.87 & 84.60 & 40.81 & 50.75 \\
+    P-ALIGN \citep{liu2026palign} & 16.67 & 26.67 & 17.78 & 30.00 & 50.20 & 63.86 & 78.40 & 87.60 & 40.76 & 52.03 \\
+    % TODO: confirm whether the concurrent group method belongs in this table.
+    % Concurrent group method & 20.00 & 26.67 & 18.89 & 33.33 & 51.41 & 65.06 & 77.07 & 86.80 & 41.84 & 52.97 \\
+    \midrule
+    \multicolumn{11}{l}{\textit{Our pipeline on P-ALIGN data (one training run, mean\,$\pm$\,std over sampling seeds 42/43/44)}} \\
+    NLL & 16.67\sd{1.1} & 26.67\sd{3.3} & 19.26\sd{1.3} & 27.78\sd{1.9} & 53.01\sd{1.4} & 66.67\sd{0.7} & 77.64\sd{1.1} & 88.20\sd{0.6} & 41.65\sd{0.69} & 52.33\sd{0.50} \\
+    Entropy allocation & 17.78\sd{4.0} & 26.67\sd{3.3} & 20.37\sd{0.6} & 33.33\sd{3.3} & 53.01\sd{1.4} & 66.27\sd{1.2} & 77.80\sd{0.4} & 87.67\sd{0.2} & 42.24\sd{0.94} & 53.48\sd{1.18} \\
+    Shuffled allocation (control) & 18.52\sd{2.8} & 28.89\sd{1.9} & 16.30\sd{2.3} & 25.56\sd{1.9} & 53.55\sd{1.0} & 71.89\sd{3.9} & 78.09\sd{0.4} & 87.93\sd{0.1} & 41.61\sd{0.71} & \textbf{53.57}\sd{1.30} \\
+    Answer-gain allocation (ours) & 18.15\sd{1.7} & 26.67\sd{3.3} & 20.00\sd{1.1} & 31.11\sd{1.9} & 53.68\sd{1.2} & 66.67\sd{3.7} & 78.02\sd{0.8} & 87.93\sd{0.9} & \textbf{42.46}\sd{0.17} & 53.09\sd{0.92} \\
+    \bottomrule
+  \end{tabular}}
+  \caption{Main results (\%). Best average in bold. With sampling seed 42 alone, as for the shared rows, answer-gain allocation scores 42.31 / 52.03. $^\dagger$Likely trained without fp32 master weights (Appendix~\ref{app:bf16}).}
+  \label{tab:main}
+\end{table*}
+
+\subsection{Answer-information gain}
+\label{sec:gain}
+
+Let $a^*$ be the gold answer (the last \boxedtok{} of the teacher trace; P-ALIGN keeps only answer-verified traces), $\pi$ the fixed probe ``\texttt{\textbackslash n\textbackslash nTherefore, the final answer is \textbackslash boxed\{}'', and $q_0$ the frozen initial student.
+The answer-information gain of step $k$ is
+\begin{equation}
+  \begin{split}
+  \gain_k={}&\log q_0(a^*\mid x,s_{1:k},\pi)\\
+  &-\log q_0(a^*\mid x,s_{1:k-1},\pi),
+  \end{split}
+  \label{eq:gain}
+\end{equation}
+where the answer is scored token by token, including its closing brace.
+We set $u_k=\gain_k$ in Eq.~\ref{eq:weights}.
+The gains of a trace telescope to $\log q_0(a^*\mid x,y,\pi)-\log q_0(a^*\mid x,\pi)$, so they split the student's total gain in belief in the answer over the steps that produce it.
+
+\paragraph{Why not entropy.}
+Read as a pointwise information quantity, $\gain_k$ is the usable information \citep{xu2020usable,ethayarajh2022pvi} that step $k$ adds about $a^*$ for the predictor $q_0$, conditioned on the prefix.
+Shannon information obeys Eq.~\ref{eq:bound}: a step that is fully predictable from its prefix adds no information about the answer.
+Usable information obeys no such bound.
+If step $k$ carries out a computation that $q_0$ can predict token by token but cannot perform implicitly while reading off the answer, writing it out raises $q_0(a^*)$ although its entropy is near zero.
+Such steps are exactly the ones a small student must learn to produce.
+
+\paragraph{Cost.}
+All probes of a trace share its prefix, so with prefix caching in vLLM \citep{kwon2023vllm} the 48,498 probes of the 966 traces take about 12 minutes on one H200 GPU.
+No rollouts, reward model or extra teacher calls are needed.
+
+
+\section{Experimental Setup}
+\label{sec:setup}
+
+\paragraph{Data.}
+We use the 966 traces released with P-ALIGN (\texttt{palign\_sft\_qwen2.5-7b}).
+Each response is a DeepSeek-R1 prefix, closed by an \eop{} marker, followed by a continuation written by the P-ALIGN student, Qwen2.5-7B \citep{qwen2024qwen25}.
+The prefix holds 27\% of the 2.92M response tokens (3,022 per trace on average).
+We split responses into steps at sentence boundaries (a sentence-final punctuation mark or closing bracket followed by whitespace and a capital letter), which gives 47,532 steps (median 34 per trace).
+
+\paragraph{Student and training.}
+DeepSeek-R1-Distill-Qwen-1.5B \citep{deepseek2025r1} is fully fine-tuned with thinking mode off: the prompt ends with an empty think block, identically in training and evaluation.
+All arms use 3 epochs, an effective batch of 32, learning rate $5\cdot10^{-5}$ with cosine decay to $10^{-5}$ and 10\% warm-up, bf16 compute with fp32 master weights (DeepSpeed ZeRO-2; \citealp{rajbhandari2020zero}), and training seed 42 (Appendix~\ref{app:repro}).
+
+\paragraph{Evaluation.}
+We follow P-ALIGN's protocol: vLLM, $n=3$ samples per problem, temperature 0.6, top-$p$ 0.9, repetition penalty 1.05, a 4,096-token budget, and grading with Math-Verify \citep{mathverify}.
+We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems), AIME25 (30), AMC12 (83) and MATH500 (500; \citealp{hendrycks2021math,lightman2024verify}), and their unweighted average.
+Each of our arms is one training run evaluated with sampling seeds 42, 43 and 44; we report mean\,$\pm$\,standard deviation.
+
+\paragraph{Compared methods.}
+Rows taken from the shared results table, each a single evaluation with sampling seed 42: the zero-shot student, SFT on final answers only, SFT on full long CoT, SGL, Segment-Selective SFT, and P-ALIGN.
+% TODO: add citation for Segment-Selective SFT; confirm which of its two rows (40.81/50.75 or 36.82/45.16) is final.
+Arms trained in our pipeline keep every token and differ only in the allocation: \textbf{NLL} ($\lambda=0$), \textbf{entropy} ($u_k=\bar H_k$), \textbf{shuffled} (the entropy values permuted across the steps of each trace before Eq.~\ref{eq:weights}, which keeps their distribution and destroys their placement), and \textbf{answer gain} ($u_k=\gain_k$).
+None of these uses the spectral gate; gated variants appear in \S\ref{sec:iwc-test}.
+
+\section{Main Results}
+\label{sec:results}
+
+
+Table~\ref{tab:main} gives the results.
+Answer-gain allocation has the best average pass@1 of all methods (42.46), +1.70 over P-ALIGN on the same data and +0.82 over our NLL reproduction.
+It also has the smallest spread across sampling seeds ($\pm$0.17, against $\pm$0.69--0.94 for the other arms).
+Its average pass@3 (53.09) is above every shared baseline, but the entropy and shuffled arms reach slightly higher pass@3 (53.48 and 53.57).
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{llrrrr}
+    \toprule
+    & Arm & s42 & s43 & s44 & mean \\
+    \midrule
+    \multirow{3}{*}{p@1} & Entropy & $-$0.82 & +1.81 & +0.79 & +0.59 \\
+    & Shuffled & $-$0.94 & +1.55 & $-$0.72 & $-$0.03 \\
+    & Answer gain & +0.33 & +1.57 & +0.55 & +0.82 \\
+    \midrule
+    \multirow{3}{*}{p@3} & Entropy & +0.48 & +2.25 & +0.73 & +1.16 \\
+    & Shuffled & +0.40 & +2.39 & +0.92 & +1.24 \\
+    & Answer gain & +0.23 & +1.22 & +0.85 & +0.77 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Paired difference to NLL in average accuracy (points), per sampling seed.}
+  \label{tab:paired}
+\end{table}
+
+\paragraph{Consistency against NLL.}
+Because all our arms share a checkpoint seed and sampling seeds, we compare them pairwise (Table~\ref{tab:paired}, Figure~\ref{fig:main}b).
+Answer gain beats NLL in all six seed--metric pairs.
+Entropy allocation loses pass@1 on seed 42, and the shuffled control loses pass@1 on two of three seeds.
+
+\paragraph{Pass@3.}
+The pass@3 gap to the controls is within one standard deviation of every arm.
+Against entropy allocation it is $-$0.25, $-$1.03 and +0.12 by seed. Averaged over seeds it comes entirely from AIME24 (31.11 against 33.33: entropy allocation solves two more of the 30 problems on one seed), while answer gain is ahead on AMC12 and MATH500 and tied on AIME25 (Appendix~\ref{app:seeds}).
+Against the shuffled control it comes from AMC12 (71.89\,$\pm$\,3.87 against 66.67).
+We therefore treat pass@3 as a tie among the three allocations, all above NLL, and read pass@1 as the primary result.
+Answer gain's pass@1 lead over entropy allocation is also modest (+1.15, $-$0.24, $-$0.24 by seed); its advantage is consistency rather than a larger mean.
+
+\section{Analysis}
+\label{sec:analysis}
+
+\subsection{Testing the IWC hypotheses}
+\label{sec:iwc-test}
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{llccc}
+    \toprule
+    Gate & Weight & $\lambda$ & seed 42 & 3 seeds \\
+    \midrule
+    -- & uniform (NLL) & 0 & 41.99 / 51.80 & 41.65 / 52.33 \\
+    SGL & uniform (SGL)$^\ddagger$ & 0 & 39.29 / 47.93 & -- \\
+    SGL & entropy (IWC) & 1 & 40.83 / 50.90 & -- \\
+    -- & entropy & 1 & 40.29 / 52.17 & -- \\
+    -- & entropy & 0.5 & 41.16 / 52.28 & 42.24 / 53.48 \\
+    -- & shuffled & 0.5 & 41.05 / 52.20 & 41.61 / 53.57 \\
+    -- & answer gain & 0.5 & 42.31 / 52.03 & 42.46 / 53.09 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Average pass@1 / pass@3 (\%) along the IWC design space, for sampling seed 42 and for the mean over three sampling seeds. $^\ddagger$From the shared results table.}
+  \label{tab:iwc}
+\end{table}
+
+\paragraph{H1: selection saturates on P-ALIGN data.}
+P-ALIGN has already decided what the student should learn, and a second selection stage takes away useful supervision.
+With $p=0.95$ the gate drops only 17\% of steps but 41\% of response tokens, because the long, low-leverage continuation steps fall below the threshold.
+It removes 20\% of the teacher prefix, 49\% of the continuation, and the step that writes \boxedtok{} in 366 of 966 traces (38\%).
+Entropy weights inside the gate improve on SGL's uniform weights (40.83 against 39.29 pass@1), but both stay below NLL on both metrics (41.99 / 51.80; Table~\ref{tab:iwc}).
+At $\lambda=1$, removing the gate trades 0.54 pass@1 for 1.27 pass@3, and at $\lambda=0.5$ the ungated arms are the ones that beat NLL.
+On data that are already well selected, the remaining lever is allocation, not further selection.
+
+\paragraph{H3: the selection and allocation signals are one signal.}
+Because Eq.~\ref{eq:weights} standardizes within a trace, only the within-trace ranking of steps matters.
+Table~\ref{tab:corr} shows that step entropy, spectral strength and step loss produce nearly the same ranking.
+All three measure how difficult a step is for the frozen student: the gradient $g_t=W^\top(p_t-e_{y_t})$ grows as the target probability falls, so high-leverage rows tend to be high-loss tokens, which are also high-entropy tokens.
+Their top steps are often short connectors: among the three highest-entropy steps of each trace, 331 are self-checks (``Let me check'', ``Wait'') against 120 among the three highest-gain steps.
+Answer gain is uncorrelated with all three.
+
+\begin{table}[t]
+  \centering
+  \small
+  \begin{tabular}{lc}
+    \toprule
+    Signal pair & Median within-trace $\rho$ \\
+    \midrule
+    Entropy -- spectral strength & 0.814 \\
+    Entropy -- step loss & 0.796 \\
+    Spectral strength -- step loss & 0.875 \\
+    \midrule
+    Answer gain -- entropy & $-$0.003 \\
+    Answer gain -- spectral strength & 0.008 \\
+    Answer gain -- step loss & 0.023 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Spearman correlation between per-step signals within a trace (median over 966 traces).}
+  \label{tab:corr}
+\end{table}
+
+\paragraph{H2: allocating by entropy is no better than at random.}
+The shuffled control keeps the distribution of entropy weights and destroys their placement.
+Over three sampling seeds it matches entropy allocation on pass@3 and trails it by 0.63 on pass@1, within noise (Table~\ref{tab:main}).
+Over three \emph{training} seeds (sampling seed 42) the two are also indistinguishable: 42.27\,$\pm$\,0.97 / 53.00\,$\pm$\,0.63 for entropy against 42.08\,$\pm$\,1.28 / 53.35\,$\pm$\,1.00 for shuffled, with NLL at 41.09\,$\pm$\,0.83 / 52.16\,$\pm$\,0.33.
+Mass-preserving reallocation helps on this data, but what entropy adds to it is not measurable.
+We do not have a tested explanation for why random reallocation helps; one reading is that it acts as noise on the loss that regularizes training on only 966 traces.
+Allocating by the model's own confidence does worse: every DFT variant we tried stays below uniform training (Appendix~\ref{app:dft}).
+
+\subsection{What answer gain rewards}
+\label{sec:what-gain}
+
+\paragraph{Decisive steps are sparse.}
+Of the 47,532 steps, 43\% raise $\log q_0(a^*)$ by more than 0.1 nats, 39\% lower it by more than 0.1, and 18\% leave it nearly unchanged.
+The total gain of a trace is positive in 95\% of traces (median 6.8 nats), and the three highest-gain steps carry a median 60\% of the positive gain.
+With $\lambda=0.5$ the resulting weights range from 0.58 to 2.68.
+
+\paragraph{The answer-writing step is only part of it.}
+The step that writes \boxedtok{} has the largest gain in 52\% of traces, as expected when the answer appears in the text.
+It carries a median 20\% of a trace's positive gain, and clipping caps its raw weight at $e^{c/\tau}\approx2.7$ times that of an average step.
+The rest of the gain sits on steps that derive the answer.
+
+\paragraph{Decisive steps have low entropy.}
+Excluding steps that write \boxedtok{}, the highest-gain step lies below its trace's median entropy in 63\% of traces, at a median entropy percentile of 0.35 (Figure~\ref{fig:main}a).
+It lies in the lowest 80\%, the share that \citet{li2026stepentropy} prune, in 81\% of traces: the hard limit of entropy allocation would stop learning the most decisive non-answer step in four of five traces.
+Entropy allocation pushes weight away from these steps; answer gain pushes weight onto them.
+Appendix~\ref{app:example} shows a trace where entropy gives its largest weights to ``let me try to work through this'' and ``I guess we'll stay in the real numbers'', while answer gain puts weight on the step that computes the requested value.
+
+\subsection{Generation behavior}
+
+Answer-gain allocation produces the fewest truncated generations among the allocation arms (24.7\% macro-averaged, against 26.1\% for shuffled and 28.1\% for entropy; NLL 24.9\%).
+All three of its samples agree on 53.3\% of problems, against 51.8--52.3\% for the other arms.
+Answer diversity is the same for all arms (1.40--1.44 distinct final answers per problem), so the pass@3 edge of the controls is not explained by more diverse samples.
+The 4,096-token budget binds: evaluating the NLL checkpoint with 8,192 tokens adds 1.45 pass@1 and 5.69 pass@3, mostly on AIME.
+We did not change the budget, because the shared protocol fixes it.
+
+\section{Conclusion}
+
+Distillation methods decide what a student should learn; we asked how the learning effort should be split over what they keep, a question that contains selection as its hard limit.
+On top of P-ALIGN, which already selects content the student can learn, further selection hurts.
+Allocation by difficulty, whether measured by entropy, spectral strength, loss or model confidence, is no better than allocation at random, because these signals are one signal and the decisive steps are low-entropy computations.
+Allocating by answer-information gain, measured with one teacher-forced pass, puts effort on the steps that make the answer usable to the student and gives the best and most consistent pass@1 in our comparison.
+The signal needs only the kept trace and its gold answer, so it can be stacked on other selection methods; we have tested it only on P-ALIGN.
+
+\section*{Limitations}
+
+\paragraph{Effect size and variance.}
+Answer gain beats NLL by +0.82 pass@1 and +0.77 pass@3 on average.
+Per-benchmark spreads (up to $\pm$4 points on AIME) exceed these gaps, and three paired sampling seeds do not establish statistical significance.
+Our main rows vary the sampling seed of one training run, matching how the shared baselines were produced; training-seed variance was measured for NLL, entropy and shuffled weighting ($\pm$0.8--1.3 pass@1) but not for answer gain.
+
+\paragraph{Pass@3.}
+Answer gain does not improve pass@3 over the entropy and shuffled controls; it ties them within noise, and its pass@1 lead over entropy allocation comes from one of three seeds.
+
+\paragraph{Hyperparameters.}
+$\lambda=0.5$ was chosen over $\lambda=1$ with entropy weights on the evaluation benchmarks, before answer gain was introduced, and then kept fixed.
+We did not tune $\tau$, $c$ or the probe for answer gain.
+
+\paragraph{Untested cells.}
+We did not run the shuffled control inside the spectral gate, reverse-entropy weights, token-level entropy weights, or the hard-pruning limit of entropy allocation, so H2 is tested only without the gate and the pruning limit is analyzed but not trained.
+
+\paragraph{Scope.}
+One 1.5B student, the 966 P-ALIGN traces, thinking mode off, and a 4,096-token budget, all fixed by the shared protocol.
+The baselines from the shared table are single evaluations.
+
+\paragraph{Gold answers.}
+Answer gain needs a checkable final answer and a pass of the frozen student over each trace.
+About half of the top-gain steps are the step that writes the answer, and a different probe or answer format may shift the signal.
+
+\section*{Ethics Statement}
+We train and evaluate on public mathematical reasoning datasets and models.
+The method changes only how existing teacher traces are weighted and introduces no new data collection.
+All experiments ran on a single GPU.
+
+% Bibliography entries for the entire Anthology, followed by custom entries
+%\bibliography{custom,anthology-overleaf-1,anthology-overleaf-2}
+
+% Custom bibliography entries only
+\bibliography{custom}
+
+\appendix
+
+\section{Full Fine-Tuning Needs fp32 Master Weights}
+\label{app:bf16}
+
+Loading the student in bf16 and running AdamW without an fp32 master copy discards most updates at learning rate $5\cdot10^{-5}$, because an update of that size falls below bf16's relative precision for typical weights.
+After 64 optimizer steps of such a run, only 13.3\% of the weights differed from the base model, and almost none changed between steps 64 and 96; the training loss stayed flat.
+On real layer weights, about 34\% of elements change per step at $5\cdot10^{-5}$ and 4\% at $5\cdot10^{-6}$.
+The long-CoT SFT row of Table~\ref{tab:main} scores below zero-shot (34.63 against 36.92), consistent with this failure.
+LlamaFactory \citep{zheng2024llamafactory}, used by P-ALIGN, upcasts trainable parameters to fp32, and DeepSpeed keeps fp32 master weights, so every arm we train uses DeepSpeed ZeRO-2.
+
+\section{Training Details and Reproducibility}
+\label{app:repro}
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{ll}
+    \toprule
+    Setting & Value \\
+    \midrule
+    Epochs & 3 \\
+    Effective batch & 32 (accumulation 32, 1 GPU) \\
+    Learning rate & $5\cdot10^{-5}$, cosine to $10^{-5}$ \\
+    Warm-up & 10\% \\
+    Max sequence length & 32,768 tokens \\
+    Precision & bf16 compute, fp32 masters \\
+    Optimizer & AdamW, ZeRO-2 offload \\
+    Training seed & 42 \\
+    Weights & $\tau=2$, $c=2$, $\lambda=0.5$ \\
+    Spectral gate (\S\ref{sec:iwc-test}) & energy threshold $p=0.95$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Training configuration shared by all arms.}
+  \label{tab:hparams}
+\end{table}
+
+Code, per-step signals and evaluation outputs will be released.
+% TODO (camera-ready): add repository URL.
+The answer-gain scorer (\texttt{src/answer\_gain.py}) writes one gain per step, aligned with the segmented training file; the weights of Eq.~\ref{eq:weights} are built by \texttt{src/iwc\_weights.py} with the energy threshold set to 1 (no gate).
+
+\section{Probability-Scaled Objectives on Stitched Traces}
+\label{app:dft}
+
+Before settling on step weighting, we tested DFT \citep{wu2026dft}, which multiplies each token's loss by its detached probability, applied to all tokens or only to the teacher prefix or the student continuation (Table~\ref{tab:dft}).
+Every variant stays below NLL at both budgets.
+
+\begin{table}[h]
+  \centering
+  \small
+  \setlength{\tabcolsep}{3pt}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{lccc}
+    \toprule
+    Objective & 4k p@1/p@3 & Trunc. & 8k p@1/p@3 \\
+    \midrule
+    NLL & 41.99 / 51.80 & 25.2 & 43.44 / 57.49 \\
+    DFT prefix, NLL cont. & 39.05 / 50.48 & 21.8 & -- \\
+    NLL prefix+junction, DFT cont. & 38.98 / 49.33 & 31.6 & 39.45 / 52.03 \\
+    DFT everywhere & 37.30 / 48.10 & 63.4 & 38.55 / 51.51 \\
+    NLL prefix, DFT cont. & 13.56 / 25.83 & 83.5 & -- \\
+    \bottomrule
+  \end{tabular}}
+  \caption{Average accuracy (\%) and macro-averaged truncation rate (\%) at 4,096 tokens for probability-scaled objectives (sampling seed 42). ``Junction'': the first eight continuation tokens are trained with NLL.}
+  \label{tab:dft}
+\end{table}
+
+\paragraph{Loops at the stitching point.}
+The first continuation token after \eop{} has a median probability of $10^{-4}$ under the student (below 0.01 in 77 of 80 sampled traces), and probability stays low for about eight tokens.
+DFT scales that token's gradient by its probability, so the student learns to emit the marker but not to leave it: with NLL on the prefix and DFT on the continuation, 95.5\% of generations repeat the marker until the budget ends.
+Training the first eight continuation tokens with NLL cuts this to 0.5\%.
+
+\paragraph{Rumination.}
+With DFT on all tokens, 41\% of generations are still truncated at 8,192 tokens, and 84\% of those end in a repetitive loop.
+The end-of-sequence token is not the cause: its median probability at the end of training targets is 0.98, so DFT does train it.
+
+\section{Per-Seed Breakdown}
+\label{app:seeds}
+
+\begin{table}[h]
+  \centering
+  \small
+  \setlength{\tabcolsep}{3pt}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{lcccc}
+    \toprule
+    Arm & AIME25 & AIME24 & AMC12 & MATH500 \\
+    \midrule
+    NLL & 23.3/26.7/30.0 & 30.0/26.7/26.7 & 66.3/67.5/66.3 & 87.6/88.8/88.2 \\
+    Entropy & 23.3/26.7/30.0 & 33.3/36.7/30.0 & 65.1/67.5/66.3 & 87.4/87.8/87.8 \\
+    Shuffled & 30.0/30.0/26.7 & 23.3/26.7/26.7 & 67.5/74.7/73.5 & 88.0/87.8/88.0 \\
+    Answer gain & 23.3/30.0/26.7 & 33.3/30.0/30.0 & 62.7/67.5/69.9 & 88.8/87.0/88.0 \\
+    \bottomrule
+  \end{tabular}}
+  \caption{Pass@3 (\%) per benchmark for sampling seeds 42/43/44.}
+  \label{tab:seeds}
+\end{table}
+
+Table~\ref{tab:seeds} lists pass@3 per benchmark and seed.
+The pass@3 gap between answer gain and entropy allocation comes from AIME24 on seed 43 (30.0 against 36.7, two problems); the gap to the shuffled control comes from AMC12 on seeds 43 and 44.
+
+\section{An Example Trace}
+\label{app:example}
+
+\begin{table}[h]
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{2.5pt}
+  \begin{tabular}{r>{\raggedright\arraybackslash}p{0.43\columnwidth}rrrr}
+    \toprule
+    $k$ & Step (abridged) & pct. & $\gain_k$ & $w^{\text{ent}}_k$ & $w^{\text{gain}}_k$ \\
+    \midrule
+    0 & Okay, let me try to work through this problem step by step. & 0.93 & +1.87 & 2.30 & 0.91 \\
+    7 & since our initial points are all real, I guess we'll stay in the real numbers here. & 1.00 & $-$0.30 & 2.36 & 0.80 \\
+    13 & both have the same magnitude, we pick one arbitrarily (say, the one with the plus sign). & 0.80 & $-$0.20 & 1.83 & 0.80 \\
+    14 & real part is: $y\approx 0.1508$. So, the new estimate is $x_3=x_2+y=1.1508$ \dots{} (762 tokens) & 0.00 & +13.85 & 0.93 & 1.46 \\
+    15 & \dots{} New estimate: $x_4=1.1508+0.2555=1.4063$ \dots & 0.07 & $-$1.99 & 0.95 & 0.74 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Five of the 16 steps of a training trace for ``Perform 2 iterations with the M\"uller method for $\log_{10}(x)-x+3=0$, $x_0=1/4$, $x_1=1/2$, $x_2=1$. What is the decimal value of $x_3$?'' (gold answer 1.1508). pct.: within-trace entropy percentile. $w^{\text{ent}}$, $w^{\text{gain}}$: weights of Eq.~\ref{eq:weights} ($\lambda=0.5$) from entropy and from answer gain.}
+  \label{tab:example}
+\end{table}
+
+Table~\ref{tab:example} shows five steps of one trace.
+Entropy allocation gives its largest weights to an opening formula, a hedge and an arbitrary choice.
+Answer gain puts weight on the long, low-entropy step that computes $x_3$, and slightly down-weights the next step, which continues past the requested value and lowers the probability of the gold answer.
+Because the weights preserve token mass, raising the 762-token step to 1.46 lowers most other steps to about 0.8.
+
+\end{document}
