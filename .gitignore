@@ -8,8 +8,6 @@ __pycache__/
 raw/
 /results/plots/*.tmp
 /results-*/
-/results_*/
-!/results_evalseed/
 *.npz
 *.pt
 *.parquet
@@ -34,3 +32,4 @@ logs-data-prep.txt
 *.safetensors
 *.bin
 *.zip
+!/paper/paper_overleaf.zip
