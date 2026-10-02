@@ -1,4 +1,5 @@
 # SFT + next-step representation objective: L = L_NLL + lambda * L_trans (sgl.training.transition_loss).
+# The layer defaults to round(2/3 * depth) (24 for Qwen3-8B, as in scripts/trans/).
 trans_lambda: 0.3
 train_variant: vanilla-trans
 pipeline: [prepare, vanilla, transitions, train, eval]
@@ -15,7 +16,6 @@ stages:
   train:
     args:
       trans-lambda: ${trans_lambda}
-      trans-layer: 24
       trans-lr: 2.0e-4
       trans-hidden: 1024
       trans-grad-log-interval: 50

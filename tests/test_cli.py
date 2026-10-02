@@ -52,7 +52,7 @@ def test_torchrun_plan_uses_every_gpu_and_derives_gradient_accumulation():
     config["stages"]["s"]["module"] = "sgl.nonexistent.module"  # not importable: args unchecked
     plan = plan_stage(config, "s")
     assert plan["env"]["CUDA_VISIBLE_DEVICES"] == "0,1"
-    assert plan["cmd"][:3] == ["torchrun", "--nproc_per_node", "2"]
+    assert plan["cmd"][1:5] == ["-m", "torch.distributed.run", "--nproc_per_node", "2"]
     assert plan["cmd"][plan["cmd"].index("--gradient-accumulation-steps") + 1] == "16"
     assert not plan["validated"]
     config["stages"]["s"]["effective_batch"] = 3

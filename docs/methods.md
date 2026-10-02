@@ -55,8 +55,8 @@ Notes:
   precision: full fine-tuning keeps fp32 trainable weights under bf16 autocast (what LLaMA-Factory
   does for full tuning), LoRA keeps a bf16 base. No DeepSpeed, as in P-ALIGN's runs. Losses are the
   token mean over the optimizer step in both trainers.
-* `palign run <cfg> --stages reference_data,train_reference` trains with the unmodified
-  LLaMA-Factory script; evaluate it with `--stages eval run_suffix=-llamafactory`.
+* `palign run <cfg> --stages reference_data,train_reference stages.train_reference.python=<llamafactory env>/bin/python`
+  trains with the unmodified LLaMA-Factory script; evaluate it with `--stages eval run_suffix=-llamafactory`.
 
 ## `ssft` — Segment-Selective SFT
 

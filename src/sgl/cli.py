@@ -15,6 +15,7 @@ A config lists its stages in `pipeline` and describes each under `stages.<name>`
     launcher: torchrun                # python (default) | torchrun
     args: {data-path: ..., use-lora: true}   # -> --data-path ... --use-lora
     creates: checkpoints/x            # skipped when this path exists (unless --force)
+    python: /envs/other/bin/python    # interpreter for this stage (default: run.python, else this one)
     gpus: [0, 1]                      # sets CUDA_VISIBLE_DEVICES; default: all of run.gpus for
                                       # torchrun stages, the first one for python stages
     effective_batch: 32               # torchrun: gradient-accumulation-steps = 32 / (bs * #gpus)
@@ -22,7 +23,7 @@ A config lists its stages in `pipeline` and describes each under `stages.<name>`
     cwd: some/dir                     # run from here (relative paths in args resolve against it)
     raw_keys: true                    # pass keys verbatim (--model_name_or_path) for reference scripts
 
-Every stage is one subprocess whose output is also written to <run.log_dir>/<name>-<stage>.log.
+Every stage is one subprocess whose output is also written to <run.log_dir>/<run_name>-<stage>.log.
 Arguments are checked against the module's own argparse parser (`build_parser()`), so a typo in a
 config fails before anything runs.
 """
@@ -109,7 +110,7 @@ def module_parser(module: str) -> argparse.ArgumentParser | None:
     """The module's build_parser(), or None when it has none or cannot be imported here."""
     try:
         imported = importlib.import_module(module)
-    except ImportError:
+    except Exception:  # missing optional dependency, or one that refuses to load here (Unsloth without a GPU)
         return None
     build = getattr(imported, "build_parser", None)
     return build() if callable(build) else None
@@ -188,12 +189,12 @@ def plan_stage(config: dict, name: str, parser_cache: dict | None = None) -> dic
         if error:
             raise StageError(f"stage {name!r} ({module}): {error}")
 
-    python = str(run.get("python") or sys.executable)
+    python = str(spec.get("python") or run.get("python") or sys.executable)
     target = ["-m", module] if module else [str(script)]
     if launcher == "torchrun":
         n_proc = max(len(gpus), 1)
-        cmd = [
-            str(run.get("torchrun") or "torchrun"),
+        cmd = [  # `python -m torch.distributed.run` is torchrun, from the stage's own environment
+            python, "-m", "torch.distributed.run",
             "--nproc_per_node", str(n_proc), "--nnodes", "1", "--node_rank", "0",
             "--rdzv_backend", "static", "--master_addr", "localhost", "--master_port", "{port}",
             *target, *argv,
@@ -212,7 +213,7 @@ def plan_stage(config: dict, name: str, parser_cache: dict | None = None) -> dic
         "name": name,
         "cmd": cmd,
         "env": env,
-        "log": log_dir / f"{config.get('name', 'run')}-{name}.log",
+        "log": log_dir / f"{config.get('run_name') or config.get('name', 'run')}-{name}.log",
         "creates": spec.get("creates"),
         "validated": parser is not None,
         "launcher": launcher,
@@ -271,10 +272,18 @@ def execute(plan: dict, cwd: Path) -> int:
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
         )
         assert process.stdout is not None
-        for line in process.stdout:
-            sys.stdout.write(line)
-            handle.write(line)
-        return process.wait()
+        try:
+            for line in process.stdout:
+                sys.stdout.write(line)
+                handle.write(line)
+            return process.wait()
+        except KeyboardInterrupt:  # never leave a training job running behind the CLI
+            process.terminate()
+            try:
+                process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                process.kill()
+            raise
 
 
 def describe(plan: dict) -> str:

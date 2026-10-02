@@ -25,7 +25,7 @@ uv sync                      # core stack: torch, transformers, vLLM, DeepSpeed,
 
 The `sgl`, `palign` and `ssft` commands come with the package. The upstream reference trainers
 (LLaMA-Factory for P-ALIGN, Unsloth for Segment-Selective SFT) need their own environments; point a
-run at one with `run.python=/path/to/env/bin/python`.
+stage at one with `stages.<stage>.python=/path/to/env/bin/python` (or `run.python=` for every stage).
 
 ## Quickstart
 

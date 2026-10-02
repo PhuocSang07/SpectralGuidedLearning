@@ -144,7 +144,9 @@ class IntegratedGradients:
             hidden = model.model(inputs_embeds=path).last_hidden_state
             logits = model.lm_head(hidden[:, start - 1:end - 1, :])
             log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
-            picked = log_probs.gather(-1, targets.unsqueeze(0).expand(chunk, -1).unsqueeze(-1)).squeeze(-1)
+            # lm_head may sit on another GPU than the embeddings when the model is sharded
+            index = targets.to(log_probs.device).unsqueeze(0).expand(chunk, -1).unsqueeze(-1)
+            picked = log_probs.gather(-1, index).squeeze(-1)
             gradient = torch.autograd.grad(picked.sum(), path, retain_graph=False, create_graph=False)[0]
             total += gradient.sum(dim=0, keepdim=True)
             position = stop

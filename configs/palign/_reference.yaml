@@ -1,5 +1,6 @@
 # Upstream trainer, untouched: references/P-ALIGN/src/train.py (LLaMA-Factory) with its YAML and the
-# overrides its project_commands*.sh pass. Needs a LLaMA-Factory environment (run.python=... ).
+# overrides its project_commands*.sh pass. Needs a LLaMA-Factory environment:
+#   palign run <cfg> --stages train_reference stages.train_reference.python=/envs/llamafactory/bin/python
 stages:
   reference_data:
     # LLaMA-Factory reads data/palign_sft_qwen2.5-7b.json (dataset_info.json), shipped gzipped

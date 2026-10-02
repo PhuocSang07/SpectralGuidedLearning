@@ -68,7 +68,8 @@ stages:
       save-total-limit: 3
       objective: nll
   train_reference:
-    # the fork's own trainer, untouched (Unsloth + TRL; needs its ssft_train env: run.python=...)
+    # the fork's own trainer, untouched (Unsloth + TRL), in its own env:
+    #   ssft run <cfg> --stages train_reference stages.train_reference.python=/envs/ssft_train/bin/python
     script: train_mask.py
     cwd: references/SegmentSelectiveSFT/SelectiveSFT
     raw_keys: true
