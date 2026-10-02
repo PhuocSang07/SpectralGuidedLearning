@@ -13,9 +13,9 @@ from pathlib import Path
 import yaml
 
 import sgl.eval.graders.palign as palign_grader
-from sgl.eval.graders.answer_scoring import score_generation
-from sgl.eval.benchmarks import BENCHMARKS
 from sgl.data.prepare import close_open_thinking, palign_close_thinking
+from sgl.eval.benchmarks import BENCHMARKS
+from sgl.eval.graders.answer_scoring import score_generation
 
 
 def build_prompts(model_path: str, records: list[dict], config: dict) -> list:
@@ -335,7 +335,10 @@ def print_summary_table(tag: str, summaries: list[dict]) -> None:
         for s in summaries
     ]
     widths = [max(len(c), *(len(r[i]) for r in rows)) for i, c in enumerate(cols)]
-    fmt = lambda r: "  ".join(v.ljust(w) if i == 0 else v.rjust(w) for i, (v, w) in enumerate(zip(r, widths)))
+
+    def fmt(r):
+        return "  ".join(v.ljust(w) if i == 0 else v.rjust(w) for i, (v, w) in enumerate(zip(r, widths)))
+
     print(f"\n=== {tag} ===")
     print(fmt(cols))
     print("  ".join("-" * w for w in widths))

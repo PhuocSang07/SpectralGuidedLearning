@@ -3,8 +3,8 @@ import random
 from pathlib import Path
 
 import pytest
-
 from reference import PALIGN, SSFT, load
+
 from sgl.segment import SEGMENTERS, palign_sentences, split, split_segments
 
 ASSETS = Path(__file__).resolve().parent / "regression" / "assets"

@@ -5,6 +5,7 @@ import pytest
 import torch
 from transformers import AutoConfig, AutoModelForCausalLM
 
+from sgl.signals.capture import step_mean_entropies, to_gradient_rows
 from sgl.signals.gradients import (
     analytic_hidden_gradients,
     analytic_hidden_gradients_and_entropies,
@@ -12,7 +13,6 @@ from sgl.signals.gradients import (
     capture_sequence_gradients_and_entropies,
     shift_for_causal_lm,
 )
-from sgl.signals.capture import step_mean_entropies, to_gradient_rows
 
 
 @pytest.fixture(scope="module")

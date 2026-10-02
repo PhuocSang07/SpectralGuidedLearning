@@ -83,7 +83,7 @@ def per_sample_diagnostics(
             selected_entropies, selected_lengths, temperature, interpolation, clip, epsilon
         )
         selected_mass = sum(selected_lengths)
-        weighted_mass = sum(l * w for l, w in zip(selected_lengths, stable_weights))
+        weighted_mass = sum(length * w for length, w in zip(selected_lengths, stable_weights))
 
         samples.append({
             "id": record_id,
@@ -222,7 +222,7 @@ def plot_entropy_alpha_binned(samples: list[dict], output_dir: Path, n_bins: int
 
 
 def plot_length_vs_weight(samples: list[dict], output_dir: Path) -> None:
-    lengths = [l for sample in samples for l in sample["selected_lengths"]]
+    lengths = [n for sample in samples for n in sample["selected_lengths"]]
     iwc_w = [w for sample in samples for w in sample["iwc_weights"]]
     stable_w = [w for sample in samples for w in sample["stable_weights"]]
 
@@ -328,7 +328,7 @@ def compute_correlations(
     samples: list[dict], records: dict[int, dict], tokenizer_name: str | None
 ) -> dict:
     entropies = [e for sample in samples for e in sample["selected_entropies"]]
-    lengths = [l for sample in samples for l in sample["selected_lengths"]]
+    lengths = [n for sample in samples for n in sample["selected_lengths"]]
     positions = [p for sample in samples for p in sample["selected_positions"]]
 
     result = {

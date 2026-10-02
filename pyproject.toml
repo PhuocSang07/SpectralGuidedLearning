@@ -57,3 +57,16 @@ explicit = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["regression: end-to-end pipeline regression against golden outputs (~1 min, CPU)"]
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["references", "src/sgl/eval/graders/oat.py", "paper"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# unsloth must be imported before transformers/torch
+"src/sgl/training/backends/unsloth.py" = ["I001"]
+# P-ALIGN's judge prompt, kept byte for byte
+"src/sgl/palign/truncate.py" = ["E501"]

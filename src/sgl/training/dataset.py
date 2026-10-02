@@ -22,7 +22,10 @@ class MaskedSFTDataset(Dataset):
             self.records = [r for r in self.records if len(r["input_ids"]) <= max_seq_len]
             dropped = before - len(self.records)
             if dropped:
-                print(f"--max-seq-len {max_seq_len}: dropped {dropped}/{before} samples (too long to fit in GPU memory at batch size 1)")
+                print(
+                    f"--max-seq-len {max_seq_len}: dropped {dropped}/{before} samples "
+                    "(too long to fit in GPU memory at batch size 1)"
+                )
 
     def __len__(self) -> int:
         return len(self.records)

@@ -121,7 +121,8 @@ STAGES = [
         "--output", "ssft/selected-sgl.jsonl",
     ], None),
     ("sgl_ssft_build", sgl("ssft.build") + [
-        "--data-path", "ssft/selected-sgl.jsonl", "--tokenizer", "tokenizer-chatml", "--output", "ssft/train-ssft.jsonl",
+        "--data-path", "ssft/selected-sgl.jsonl", "--tokenizer", "tokenizer-chatml",
+        "--output", "ssft/train-ssft.jsonl",
         "--no-deepseek", "--think-prefix", "plain", "--prompt-style", "palign",
     ], None),
 ]

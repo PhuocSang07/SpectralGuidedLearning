@@ -136,7 +136,8 @@ class IntegratedGradients:
             stop = min(position + self.batch_size, steps)
             chunk = stop - position
             alpha = alphas[position:stop]
-            path = baseline.expand(chunk, -1, -1) + alpha * (inputs.expand(chunk, -1, -1) - baseline.expand(chunk, -1, -1)).detach()
+            start_point = baseline.expand(chunk, -1, -1)
+            path = start_point + alpha * (inputs.expand(chunk, -1, -1) - start_point).detach()
             path = path.to(dtype=self.dtype)
             path.requires_grad_(True)
             model.zero_grad(set_to_none=True)

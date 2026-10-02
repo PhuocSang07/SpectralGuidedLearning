@@ -16,7 +16,9 @@ from sgl.segment.sentence import record_step_spans
 from sgl.selection.energy import build_loss_mask, select_steps_by_energy, selection_stats
 
 
-def emit_masked_dataset(records: list[dict], strengths: dict[int, list[float]], threshold: float | None, output_path: Path) -> list[dict]:
+def emit_masked_dataset(
+    records: list[dict], strengths: dict[int, list[float]], threshold: float | None, output_path: Path
+) -> list[dict]:
     """Write a JSONL with a loss_mask per record. threshold=None -> supervise all response tokens."""
     all_stats = []
     with output_path.open("w") as handle:
@@ -169,7 +171,10 @@ def main(argv: list[str] | None = None) -> None:
     )
     print(f"p={threshold} (not a paper-published value; run --sweep first to justify it) -> {spectral_path}")
 
-    header = f"\n{'variant':<18} {'steps dropped':>14} {'median':>8} {'tokens dropped':>15} {'median':>8} {'keeps final':>12}"
+    header = (
+        f"\n{'variant':<18} {'steps dropped':>14} {'median':>8} {'tokens dropped':>15} {'median':>8} "
+        f"{'keeps final':>12}"
+    )
     print(header)
     for name, summary in summaries.items():
         print(

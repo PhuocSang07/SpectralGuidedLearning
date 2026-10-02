@@ -342,7 +342,9 @@ def load_family_config(name: str, family: str, overrides: list[str] | None = Non
 
 
 def build_parser(family: str = "sgl") -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog=family, description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog=family, description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     commands = parser.add_subparsers(dest="command", required=True)
 
     run = commands.add_parser("run", help="run the pipeline of an experiment config")
@@ -353,7 +355,8 @@ def build_parser(family: str = "sgl") -> argparse.ArgumentParser:
     run.add_argument("--force", action="store_true", help="rerun stages whose `creates` path exists")
     run.add_argument("--dry-run", action="store_true", help="print the commands without running them")
     run.add_argument("--keep-going", action="store_true", help="continue after a failed stage")
-    run.add_argument("--cwd", default=str(REPO_DIR), help="directory relative paths resolve against (default: repo root)")
+    run.add_argument("--cwd", default=str(REPO_DIR),
+                     help="directory relative paths resolve against (default: repo root)")
 
     show = commands.add_parser("show", help="print the resolved config")
     show.add_argument("config")

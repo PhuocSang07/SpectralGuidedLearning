@@ -16,12 +16,12 @@ import torch
 import yaml
 from transformers import AutoModelForCausalLM
 
+from sgl.segment.sentence import record_step_spans
 from sgl.signals.gradients import (
     analytic_hidden_gradients,
     capture_sequence_gradients_and_entropies,
     shift_for_causal_lm,
 )
-from sgl.segment.sentence import record_step_spans
 from sgl.signals.spectral import analyze_gradient_matrix
 
 
@@ -218,7 +218,8 @@ def run_capture(
         f"step strength: mean={strengths.mean():.4f} p10={quantiles[0]:.4f} "
         f"median={quantiles[1]:.4f} p90={quantiles[2]:.4f} max={strengths.max():.4f}"
     )
-    print(f"strength spread (p90/p10) = {quantiles[2] / max(quantiles[0], 1e-12):.1f}x  (flat => selection drops little)")
+    spread = quantiles[2] / max(quantiles[0], 1e-12)
+    print(f"strength spread (p90/p10) = {spread:.1f}x  (flat => selection drops little)")
 
 
 def build_parser() -> argparse.ArgumentParser:

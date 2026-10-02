@@ -6,8 +6,8 @@ import types
 from pathlib import Path
 
 import pytest
-
 from reference import PALIGN, ROOT, load, stub_module
+
 from sgl.eval.graders import palign as palign_grader
 from sgl.palign import align, build, truncate
 
@@ -102,7 +102,7 @@ def test_continuation_prompt_is_upstreams(tmp_path):
 
     upstream = load(PALIGN / "prefix-alignment.py", "upstream_prefix_alignment", stubs={
         "vllm": stub_module("vllm", LLM=object, SamplingParams=object),
-        "jsonlines": stub_module("jsonlines", open=lambda path: _Ctx([json.loads(l) for l in open(path)])),
+        "jsonlines": stub_module("jsonlines", open=lambda path: _Ctx([json.loads(line) for line in open(path)])),
     })
     source = tmp_path / "truncated.jsonl"
     items = [{"question": "Q one?", "sufficient_reasoning": "Step. Step two."},
@@ -156,8 +156,9 @@ def test_truncate_cli_with_the_hf_backend(tmp_path):
     tokenizer = AutoTokenizer.from_pretrained(str(ASSETS / "tokenizer"))
     torch.manual_seed(0)
     model_dir = tmp_path / "judge"
-    Qwen2ForCausalLM(Qwen2Config(vocab_size=len(tokenizer), hidden_size=32, intermediate_size=64,
-                                 num_hidden_layers=1, num_attention_heads=2, num_key_value_heads=1)).save_pretrained(model_dir)
+    config = Qwen2Config(vocab_size=len(tokenizer), hidden_size=32, intermediate_size=64,
+                         num_hidden_layers=1, num_attention_heads=2, num_key_value_heads=1)
+    Qwen2ForCausalLM(config).save_pretrained(model_dir)
     tokenizer.save_pretrained(model_dir)
     source = tmp_path / "traces.jsonl"
     source.write_text("".join(json.dumps(row) + "\n" for row in [

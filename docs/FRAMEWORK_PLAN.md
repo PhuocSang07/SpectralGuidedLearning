@@ -303,8 +303,16 @@ Tổ hợp mới (vd. IG làm tín hiệu allocation thay vì selection) chỉ l
   (trừ một chuỗi ghi chú trong `correlations.json` nhắc tên module cũ); 12 entrypoint `--help` OK;
   train 1 epoch CPU trên model Qwen2 tí hon OK. **Việc của bạn:** chạy `uv lock` trên máy có mạng
   (sandbox không tới được index PyTorch cu130).
-- [ ] Phase 2 — config + CLI
-- [ ] Phase 3 — hợp nhất phân đoạn
-- [ ] Phase 4 — SegmentSelectiveSFT
-- [ ] Phase 5 — P-ALIGN
-- [ ] Phase 6 — tài liệu, CI
+- [x] **Phase 2** — `sgl.config` + một engine CLI chạy dưới 3 lệnh `sgl` / `palign` / `ssft`
+  (mỗi lệnh chỉ nhận config của họ mình, tên run riêng: `<arm>-<track>`, `palign-<model>`,
+  `ssft-<model>`); `configs/{common,sgl,palign,ssft}`; mỗi module có `build_parser()`/`main(argv)`.
+- [x] **Phase 3** — `sgl.segment` (sentence / paragraph / cue + palign_sentences), `prepare --segmenter`.
+- [x] **Phase 4** — `sgl.ssft` (attribution, select, build) + `sgl.data.s1k`; khớp code gốc (IG, nhãn
+  train_mask trên 40 tổ hợp, file select byte-identical).
+- [x] **Phase 5** — `sgl.palign` (truncate theo vòng, align, build); prompt khớp từng byte, binary
+  search khớp bản tuần tự, grader tái lập 429/429 nhãn công bố.
+- [x] **Phase 6** — README, `docs/methods.md`, `docs/reproducing.md`, `docs/extending.md`, CI
+  (ruff + pytest CPU).
+
+Khác plan ban đầu: code gốc giữ trong `references/` (không xoá); grader Qwen-Math của SSFT không port
+(so sánh dùng math_verify như `commands.sh` của fork); các shell driver cũ vẫn giữ và gọi package.

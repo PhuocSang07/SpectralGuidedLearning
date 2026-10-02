@@ -26,9 +26,9 @@ from transformers import (
 from sgl.training.collator import MaskedSFTCollator
 from sgl.training.dataset import MaskedSFTDataset
 from sgl.training.losses import OBJECTIVE_NLL, OBJECTIVES, masked_cross_entropy
-from sgl.training.utils import compensate_global_token_mean, set_training_seed
 from sgl.training.transition_loss import default_transition_layer, find_decoder_layers
 from sgl.training.transition_trainer import TRANS_INPUT_KEYS, TransitionLossMixin, attach_predictor
+from sgl.training.utils import compensate_global_token_mean, set_training_seed
 
 
 class MaskedSFTTrainer(Trainer):
@@ -299,7 +299,8 @@ def main(argv: list[str] | None = None) -> None:
         missing_fields = [r.get("id") for r in dataset.records if "step_id" not in r][:5]
         if missing_fields:
             parser.error(
-                f"--trans-lambda needs step fields (sgl.transforms.build_transitions); records without them: {missing_fields}..."
+                "--trans-lambda needs step fields (sgl.transforms.build_transitions); "
+                f"records without them: {missing_fields}..."
             )
         pairs = sum(len(r["pair_src"]) for r in dataset.records)
         print(f"L_trans: {pairs:,} transition pairs over {len(dataset)} samples")

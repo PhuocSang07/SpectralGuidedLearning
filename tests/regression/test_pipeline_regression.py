@@ -2,7 +2,6 @@
 import json
 
 import pytest
-
 from pipeline import GOLDEN, diff, run_pipeline
 
 

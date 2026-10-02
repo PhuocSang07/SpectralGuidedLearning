@@ -101,7 +101,8 @@ def test_a_config_only_runs_under_its_own_family(capsys):
 def test_overrides_after_options_are_accepted(capsys):
     assert cli.main(["show", "r1-qwen-1.5b-palign/sft-nll", "train_seed=7"], "sgl") == 0
     assert "seed: 7" in capsys.readouterr().out
-    assert cli.main(["run", "r1-qwen-1.5b-palign/sft-nll", "--dry-run", "train_seed=7", "--stages", "train"], "sgl") == 0
+    argv = ["run", "r1-qwen-1.5b-palign/sft-nll", "--dry-run", "train_seed=7", "--stages", "train"]
+    assert cli.main(argv, "sgl") == 0
 
 
 def test_run_executes_stages_skips_created_outputs_and_stops_on_failure(tmp_path, capsys):

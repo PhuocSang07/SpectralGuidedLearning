@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 import torch
-
 from reference import SSFT, functions_from, load
+
 from sgl.data.s1k import convert_rows, last_boxed
 from sgl.segment.rules import split_segments
 from sgl.ssft import attribution, build, select
@@ -102,7 +102,8 @@ def upstream_labels(tokenizer, rows, *, prompt_style, chat_kwargs, think, mask, 
         "tokenizer": tokenizer, "chat_kwargs": chat_kwargs, "think_str": think,
         "split_segments": split_segments, "SKIPPED": {"n": 0},
     }
-    functions_from(SSFT / "SelectiveSFT" / "train_mask.py", ["segment_char_bounds", "formatting_prompts_func"], namespace)
+    names = ["segment_char_bounds", "formatting_prompts_func"]
+    functions_from(SSFT / "SelectiveSFT" / "train_mask.py", names, namespace)
     examples = {key: [row[key] for row in rows] for key in ("question", "solution", "selected_spans_ids")}
     out = namespace["formatting_prompts_func"](examples)
     return list(zip(out["input_ids"], out["labels"])), namespace["SKIPPED"]["n"]
