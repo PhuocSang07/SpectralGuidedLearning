@@ -10,7 +10,8 @@ math_verify grading. Results go to `results/<run>/summary.json`; `--stages compa
 | Row | Command |
 |---|---|
 | P-ALIGN (paper's own trainer) | `palign run r1-qwen-1.5b --stages reference_data,train_reference` then `palign run r1-qwen-1.5b --stages eval run_suffix=-llamafactory` |
-| P-ALIGN through this pipeline (NLL) | `sgl run r1-qwen-1.5b-palign/sft-nll` (or `palign run r1-qwen-1.5b`, P-ALIGN's cosine-to-0 schedule) |
+| P-ALIGN, native trainer, P-ALIGN's exact tokens and schedule | `palign run r1-qwen-1.5b` |
+| P-ALIGN data through the SGL recipe (NLL; eval-style prompt, lr to 1e-5) | `sgl run r1-qwen-1.5b-palign/sft-nll` |
 | Segment-Selective SFT | `ssft run r1-qwen-1.5b` |
 | SGL (spectral selection) | `sgl run r1-qwen-1.5b-palign/sgl-spectral` |
 | IWC (gate + entropy) | `sgl run r1-qwen-1.5b-palign/iwc-stable` |

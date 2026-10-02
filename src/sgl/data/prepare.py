@@ -31,16 +31,21 @@ RESPONSE_MODES = ("long_cot", "answer")
 
 def build_prompt(
     tokenizer, problem: str, chat_template: bool, enable_thinking: bool, palign_prompt: bool = False,
+    instruction_separator: str = "",
 ) -> str:
     """Plain-text continuation prompt (base models) or chat-templated prompt (instruct models).
 
     Templates that define enable_thinking (e.g. Qwen3) honour the kwarg; ones that ignore it
     but hard-code an open `<think>` (R1-Distill) are closed by close_open_thinking(), so
     --no-enable-thinking means the same thing for every student.
+
+    `instruction_separator` goes between the instruction and the problem. It is empty for the
+    SGL arms (train prompt == eval prompt); P-ALIGN's LLaMA-Factory training joins its alpaca
+    `instruction` and `input` with "\n" (while its evaluation uses no separator).
     """
+    instruction = PROMPT_TEMPLATE.format(problem=instruction_separator + problem)
     if not chat_template:
-        return PROMPT_TEMPLATE.format(problem=problem)
-    instruction = PROMPT_TEMPLATE.format(problem=problem)
+        return instruction
     prompt = tokenizer.apply_chat_template(
         [{"role": "user", "content": instruction}],
         tokenize=False,
@@ -99,7 +104,7 @@ def reconcile_thinking_markers(prompt: str, response: str) -> str:
 def build_record(
     tokenizer, problem: str, response: str, max_tokens: int,
     chat_template: bool = False, enable_thinking: bool = True, palign_prompt: bool = False,
-    segmenter: str = "sentence",
+    segmenter: str = "sentence", instruction_separator: str = "", stop_suffix: str = "",
 ) -> dict | None:
     """Tokenize one problem/response pair and map its steps to absolute token spans.
 
@@ -112,7 +117,7 @@ def build_record(
     problem = unicodedata.normalize("NFC", problem)
     response = unicodedata.normalize("NFC", response)
 
-    prompt = build_prompt(tokenizer, problem, chat_template, enable_thinking, palign_prompt)
+    prompt = build_prompt(tokenizer, problem, chat_template, enable_thinking, palign_prompt, instruction_separator)
     response = reconcile_thinking_markers(prompt, response)
     prompt_ids = tokenizer(prompt, add_special_tokens=False)["input_ids"]
     response_ids, token_starts = encode_with_offsets(tokenizer, response)
@@ -125,6 +130,10 @@ def build_record(
     # response_token_span (which stays text-only so step spans still round-trip) and outside
     # every step span, so sgl.selection.build_masks supervises it separately in both arms.
     stop_ids = [tokenizer.eos_token_id] if tokenizer.eos_token_id is not None else []
+    # --stop-suffix: text the trainer being reproduced also supervises after the stop token
+    # (LLaMA-Factory's qwen/qwen3 templates end every assistant turn with "<|im_end|>\n").
+    if stop_suffix:
+        stop_ids += tokenizer(stop_suffix, add_special_tokens=False)["input_ids"]
     input_ids = prompt_ids + response_ids + stop_ids
     return {
         "prompt": prompt,
@@ -283,6 +292,8 @@ def collect_records(tokenizer, config: dict, limit_scan: int) -> tuple[list[dict
             enable_thinking=config.get("enable_thinking", True),
             palign_prompt=config.get("palign_prompt", False),
             segmenter=config.get("segmenter", "sentence"),
+            instruction_separator=config.get("instruction_separator", ""),
+            stop_suffix=config.get("stop_suffix", ""),
         )
         if record is None:
             counts["skipped_long"] += 1
@@ -326,6 +337,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--segmenter", choices=sorted(SEGMENTERS),
         help="step segmentation rule (default sentence; paragraph/cue are Segment-Selective SFT's)",
     )
+    parser.add_argument(
+        "--instruction-separator",
+        help="text between the instruction and the problem (default none; P-ALIGN's LLaMA-Factory "
+        "training uses a newline)",
+    )
+    parser.add_argument(
+        "--stop-suffix",
+        help="extra supervised text after the stop token (LLaMA-Factory's qwen/qwen3 templates: a newline)",
+    )
     parser.add_argument("--limit-scan", type=int, default=0, help="max source rows to scan; 0 means no scan cap")
     return parser
 
@@ -349,6 +369,8 @@ def main(argv: list[str] | None = None) -> None:
         "palign_prompt": args.palign_prompt,
         "response_mode": args.response_mode,
         "segmenter": args.segmenter,
+        "instruction_separator": args.instruction_separator,
+        "stop_suffix": args.stop_suffix,
     }
     config.update({key: value for key, value in overrides.items() if value is not None})
     config.setdefault("dataset_split", "train")

@@ -7,3 +7,4 @@ defaults:
   - ../common/eval/palign-protocol.yaml
   - _palign.yaml
 run_suffix: -lora
+stop_suffix: "\n"          # LLaMA-Factory qwen template: "<|im_end|>\n"

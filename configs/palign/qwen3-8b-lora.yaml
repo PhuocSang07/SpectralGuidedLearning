@@ -8,4 +8,5 @@ defaults:
   - _palign.yaml
   - _reference.yaml
 run_suffix: -lora
+stop_suffix: "\n"          # LLaMA-Factory qwen3 template: "<|im_end|>\n"
 reference_config: configs/qwen3_8b_palign_sft.yaml

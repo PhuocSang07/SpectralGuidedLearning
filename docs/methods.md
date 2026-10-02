@@ -22,9 +22,16 @@ recipe, `<track>/<arm>.yaml` = one published arm).
 | `sft-trans` | trans | NLL + lambda * L_trans (next-step representation) |
 
 Fidelity: the code is the pre-refactor code moved into a package. Every dataset the CPU stages
-write is byte-identical to `paper-v1` (`tests/regression/golden.json`). The configs reproduce the
-shell drivers' arguments (3 epochs, effective batch 32, lr 5e-5 cosine to 1e-5, warmup 0.1,
-DeepSpeed ZeRO-2 offload; LoRA tracks r16). Two intentional differences from the old drivers:
+write is byte-identical to `paper-v1` (`tests/regression/golden.json`), and every config launches
+exactly the command of the shell driver that produced its published run: the drivers are executed
+with recording fake `python`/`torchrun` and compared flag by flag (`tests/regression/legacy_drivers.py`,
+30 prepare / capture / weights / train / eval commands).
+
+Note on "P-ALIGN through this pipeline" (`sft-nll`): the SGL prompt is the evaluation prompt
+(`...\boxed{}.<question>`), whereas P-ALIGN's own LLaMA-Factory training inserts a newline
+(`...\boxed{}.\n<question>`) and, for Qwen students, also supervises the newline after
+`<|im_end|>`. `sft-nll` therefore matches P-ALIGN's data and objective but not its exact training
+tokens; `palign run` reproduces those (see below). Two intentional differences from the old drivers:
 the IWC arms write their dataset under its final name directly (`allocation.build --output-name`)
 instead of building in a scratch dir and renaming it, and seed-43/44 evaluations are tagged
 `<arm>-<track>-e43` for every track (the 1.5B driver used `<arm>-e43`).
@@ -39,6 +46,7 @@ Code: `sgl.palign` (`truncate`, `align`, `build`), `sgl.data.s1k`. Configs: `con
 | Truncation | `src/binary_search.py` | `sgl.palign.truncate` | judge prompt byte-identical; verdict rule; 300 searches give upstream's exact result |
 | Continuation | `src/prefix-alignment.py` | `sgl.palign.align` | prompt byte-identical (upstream `process_data` run with stubs) |
 | Training file | not released as code | `sgl.palign.build` | marker layout reproduces all 966 released rows |
+| Training tokens | LLaMA-Factory alpaca converter + `deepseekr1` / `qwen3` / `qwen` templates | `sgl.data.prepare --instruction-separator "\n" [--stop-suffix "\n"]` | ids identical to LLaMA-Factory's own `encode_oneturn` (`tests/test_palign_training_format.py`) |
 | Training | LLaMA-Factory (`src/train.py` + YAML) | `sgl.training.train` | same recipe; `train_reference` stage runs the original |
 | Evaluation | `src/test.py` + `src/evaluation.py` | `sgl.eval.evaluate --palign-prompt --grader math_verify` | prompt test; grader reproduces 429/429 published labels |
 
@@ -51,12 +59,19 @@ Notes:
 * The assembly step (`<Begin_of_Prefix>prefix<End_of_Prefix>\ncontinuation`, kept when the
   continuation's last `\boxed{}` matches the gold answer under math_verify) is reconstructed from
   the released file, since upstream ships no script for it.
+* P-ALIGN runs keep their own data dir (`data/palign-<model>/`) because their token layout differs
+  from the SGL arms'. LoRA runs merge the adapter before saving and evaluate the merged model, as
+  P-ALIGN exports before `test.py`.
 * Native training uses P-ALIGN's own schedule, cosine to 0 (the SGL arms decay to 1e-5), and its
   precision: full fine-tuning keeps fp32 trainable weights under bf16 autocast (what LLaMA-Factory
   does for full tuning), LoRA keeps a bf16 base. No DeepSpeed, as in P-ALIGN's runs. Losses are the
   token mean over the optimizer step in both trainers.
 * `palign run <cfg> --stages reference_data,train_reference stages.train_reference.python=<llamafactory env>/bin/python`
-  trains with the unmodified LLaMA-Factory script; evaluate it with `--stages eval run_suffix=-llamafactory`.
+  trains with the unmodified LLaMA-Factory script; evaluate it with `--stages eval run_suffix=-llamafactory`
+  (add `lora_adapter=true` for the LoRA configs, whose LLaMA-Factory output is an adapter).
+* Not bit-identical by construction: data order and dropout RNG differ between trainers, the HF
+  Trainer's default AdamW implementation may be the fused one (same update rule), and sdpa vs
+  LLaMA-Factory's `flash_attn: auto` kernels. These change numbers at the level of seed noise only.
 
 ## `ssft` — Segment-Selective SFT
 
@@ -73,6 +88,9 @@ Code: `sgl.ssft` (`attribution`, `select`, `build`), `sgl.data.s1k`. Configs: `c
 
 Notes:
 
+* To train on the fork's released selection instead of recomputing IG:
+  `ssft run r1-qwen-1.5b --stages build,train,eval stages.build.args.data-path=<.../solutions_selected.jsonl>`.
+* The 7B LoRA config merges the adapter before evaluation, as the fork does with `merge_lora.py`.
 * `configs/ssft/r1-qwen-1.5b.yaml` is the fork's `commands.sh`: full fine-tuning, DeepSeek-R1
   template, P-ALIGN prompt, empty think block (`--think-prefix off`), paragraph segments, IG from
   DeepSeek-R1-Distill-Qwen-7B with 20 steps, top-70% strength + coherence <= 0.8, lr 5e-5 cosine to

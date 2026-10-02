@@ -180,3 +180,17 @@ def test_integrated_gradients_match_upstream(monkeypatch, tiny_model_dir, rows):
         got = ours(ids, spans, answer, tokenizer.pad_token_id)
         assert got == expected
         assert attribution.compact(got)[0][0] == spans[0][1] - spans[0][0]
+
+
+def test_attribution_prompt_ids_are_the_rendered_chat_template(tokenizer, rows):
+    """Upstream ran transformers 4.x, where apply_chat_template(tokenize=True) returns the ids of the
+    rendered template without extra special tokens; transformers 5 returns a BatchEncoding instead."""
+    row = dict(rows[0], answer="7")
+    ids, spans, _ = attribution.build_example(tokenizer, row)
+    text = tokenizer.apply_chat_template(
+        [{"role": "user", "content": attribution.USER_TEMPLATE.format(input=row["question"])}],
+        tokenize=False, add_generation_prompt=True,
+    )
+    prompt_ids = tokenizer(text, add_special_tokens=False)["input_ids"]
+    assert ids[:len(prompt_ids)] == prompt_ids
+    assert spans[0][0] == len(prompt_ids)

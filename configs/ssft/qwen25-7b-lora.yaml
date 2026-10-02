@@ -9,16 +9,15 @@ defaults:
   - _ssft.yaml
 run_suffix: -lora
 prompt_style: palign
-lora_adapter: true
 stages:
   train:
     args:
       deepspeed-config: null
       lora-r: 64
       lora-alpha: 64
+      lora-merge: true            # the fork merges (SelectiveSFT/merge_lora.py) and evaluates the merged model
   eval:
     args:
-      lora-r: 64
       gpu-memory-utilization: 0.5
   train_reference:
     args:
