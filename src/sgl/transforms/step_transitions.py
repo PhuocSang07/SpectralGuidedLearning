@@ -1,6 +1,6 @@
 """Step structure for the next-step representation objective (L_trans).
 
-Independent of the sentence-level segmentation in segmentation.py (which feeds spectral step
+Independent of the sentence-level segmentation in sgl.segment.sentence (which feeds spectral step
 selection): here a step is a `\\n\\n`-delimited paragraph of the thinking trace, the same unit SGL
 and step-entropy use. Steps shorter than `min_step_tokens` are folded into the step before them.
 
@@ -19,7 +19,7 @@ DEFAULT_MIN_STEP_TOKENS = 8
 def cot_char_span(response: str) -> tuple[int, int]:
     """Character span of the thinking trace inside `response`.
 
-    Covers the three response layouts data_prep.py can emit: a full `<think>...</think>` block;
+    Covers the three response layouts sgl.data.prepare can emit: a full `<think>...</think>` block;
     only `</think>` (the prompt opened the block, R1-style); or no tags at all (the prompt already
     emitted an empty thinking block, e.g. Qwen3 with enable_thinking=False -- the trajectory and the
     final write-up are then plain prose, and both are stepped). Prompt tokens are never steps.
@@ -81,7 +81,7 @@ def build_transition_fields(
     """The transition fields for one record.
 
     Args:
-        response: response text (data_prep record["response"]).
+        response: response text (sgl.data.prepare record["response"]).
         token_starts: starting char offset of every response token (encode_with_offsets).
         response_offset: absolute index of the first response token (response_token_span[0]).
         sequence_length: len(input_ids), to size `step_id`.

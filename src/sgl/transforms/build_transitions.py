@@ -1,13 +1,13 @@
 """Add the L_trans step fields to a masked SFT dataset.
 
-Reads the segmented records (data_prep.py: response text + response_token_span) for the step
-structure and a masked dataset (build_masks.py / build_iwc_datasets.py: input_ids + loss_mask
+Reads the segmented records (sgl.data.prepare: response text + response_token_span) for the step
+structure and a masked dataset (sgl.selection.build_masks / sgl.allocation.build: input_ids + loss_mask
 [+ loss_weights]) for the NLL supervision, and writes the masked records plus
-step_id / step_end / num_steps / pair_src (step_transitions.py). The NLL mask is copied
+step_id / step_end / num_steps / pair_src (sgl.transforms.step_transitions). The NLL mask is copied
 untouched, so `--masked train-vanilla.jsonl` gives SFT + L_trans and `--masked
 train-spectral.jsonl` gives SGL + L_trans on exactly the same transition pairs.
 
-The response is re-tokenized with offsets exactly as data_prep.py did (one pass over the whole
+The response is re-tokenized with offsets exactly as sgl.data.prepare did (one pass over the whole
 response, never piecewise) and checked against the stored input_ids before any boundary is mapped.
 """
 
@@ -18,8 +18,8 @@ from pathlib import Path
 
 from transformers import AutoTokenizer
 
-from segmentation import encode_with_offsets
-from step_transitions import DEFAULT_MIN_STEP_TOKENS, build_transition_fields
+from sgl.segment.sentence import encode_with_offsets
+from sgl.transforms.step_transitions import DEFAULT_MIN_STEP_TOKENS, build_transition_fields
 
 
 def load_jsonl(path: Path) -> list[dict]:
@@ -33,7 +33,7 @@ def transition_fields_for_record(tokenizer, record: dict, min_step_tokens: int) 
     if response_ids != record["input_ids"][start:end]:
         raise RuntimeError(
             f"record {record['id']}: re-tokenized response differs from stored input_ids "
-            "(different tokenizer than data_prep.py?)"
+            "(different tokenizer than sgl.data.prepare?)"
         )
     return build_transition_fields(
         record["response"], token_starts, start, len(record["input_ids"]), min_step_tokens
@@ -42,10 +42,10 @@ def transition_fields_for_record(tokenizer, record: dict, min_step_tokens: int) 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--segmented", required=True, help="data_prep.py output (train-segmented.jsonl)")
+    parser.add_argument("--segmented", required=True, help="sgl.data.prepare output (train-segmented.jsonl)")
     parser.add_argument("--masked", required=True, help="masked dataset to extend (train-vanilla.jsonl, train-spectral.jsonl, ...)")
     parser.add_argument("--output", required=True)
-    parser.add_argument("--tokenizer", required=True, help="same tokenizer data_prep.py used")
+    parser.add_argument("--tokenizer", required=True, help="same tokenizer sgl.data.prepare used")
     parser.add_argument("--min-step-tokens", type=int, default=DEFAULT_MIN_STEP_TOKENS)
     args = parser.parse_args()
 

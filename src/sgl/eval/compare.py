@@ -1,6 +1,6 @@
 """Phase 7 helper: merge per-model eval summaries into the final comparison table.
 
-    python src/compare_results.py [--results-dir results]
+    python sgl.eval.compare [--results-dir results]
 """
 
 import argparse

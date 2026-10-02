@@ -2,8 +2,8 @@ import math
 
 import pytest
 
-from build_iwc_datasets import build_example
-from iwc_weights import (
+from sgl.allocation.build import build_example
+from sgl.allocation.iwc import (
     reverse_iwc_step_weights,
     shuffled_iwc_step_weights,
     stable_iwc_step_weights,

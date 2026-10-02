@@ -1,8 +1,8 @@
 import torch
 import torch.nn.functional as F
 
-from data_collator import MaskedSFTCollator
-from masked_loss import IGNORE_INDEX, OBJECTIVE_DFT, OBJECTIVE_NLL, masked_cross_entropy
+from sgl.training.collator import MaskedSFTCollator
+from sgl.training.losses import IGNORE_INDEX, OBJECTIVE_DFT, OBJECTIVE_NLL, masked_cross_entropy
 
 
 def _random_batch(batch_size=2, seq_len=12, vocab=17, seed=0):
@@ -75,7 +75,7 @@ def test_collator_pads_token_source_with_zero():
 def test_junction_tokens_get_their_own_source(tmp_path, monkeypatch):
     import json
 
-    from build_provenance_dataset import build
+    from sgl.transforms.provenance import build
 
     class Tok:  # char-level tokenizer: token i == character i
         def __call__(self, text, add_special_tokens=False, return_offsets_mapping=False):
@@ -84,7 +84,7 @@ def test_junction_tokens_get_their_own_source(tmp_path, monkeypatch):
                 out["offset_mapping"] = [(i, i + 1) for i in range(len(text))]
             return out
 
-    import build_provenance_dataset as module
+    import sgl.transforms.provenance as module
 
     monkeypatch.setattr(module, "AutoTokenizer", type("A", (), {"from_pretrained": staticmethod(lambda name: Tok())}))
     response = "ab<End_of_Prefix>cdefg"

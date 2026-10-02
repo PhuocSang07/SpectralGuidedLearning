@@ -1,20 +1,18 @@
 """Spectral masked SFT via Unsloth full fine-tuning, single GPU.
 
-A leaner sibling of `train_sft.py` for the spectral arm only: full-FT (no LoRA), no DeepSpeed,
+A leaner sibling of `sgl.training.train` for the spectral arm only: full-FT (no LoRA), no DeepSpeed,
 one GPU. The loss mask is still applied the framework-agnostic way -- the collator sets
-`labels=-100` at masked positions -- so the ONLY thing that changes versus `train_sft.py` is who
+`labels=-100` at masked positions -- so the ONLY thing that changes versus `sgl.training.train` is who
 computes the cross-entropy: here it is the model's own (Unsloth-patched, fused) loss instead of
 the custom `masked_cross_entropy`. With a plain `Trainer` on transformers 4.57 that fused loss is
 normalized by `num_items_in_batch` summed across the grad-accum step, which equals Eq. 9's Z.
 `--force-eq9-denominator` makes that normalization explicit if the equivalence gate shows the
 native path does not do it on its own.
 
-    modal run modal_train.py --mode check-unsloth      # verify the stack loads
-    modal run modal_train.py --mode eq9-gate           # all-ones equivalence gate
-    modal run --detach modal_train.py --mode train-eval-unsloth
+    python -m sgl.training.backends.unsloth --config ... [flags]
 
 Output dir is a normal merged full checkpoint (weights + tokenizer + run-summary.json), loaded by
-evaluate.py exactly like a `train_sft.py` checkpoint.
+`sgl.eval.evaluate` exactly like a `sgl.training.train` checkpoint.
 """
 
 # Unsloth MUST be imported before transformers/torch so its kernel patches take effect.
@@ -30,8 +28,8 @@ import torch
 import yaml
 from transformers import Trainer, TrainingArguments
 
-from data_collator import MaskedSFTCollator
-from masked_dataset import MaskedSFTDataset, VolumeCommitCallback
+from sgl.training.collator import MaskedSFTCollator
+from sgl.training.dataset import MaskedSFTDataset
 
 
 class _Eq9DenominatorTrainer(Trainer):
@@ -217,10 +215,6 @@ def main() -> None:
     model.config.use_cache = False
 
     callbacks = []
-    commit_volume = os.environ.get("MODAL_COMMIT_VOLUME")
-    if commit_volume:
-        callbacks.append(VolumeCommitCallback(commit_volume))
-        print(f"per-epoch volume commits enabled (volume: {commit_volume})")
 
     trainer_cls = _Eq9DenominatorTrainer if args.force_eq9_denominator else Trainer
     if args.force_eq9_denominator:
@@ -285,7 +279,7 @@ def main() -> None:
         )
         print(f"metric history ({len(trainer.state.log_history)} entries) -> {metrics_path}")
 
-    # LoRA: save_model writes the adapter only -- evaluate.py loads it with --lora-adapter
+    # LoRA: save_model writes the adapter only -- sgl.eval.evaluate loads it with --lora-adapter
     # against --base-model. Full-FT: the same call writes the whole model.
     trainer.save_model(config["output_dir"])
     tokenizer.save_pretrained(config["output_dir"])

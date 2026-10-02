@@ -16,13 +16,13 @@ import torch
 import yaml
 from transformers import AutoModelForCausalLM
 
-from gradient_utils import (
+from sgl.signals.gradients import (
     analytic_hidden_gradients,
     capture_sequence_gradients_and_entropies,
     shift_for_causal_lm,
 )
-from segmentation import record_step_spans
-from spectral_utils import analyze_gradient_matrix
+from sgl.segment.sentence import record_step_spans
+from sgl.signals.spectral import analyze_gradient_matrix
 
 
 def sync_if_cuda(device) -> None:
@@ -225,7 +225,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="optional yaml base; CLI flags below override it")
     parser.add_argument("--model-name", help="HF model id, e.g. Qwen/Qwen3-8B")
-    parser.add_argument("--data-path", help="segmented jsonl from data_prep.py (Phase 2 output)")
+    parser.add_argument("--data-path", help="segmented jsonl from sgl.data.prepare (Phase 2 output)")
     parser.add_argument("--output-dir", help="per-sample .npz spectra go here")
     parser.add_argument("--strengths-path", help="merged parquet of per-sample k*/step strengths")
     parser.add_argument("--energy-cutoff", type=float, help="k* cumulative-energy threshold (Eq. 4)")

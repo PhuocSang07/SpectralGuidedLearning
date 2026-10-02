@@ -65,7 +65,7 @@ SAVE_TOTAL_LIMIT=2
 MAX_SEQ_LEN=32768
 DS_CONFIG="${DS_CONFIG-${BASE_PATH}/configs/deepspeed/ds_config_zero2_offload.json}"
 
-[[ -f "${DATA_PATH}" ]] || { echo "missing ${DATA_PATH} -- run scripts/data/data_r1-qwen-1.5b.sh / src/build_provenance_dataset.py first" >&2; exit 1; }
+[[ -f "${DATA_PATH}" ]] || { echo "missing ${DATA_PATH} -- run scripts/data/data_r1-qwen-1.5b.sh / src/sgl/transforms/provenance.py first" >&2; exit 1; }
 
 OPTS=""
 OPTS+=" --model-name ${MODEL_NAME}"
@@ -88,6 +88,6 @@ if [[ -n "${DS_CONFIG:-}" ]]; then
   OPTS+=" --deepspeed-config ${DS_CONFIG}"
 fi
 
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/train_sft.py ${OPTS} ${EXTRA_ARGS[*]}"
+CMD="torchrun ${DISTRIBUTED_ARGS} -m sgl.training.train ${OPTS} ${EXTRA_ARGS[*]}"
 echo "${CMD}"
 ${CMD} 2>&1 | tee "${BASE_PATH}/logs/${ARM}-${TRACK}.log"

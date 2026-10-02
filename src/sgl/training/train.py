@@ -4,8 +4,8 @@ Shared by both the vanilla and spectral SFT launchers (scripts/qwen3/{sft,spectr
 only the loss mask in the dataset differs. Settings come from CLI flags or --config.
 
 --trans-lambda > 0 adds the next-step representation objective (L = L_NLL + lambda * L_trans,
-see transition_loss.py) on top of whichever NLL mask the data carries; the data then needs the
-step fields written by build_trans_dataset.py. Off by default, so every existing arm is unchanged.
+see sgl.training.transition_loss) on top of whichever NLL mask the data carries; the data then needs the
+step fields written by sgl.transforms.build_transitions. Off by default, so every existing arm is unchanged.
 """
 
 import argparse
@@ -23,12 +23,12 @@ from transformers import (
     TrainingArguments,
 )
 
-from data_collator import MaskedSFTCollator
-from masked_dataset import MaskedSFTDataset, VolumeCommitCallback
-from masked_loss import OBJECTIVE_NLL, OBJECTIVES, masked_cross_entropy
-from training_utils import compensate_global_token_mean, set_training_seed
-from transition_loss import default_transition_layer, find_decoder_layers
-from transition_trainer import TRANS_INPUT_KEYS, TransitionLossMixin, attach_predictor
+from sgl.training.collator import MaskedSFTCollator
+from sgl.training.dataset import MaskedSFTDataset
+from sgl.training.losses import OBJECTIVE_NLL, OBJECTIVES, masked_cross_entropy
+from sgl.training.utils import compensate_global_token_mean, set_training_seed
+from sgl.training.transition_loss import default_transition_layer, find_decoder_layers
+from sgl.training.transition_trainer import TRANS_INPUT_KEYS, TransitionLossMixin, attach_predictor
 
 
 class MaskedSFTTrainer(Trainer):
@@ -63,7 +63,7 @@ class MaskedSFTTrainer(Trainer):
         token_objective = None
         if self.source_objectives and token_source is None:
             raise ValueError(
-                "--prefix/--cont/--junction-objective need token_source (build_provenance_dataset.py)"
+                "--prefix/--cont/--junction-objective need token_source (sgl.transforms.provenance)"
             )
         if self.objective != OBJECTIVE_NLL or self.source_objectives:
             token_objective = torch.full_like(labels, self.objective)
@@ -166,8 +166,7 @@ def main() -> None:
     parser.add_argument("--save-total-limit", type=int)
     parser.add_argument(
         "--resume", action=argparse.BooleanOptionalAction,
-        help="resume from the last checkpoint in --output-dir if one exists (else start fresh); "
-        "pair with per-epoch volume commits so an interrupted run continues instead of restarting",
+        help="resume from the last checkpoint in --output-dir if one exists (else start fresh)",
     )
     # LoRA (optional): trains low-rank adapters instead of full weights. Merged back into the
     # base model before saving, so output_dir is a normal full checkpoint either way.
@@ -182,11 +181,11 @@ def main() -> None:
     parser.add_argument("--objective", choices=sorted(OBJECTIVES), help="objective on every supervised token")
     parser.add_argument(
         "--prefix-objective", choices=sorted(OBJECTIVES),
-        help="override on teacher-prefix tokens (token_source 1, build_provenance_dataset.py)",
+        help="override on teacher-prefix tokens (token_source 1, sgl.transforms.provenance)",
     )
     parser.add_argument(
         "--cont-objective", choices=sorted(OBJECTIVES),
-        help="override on continuation tokens (token_source 2, build_provenance_dataset.py)",
+        help="override on continuation tokens (token_source 2, sgl.transforms.provenance)",
     )
     parser.add_argument(
         "--junction-objective", choices=sorted(OBJECTIVES),
@@ -206,7 +205,7 @@ def main() -> None:
     parser.add_argument(
         "--trans-lambda", type=float,
         help="weight lambda of L_trans (0/unset = plain masked SFT). Needs a dataset with the step "
-        "fields from build_trans_dataset.py",
+        "fields from sgl.transforms.build_transitions",
     )
     parser.add_argument(
         "--trans-layer", type=int,
@@ -295,7 +294,7 @@ def main() -> None:
         missing_fields = [r.get("id") for r in dataset.records if "step_id" not in r][:5]
         if missing_fields:
             parser.error(
-                f"--trans-lambda needs step fields (build_trans_dataset.py); records without them: {missing_fields}..."
+                f"--trans-lambda needs step fields (sgl.transforms.build_transitions); records without them: {missing_fields}..."
             )
         pairs = sum(len(r["pair_src"]) for r in dataset.records)
         print(f"L_trans: {pairs:,} transition pairs over {len(dataset)} samples")
@@ -367,12 +366,7 @@ def main() -> None:
             )
         }
 
-    # On Modal, commit the volume after each epoch's save so an interrupted run keeps finished epochs.
     callbacks = []
-    commit_volume = os.environ.get("MODAL_COMMIT_VOLUME")
-    if commit_volume:
-        callbacks.append(VolumeCommitCallback(commit_volume))
-        print(f"per-epoch volume commits enabled (volume: {commit_volume})")
 
     trainer = trainer_cls(
         model=model,
@@ -380,7 +374,7 @@ def main() -> None:
         train_dataset=dataset,
         data_collator=MaskedSFTCollator(pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id),
         # lets Trainer write tokenizer files into every checkpoint-N/, not just output_dir at the
-        # end — otherwise intermediate checkpoints aren't loadable by vLLM (evaluate.py) on their own.
+        # end — otherwise intermediate checkpoints aren't loadable by vLLM (sgl.eval.evaluate) on their own.
         processing_class=tokenizer,
         callbacks=callbacks,
         **trainer_kwargs,
@@ -441,16 +435,16 @@ def main() -> None:
 
     if config.get("use_lora") and config.get("lora_merge", True):
         # merge adapters into the base weights so output_dir is a normal full checkpoint,
-        # loadable by evaluate.py/vLLM exactly like a non-LoRA run.
+        # loadable by sgl.eval.evaluate/vLLM exactly like a non-LoRA run.
         trainer.model.merge_and_unload().save_pretrained(config["output_dir"])
     else:
         # --no-lora-merge: trainer.save_model() on a PEFT model saves adapter weights only
-        # (tens-hundreds of MB) instead of a full ~16GB checkpoint; evaluate.py loads it as a
+        # (tens-hundreds of MB) instead of a full ~16GB checkpoint; sgl.eval.evaluate loads it as a
         # LoRA adapter on top of the base model.
         trainer.save_model(config["output_dir"])
     tokenizer.save_pretrained(config["output_dir"])
     if use_trans:
-        # Not needed at inference (evaluate.py/vLLM read only the adapter); kept for continued training.
+        # Not needed at inference (sgl.eval.evaluate/vLLM read only the adapter); kept for continued training.
         trainer.save_predictor(config["output_dir"])
 
     # evidence for the paper's "fewer supervised tokens" claim, recorded next to the checkpoint

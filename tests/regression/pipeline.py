@@ -33,12 +33,11 @@ if not SSFT.exists():
     SSFT = ROOT / "SegmentSelectiveSFT"
 
 PY = sys.executable
-SGL = [PY, "-m"]
 
 
 def sgl(module: str) -> list[str]:
-    """Command prefix for one SGL pipeline module."""
-    return [PY, str(ROOT / "src" / f"{module}.py")]
+    """Command prefix for one sgl pipeline module."""
+    return [PY, "-m", f"sgl.{module}"]
 
 
 PREP_ARGS = [
@@ -48,57 +47,57 @@ PREP_ARGS = [
 
 # (stage name, argv, stdout capture file or None). Run in order, cwd = work dir.
 STAGES = [
-    ("data_prep", sgl("data_prep") + PREP_ARGS + [
+    ("data_prep", sgl("data.prepare") + PREP_ARGS + [
         "--chat-template", "--no-enable-thinking", "--palign-prompt",
         "--output-path", "data/train-segmented.jsonl",
     ], None),
-    ("data_prep_plain", sgl("data_prep") + PREP_ARGS + [
+    ("data_prep_plain", sgl("data.prepare") + PREP_ARGS + [
         "--no-chat-template", "--output-path", "plain/train-segmented.jsonl",
     ], None),
     ("signals", None, None),  # synthetic spectral/entropy/gain signals, see write_signals()
-    ("build_masks", sgl("build_masks") + [
+    ("build_masks", sgl("selection.build_masks") + [
         "--data-path", "data/train-segmented.jsonl", "--strengths", "signals/spectral.parquet",
         "--energy-threshold-p", "0.8", "--vanilla",
     ], None),
-    ("build_masks_sweep", sgl("build_masks") + [
+    ("build_masks_sweep", sgl("selection.build_masks") + [
         "--data-path", "data/train-segmented.jsonl", "--strengths", "signals/spectral.parquet",
         "--sweep", "0.5,0.8,0.95",
     ], None),
-    ("build_iwc", sgl("build_iwc_datasets") + [
+    ("build_iwc", sgl("allocation.build") + [
         "--data-path", "data/train-segmented.jsonl", "--strengths", "signals/spectral.parquet",
         "--energy-threshold-p", "0.8", "--interpolation", "0.5",
         "--variants", "iwc,iwc-stable,iwc-stable-lambda0,iwc-stable-shuffled,iwc-stable-reverse",
     ], None),
-    ("build_gain_signal", sgl("build_gain_signal") + [
+    ("build_gain_signal", sgl("signals.gain_parquet") + [
         "--data-path", "gain/train-segmented.jsonl", "--gains", "signals/gains.json",
         "--output", "gain/signal-answer-gain.parquet",
     ], None),
-    ("build_iwc_gain", sgl("build_iwc_datasets") + [
+    ("build_iwc_gain", sgl("allocation.build") + [
         "--data-path", "gain/train-segmented.jsonl", "--strengths", "gain/signal-answer-gain.parquet",
         "--energy-threshold-p", "1.0", "--interpolation", "0.5", "--variants", "iwc-stable",
     ], None),
-    ("build_provenance", sgl("build_provenance_dataset") + [
+    ("build_provenance", sgl("transforms.provenance") + [
         "--data-dir", "data", "--tokenizer", TOKENIZER,
     ], None),
-    ("build_provenance_junction", sgl("build_provenance_dataset") + [
+    ("build_provenance_junction", sgl("transforms.provenance") + [
         "--data-dir", "data", "--tokenizer", TOKENIZER, "--junction-tokens", "8",
         "--output-name", "train-provenance-j8.jsonl",
     ], None),
-    ("build_trans", sgl("build_trans_dataset") + [
+    ("build_trans", sgl("transforms.build_transitions") + [
         "--segmented", "data/train-segmented.jsonl", "--masked", "data/train-spectral.jsonl",
         "--output", "data/train-spectral-trans.jsonl", "--tokenizer", TOKENIZER,
     ], None),
-    ("iwc_diagnostics", sgl("iwc_diagnostics") + [
+    ("iwc_diagnostics", sgl("diagnostics.iwc") + [
         "--data-path", "data/train-segmented.jsonl", "--strengths", "signals/spectral.parquet",
         "--output-dir", "diagnostics", "--energy-threshold-p", "0.8", "--tokenizer", TOKENIZER,
     ], None),
-    ("rescore", sgl("evaluate") + [
+    ("rescore", sgl("eval.evaluate") + [
         "--rescore", str(ASSETS / "raw_aime24.jsonl"), "--grader", "math_verify",
     ], "eval/rescore-math_verify.json"),
-    ("rescore_builtin", sgl("evaluate") + [
+    ("rescore_builtin", sgl("eval.evaluate") + [
         "--rescore", str(ASSETS / "raw_aime24.jsonl"), "--grader", "builtin",
     ], "eval/rescore-builtin.json"),
-    ("compare_results", sgl("compare_results") + ["--results-dir", "results"], None),
+    ("compare_results", sgl("eval.compare") + ["--results-dir", "results"], None),
     ("ssft_split_paragraph", [PY, str(SSFT / "Attribution" / "segment_split.py"),
         "--input_data_file", "ssft/train.jsonl", "--output_data_file", "ssft/segments-paragraph.jsonl",
         "--tokenizer", "none", "--segment_mode", "paragraph",

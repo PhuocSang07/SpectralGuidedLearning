@@ -9,7 +9,7 @@ train-vanilla.jsonl (same supervised tokens as plain SFT / P-ALIGN) and adds
                       2  continuation (student-generated text and the stop token)
                       3  junction: the first --junction-tokens continuation tokens (default 0 = none)
 
-so train_sft.py --prefix-objective/--cont-objective/--junction-objective can use a different
+so sgl.training.train --prefix-objective/--cont-objective/--junction-objective can use a different
 objective per segment. The junction exists because the first continuation token after the marker
 is nearly impossible under the base model (median p ~1e-4, low p for ~8 tokens): a p-scaled
 objective such as DFT gives it ~no gradient, the model never learns to leave the marker, and

@@ -14,14 +14,14 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from iwc_weights import (
+from sgl.allocation.iwc import (
     reverse_iwc_step_weights,
     shuffled_iwc_step_weights,
     stable_iwc_step_weights,
     vanilla_iwc_step_weights,
 )
-from segmentation import record_step_spans
-from step_selection import build_loss_mask, select_steps_by_energy, selection_stats
+from sgl.segment.sentence import record_step_spans
+from sgl.selection.energy import build_loss_mask, select_steps_by_energy, selection_stats
 
 # Every non-"iwc" variant is IWC-Stable with a specific (interpolation, entropy-mapping) choice --
 # the shared token-mass normalization is what makes them comparable controls (see docs/iwc-baselines.md).
@@ -148,8 +148,8 @@ def summarize(stats: list[dict]) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="optional yaml base; CLI flags override it")
-    parser.add_argument("--data-path", help="segmented JSONL from data_prep.py")
-    parser.add_argument("--strengths", help="spectral-strengths.parquet from gradient_capture.py")
+    parser.add_argument("--data-path", help="segmented JSONL from sgl.data.prepare")
+    parser.add_argument("--strengths", help="spectral-strengths.parquet from sgl.signals.capture")
     parser.add_argument("--energy-threshold-p", type=float, help="the shared spectral gate threshold")
     parser.add_argument("--temperature", type=float, help="entropy temperature tau")
     parser.add_argument("--interpolation", type=float, help="IWC-Stable lambda in [0, 1]")
@@ -192,7 +192,7 @@ def main() -> None:
     frame = pd.read_parquet(config["strengths"])
     if "step_entropies" not in frame.columns:
         raise ValueError(
-            f"{config['strengths']} has no step_entropies; rerun gradient_capture.py after the IWC update"
+            f"{config['strengths']} has no step_entropies; rerun sgl.signals.capture after the IWC update"
         )
     signals = {
         int(row.id): (list(row.step_strengths), list(row.step_entropies))

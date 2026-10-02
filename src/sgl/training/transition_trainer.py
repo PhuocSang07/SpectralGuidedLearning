@@ -13,7 +13,7 @@ from collections import defaultdict
 import torch
 from transformers import TrainerCallback
 
-from transition_loss import HiddenStateCapture, TransitionPredictor, find_decoder_layers, transition_loss
+from sgl.training.transition_loss import HiddenStateCapture, TransitionPredictor, find_decoder_layers, transition_loss
 
 PREDICTOR_FILE = "trans_predictor.pt"
 PREDICTOR_ATTR = "trans_predictor"

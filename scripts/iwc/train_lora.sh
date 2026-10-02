@@ -105,6 +105,6 @@ if [[ -n "${DS_CONFIG:-}" ]]; then
   OPTS+=" --deepspeed-config ${DS_CONFIG}"
 fi
 
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/src/train_sft.py ${OPTS} ${EXTRA_ARGS[*]}"
+CMD="torchrun ${DISTRIBUTED_ARGS} -m sgl.training.train ${OPTS} ${EXTRA_ARGS[*]}"
 echo "${CMD}"
 ${CMD} 2>&1 | tee "${BASE_PATH}/logs/${ARM}-${TRACK}.log"

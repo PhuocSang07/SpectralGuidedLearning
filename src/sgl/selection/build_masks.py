@@ -12,8 +12,8 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-from segmentation import record_step_spans
-from step_selection import build_loss_mask, select_steps_by_energy, selection_stats
+from sgl.segment.sentence import record_step_spans
+from sgl.selection.energy import build_loss_mask, select_steps_by_energy, selection_stats
 
 
 def emit_masked_dataset(records: list[dict], strengths: dict[int, list[float]], threshold: float | None, output_path: Path) -> list[dict]:
@@ -103,7 +103,7 @@ def summarize(stats: list[dict]) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="optional yaml base; CLI flags below override it")
-    parser.add_argument("--data-path", help="segmented jsonl from data_prep.py (Phase 2 output)")
+    parser.add_argument("--data-path", help="segmented jsonl from sgl.data.prepare (Phase 2 output)")
     parser.add_argument("--energy-threshold-p", type=float, help="Eq. 8 threshold p (engineering choice)")
     parser.add_argument("--strengths", default="data/spectral-strengths.parquet")
     parser.add_argument("--vanilla", action="store_true", help="also emit the all-ones baseline")

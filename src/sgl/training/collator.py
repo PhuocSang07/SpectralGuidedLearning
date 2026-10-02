@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import torch
 
-from masked_loss import IGNORE_INDEX
+from sgl.training.losses import IGNORE_INDEX
 
 
 @dataclass
@@ -58,7 +58,7 @@ class MaskedSFTCollator:
         if has_loss_weights:
             batch["loss_weights"] = torch.tensor(loss_weights, dtype=torch.float32)
         if any("token_source" in example for example in examples):
-            # provenance of each token (build_provenance_dataset.py): 0 = unsupervised/prompt,
+            # provenance of each token (sgl.transforms.provenance): 0 = unsupervised/prompt,
             # 1 = teacher prefix, 2 = continuation; padding is 0.
             if not all("token_source" in example for example in examples):
                 raise ValueError("a batch must either provide token_source for every example or for none")
@@ -77,7 +77,7 @@ class MaskedSFTCollator:
 
     @staticmethod
     def _transition_fields(examples: list[dict], max_length: int) -> dict[str, torch.Tensor]:
-        """L_trans structure from build_trans_dataset.py, padded with -1 (step_id: outside the
+        """L_trans structure from sgl.transforms.build_transitions, padded with -1 (step_id: outside the
         CoT; step_end / pair_src: no entry) so the trainer can filter per example."""
         if not all("step_id" in example for example in examples):
             raise ValueError("a batch must either provide step_id for every example or for none")

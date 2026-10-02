@@ -288,7 +288,7 @@ Tổ hợp mới (vd. IG làm tín hiệu allocation thay vì selection) chỉ l
 |---|---|---|
 | 1 | Tên package | `sgl` |
 | 2 | Backend train | HF mặc định; Unsloth là extra; LLaMA-Factory chỉ để đối chứng |
-| 3 | Logs / kết quả cũ | Giữ trong git, gom vào `experiments/` |
+| 3 | Logs / kết quả cũ | Giữ trong git. `logs_*.txt` ở root → `experiments/logs/`; `results*/` và `logs/` giữ nguyên vì là thư mục output đang được script dùng |
 | 4 | Code gốc P-ALIGN / SSFT | Giữ trong `references/` (không xoá ở Phase 6) |
 | 5 | Ngôn ngữ comment | Không quan trọng → giữ tiếng Anh như SGL hiện tại |
 
@@ -296,7 +296,13 @@ Tổ hợp mới (vd. IG làm tín hiệu allocation thay vì selection) chỉ l
   P-ALIGN + 30 bài AIME24 đã sinh của P-ALIGN; 21 stage CPU (data_prep, masks, IWC ×5 biến thể,
   gain, provenance, trans, diagnostics, rescore, compare, SSFT split/select) → 53 output được băm
   trong `golden.json`. `pytest` chạy cả bộ (~1 phút CPU).
-- [ ] Phase 1 — package hoá
+- [x] **Phase 1** — `src/*.py` → `src/sgl/` (git mv, giữ lịch sử); import theo package;
+  mọi shell script gọi `python -m sgl.…` / `torchrun -m sgl.training.train`; `pyproject` là
+  package thật (hatchling, `uv` package = true, entry points `sgl-prepare/-evaluate/-compare`);
+  code gốc → `references/`; bỏ Modal volume-commit. Gate: 141 test xanh, regression giống hệt
+  (trừ một chuỗi ghi chú trong `correlations.json` nhắc tên module cũ); 12 entrypoint `--help` OK;
+  train 1 epoch CPU trên model Qwen2 tí hon OK. **Việc của bạn:** chạy `uv lock` trên máy có mạng
+  (sandbox không tới được index PyTorch cu130).
 - [ ] Phase 2 — config + CLI
 - [ ] Phase 3 — hợp nhất phân đoạn
 - [ ] Phase 4 — SegmentSelectiveSFT

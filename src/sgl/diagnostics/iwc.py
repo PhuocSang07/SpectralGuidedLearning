@@ -1,9 +1,9 @@
 """Pre-train IWC diagnostics (paper-adjacent controls, see docs/iwc-baselines.md).
 
-CPU-only checks on the two artifacts gradient_capture.py/data_prep.py already produce
-(train-segmented.jsonl, spectral-strengths.parquet) -- no train_sft.py run required. Reuses
-the exact selection/weighting functions from step_selection.py and iwc_weights.py instead of
-recomputing the maths, so a diagnostic can never silently drift from what build_iwc_datasets.py
+CPU-only checks on the two artifacts sgl.signals.capture/data_prep.py already produce
+(train-segmented.jsonl, spectral-strengths.parquet) -- no sgl.training.train run required. Reuses
+the exact selection/weighting functions from sgl.selection.energy and sgl.allocation.iwc instead of
+recomputing the maths, so a diagnostic can never silently drift from what sgl.allocation.build
 actually ships.
 
 Produces:
@@ -39,9 +39,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from iwc_weights import stable_iwc_step_weights, vanilla_iwc_step_weights
-from segmentation import record_step_spans
-from step_selection import select_steps_by_energy
+from sgl.allocation.iwc import stable_iwc_step_weights, vanilla_iwc_step_weights
+from sgl.segment.sentence import record_step_spans
+from sgl.selection.energy import select_steps_by_energy
 
 
 def load_records(data_path: str) -> dict[int, dict]:
@@ -52,7 +52,7 @@ def load_records(data_path: str) -> dict[int, dict]:
 def load_signals(strengths_path: str) -> dict[int, tuple[list[float], list[float]]]:
     frame = pd.read_parquet(strengths_path)
     if "step_entropies" not in frame.columns:
-        raise ValueError(f"{strengths_path} has no step_entropies; rerun gradient_capture.py")
+        raise ValueError(f"{strengths_path} has no step_entropies; rerun sgl.signals.capture")
     return {int(row.id): (list(row.step_strengths), list(row.step_entropies)) for row in frame.itertuples()}
 
 
@@ -360,7 +360,7 @@ def compute_correlations(
         ),
         "entropy_vs_nll": None,
         "entropy_vs_nll_note": (
-            "gradient_capture.py does not store per-step NLL, only predictive entropy and "
+            "sgl.signals.capture does not store per-step NLL, only predictive entropy and "
             "spectral strength -- computing it needs a separate frozen-model forward pass."
         ),
     }
@@ -388,8 +388,8 @@ def compute_correlations(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-path", required=True, help="train-segmented.jsonl from data_prep.py")
-    parser.add_argument("--strengths", required=True, help="spectral-strengths.parquet from gradient_capture.py")
+    parser.add_argument("--data-path", required=True, help="train-segmented.jsonl from sgl.data.prepare")
+    parser.add_argument("--strengths", required=True, help="spectral-strengths.parquet from sgl.signals.capture")
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--energy-threshold-p", type=float, default=0.95)
     parser.add_argument("--temperature", type=float, default=1.0)

@@ -49,11 +49,11 @@ if [[ -n "${N_SAMPLES}" ]]; then
   OPTS+=" --n-samples ${N_SAMPLES}"
 fi
 
-CMD="python ${BASE_PATH}/src/data_prep.py ${OPTS}"
+CMD="python -m sgl.data.prepare ${OPTS}"
 echo "${CMD}"
 ${CMD} 2>&1 | tee logs/${TRACK}-data.log
 
 # All-ones mask = every response token supervised = plain SFT on the full long CoT.
-CMD="python ${BASE_PATH}/src/build_masks.py --data-path ${OUTPUT_PATH} --vanilla-only"
+CMD="python -m sgl.selection.build_masks --data-path ${OUTPUT_PATH} --vanilla-only"
 echo "${CMD}"
 ${CMD} 2>&1 | tee logs/${TRACK}-vanilla-masks.log

@@ -14,7 +14,7 @@ import argparse
 import json
 from pathlib import Path
 
-from answer_scoring import extract_boxed
+from sgl.eval.graders.answer_scoring import extract_boxed
 
 PROBE = "\n\nTherefore, the final answer is \\boxed{"
 

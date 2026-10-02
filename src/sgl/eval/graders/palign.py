@@ -44,7 +44,7 @@ def _math_verify_labels(predictions: list[str], gold: str) -> list[int]:
 
 
 def _oat_label(prediction: str, gold: str) -> int:
-    from oat_math_grader import boxed_reward_fn
+    from sgl.eval.graders.oat import boxed_reward_fn
 
     try:
         _, result = boxed_reward_fn(prediction, gold, fast=False)
@@ -56,12 +56,12 @@ def _oat_label(prediction: str, gold: str) -> int:
 def active_graders() -> list[str]:
     """Grader branches whose imports resolve in this environment."""
     available = []
-    for module in ("math_verify", "oat_math_grader"):
+    for name, module in (("math_verify", "math_verify"), ("oat_math_grader", "sgl.eval.graders.oat")):
         try:
             __import__(module)
         except ImportError:
             continue
-        available.append(module)
+        available.append(name)
     return available
 
 

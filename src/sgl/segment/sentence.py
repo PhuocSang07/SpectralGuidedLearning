@@ -34,14 +34,14 @@ def split_into_step_texts(response: str) -> list[str]:
 
 
 def record_step_spans(record: dict) -> list[tuple[int, int]]:
-    """Absolute (start, end) token spans of a data_prep.py record's steps."""
+    """Absolute (start, end) token spans of a sgl.data.prepare record's steps."""
     return [(step["token_start"], step["token_end"]) for step in record["steps"]]
 
 
 def solution_step_start(step_texts: list[str]) -> int | None:
     """Index of the first step belonging to the final solution, for methods (Pru-CoT) that treat
     the CoT and solution as separate. Our source guarantees every response is
-    "<think>\n{trajectory}\n</think>\n\n{attempt}" (data_prep.py); since the tag rarely lands on
+    "<think>\n{trajectory}\n</think>\n\n{attempt}" (sgl.data.prepare); since the tag rarely lands on
     a step boundary, the step whose text *contains* "</think>" (and everything after) counts as
     solution. Returns None (whole-response fallback) when no tag is present.
     """

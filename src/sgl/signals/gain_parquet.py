@@ -1,6 +1,6 @@
-"""Turn per-step answer gains (answer_gain.py) into a signal parquet build_iwc_datasets.py can read.
+"""Turn per-step answer gains (sgl.signals.answer_gain) into a signal parquet sgl.allocation.build can read.
 
-build_iwc_datasets.py reads ``step_strengths`` (spectral gate) and ``step_entropies`` (the IWC
+sgl.allocation.build reads ``step_strengths`` (spectral gate) and ``step_entropies`` (the IWC
 signal) from one parquet. The answer-gain arm feeds the gain through the same IWC-Stable formula
 by putting it in ``step_entropies``. ``step_strengths`` only matters if a gate < 1.0 is used; the
 no-gate arms (energy threshold p=1.0) ignore it, so when no spectral capture exists it is filled
@@ -17,7 +17,7 @@ import pandas as pd
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", required=True, help="train-segmented.jsonl")
-    parser.add_argument("--gains", required=True, help="step_answer_gain.json from answer_gain.py")
+    parser.add_argument("--gains", required=True, help="step_answer_gain.json from sgl.signals.answer_gain")
     parser.add_argument("--output", required=True, help="signal-answer-gain.parquet")
     parser.add_argument(
         "--strengths",

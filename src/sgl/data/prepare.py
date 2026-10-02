@@ -16,7 +16,7 @@ from datasets import load_dataset
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from segmentation import encode_with_offsets, step_token_spans
+from sgl.segment.sentence import encode_with_offsets, step_token_spans
 
 # Must stay byte-identical to benchmarks.MATH_PROMPT so the student sees the same instruction
 # at train and eval time; the shape is P-ALIGN's (instruction first, no separator).
@@ -121,7 +121,7 @@ def build_record(
     # The stop token has to be part of the target, or the model is only ever supervised to
     # continue past its final answer and never to end the turn. It sits outside
     # response_token_span (which stays text-only so step spans still round-trip) and outside
-    # every step span, so build_masks supervises it separately in both arms.
+    # every step span, so sgl.selection.build_masks supervises it separately in both arms.
     stop_ids = [tokenizer.eos_token_id] if tokenizer.eos_token_id is not None else []
     input_ids = prompt_ids + response_ids + stop_ids
     return {
@@ -312,7 +312,7 @@ def main() -> None:
     parser.add_argument("--enable-thinking", action=argparse.BooleanOptionalAction)
     parser.add_argument(
         "--palign-prompt", action=argparse.BooleanOptionalAction,
-        help="thinking off: close R1's forced <think> as P-ALIGN / evaluate.py --palign-prompt do "
+        help="thinking off: close R1's forced <think> as P-ALIGN / sgl.eval.evaluate --palign-prompt do "
         "(<think>\\n\\n</think>\\n\\n) so train and eval prompts tokenize identically",
     )
     parser.add_argument(

@@ -1,6 +1,6 @@
 """Phase 6: generate with vLLM and score both checkpoints on the paper's benchmarks.
 
-    python src/evaluate.py --rescore results/spectral/raw/math500.jsonl   # no GPU needed
+    python sgl.eval.evaluate --rescore results/spectral/raw/math500.jsonl   # no GPU needed
 
 Raw generations are persisted under --results-dir/<tag>/raw/ so scoring can be revised with
 --rescore. A run always regenerates them; it never reuses a file from an earlier run.
@@ -12,10 +12,10 @@ from pathlib import Path
 
 import yaml
 
-import palign_grader
-from answer_scoring import score_generation
-from benchmarks import BENCHMARKS
-from data_prep import close_open_thinking, palign_close_thinking
+import sgl.eval.graders.palign as palign_grader
+from sgl.eval.graders.answer_scoring import score_generation
+from sgl.eval.benchmarks import BENCHMARKS
+from sgl.data.prepare import close_open_thinking, palign_close_thinking
 
 
 def build_prompts(model_path: str, records: list[dict], config: dict) -> list:
@@ -23,7 +23,7 @@ def build_prompts(model_path: str, records: list[dict], config: dict) -> list:
 
     Instruct/hybrid-thinking models need the chat template so generation starts from the
     assistant turn as trained, rather than continuing raw text like a base model. Prompts are
-    built exactly as data_prep.build_prompt() builds them at train time, including how
+    built exactly as sgl.data.prepare.build_prompt() builds them at train time, including how
     enable_thinking=False is rendered (see close_open_thinking).
 
     palign_prompt: follow P-ALIGN/src/test.py instead -- close thinking with
