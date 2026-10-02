@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Answer-gain signal, 3 training seeds, P-ALIGN data:
-#   iwc-gain-l05 : IWC-Stable weights from per-step answer-information gain (src/answer_gain.py), no gate, lambda 0.5, tau 2.0, clip 2.0
+#   iwc-gain-l05 : IWC-Stable weights from per-step answer-information gain (src/sgl/signals/answer_gain.py), no gate, lambda 0.5, tau 2.0, clip 2.0
 # Only the training seed changes; eval (seed 42, n=3, T=0.6, 4096 tok) is identical.
 set -uo pipefail
 BASE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

@@ -31,7 +31,7 @@ ARMS=("$@")
 [[ ${#ARMS[@]} -gt 0 ]] || ARMS=(prov-nll-dft sft-nll sft-dft prov-dft-nll)
 
 [[ -f "data/${TRACK}/train-provenance.jsonl" ]] || \
-  PYTHONPATH="${BASE}/src" "${PROJECT_ENV}/bin/python" src/build_provenance_dataset.py \
+  PYTHONPATH="${BASE}/src" "${PROJECT_ENV}/bin/python" -m sgl.transforms.provenance \
     --data-dir "data/${TRACK}" --tokenizer "${MODEL_NAME}" || exit 1
 
 for arm in "${ARMS[@]}"; do
@@ -48,4 +48,4 @@ for arm in "${ARMS[@]}"; do
     || echo "ARM ${arm}: EVAL FAILED" >&2
 done
 
-"${PROJECT_ENV}/bin/python" "${BASE}/src/compare_results.py"
+"${PROJECT_ENV}/bin/python" -m sgl.eval.compare

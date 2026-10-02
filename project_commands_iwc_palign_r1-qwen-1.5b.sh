@@ -2,8 +2,8 @@
 # IWC on P-ALIGN's data -- DeepSeek-R1-Distill-Qwen-1.5B, FULL fine-tuning:
 #   data (P-ALIGN prefix-aligned traces) -> capture (spectral + entropy) -> IWC weights
 #   -> full-FT IWC SFT -> eval -> compare.
-# Same training set and format as P-ALIGN (../P-ALIGN/configs/r1_distill_qwen_1.5b_palign_full_sft.yaml):
-# ../P-ALIGN/data/palign_sft_qwen2.5-7b.json.gz, thinking OFF at train and eval (prompt ends with an
+# Same training set and format as P-ALIGN (references/P-ALIGN/configs/r1_distill_qwen_1.5b_palign_full_sft.yaml):
+# references/P-ALIGN/data/palign_sft_qwen2.5-7b.json.gz, thinking OFF at train and eval (prompt ends with an
 # empty <think>\n\n</think>\n\n). The only difference from P-ALIGN is which response tokens are
 # supervised (spectral selection) and how they are weighted (IWC-Stable), so
 # iwc-stable-r1-qwen-1.5b-palign compares directly against the P-ALIGN row.
@@ -13,13 +13,14 @@
 set -euo pipefail
 BASE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${BASE}"
+export PYTHONPATH="${BASE}/src${PYTHONPATH:+:${PYTHONPATH}}"
 
 CUDA_GPUS="${CUDA_VISIBLE_DEVICES:-}"
 export GPUS="${GPUS:-${CUDA_GPUS:+${CUDA_GPUS//,/ }}}"
 export GPUS="${GPUS:-0}"
 
 export TRACK="${TRACK:-r1-qwen-1.5b-palign}"
-export DATASET_NAME="${DATASET_NAME:-$(cd "${BASE}/.." && pwd)/P-ALIGN/data/palign_sft_qwen2.5-7b.json.gz}"
+export DATASET_NAME="${DATASET_NAME:-${BASE}/references/P-ALIGN/data/palign_sft_qwen2.5-7b.json.gz}"
 # Thinking OFF, as P-ALIGN trains (enable_thinking: false) and as eval runs.
 export ENABLE_THINKING="${ENABLE_THINKING:-false}"
 export PALIGN_PROMPT=true   # "<think>\n\n</think>\n\n", identical to the eval prompt
@@ -48,4 +49,4 @@ ENABLE_THINKING=false \
   bash scripts/eval/eval_r1-qwen-1.5b.sh "checkpoints/iwc-stable-${TRACK}" "iwc-stable-${TRACK}"
 
 # =========================== COMPARE ==========================
-"${PROJECT_ENV}/bin/python" "${BASE}/src/compare_results.py"
+"${PROJECT_ENV}/bin/python" -m sgl.eval.compare

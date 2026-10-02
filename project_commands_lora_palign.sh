@@ -48,7 +48,7 @@ export TRACK="${MODEL_KEY}-palign"
 export TRACK
 export MODEL_NAME
 export BASE_MODEL="${MODEL_NAME}"
-export DATASET_NAME="${DATASET_NAME:-$(cd "${BASE}/.." && pwd)/P-ALIGN/data/palign_sft_qwen2.5-7b.json.gz}"
+export DATASET_NAME="${DATASET_NAME:-${BASE}/references/P-ALIGN/data/palign_sft_qwen2.5-7b.json.gz}"
 # Thinking OFF, as P-ALIGN trains and as eval runs (prompt ends with an empty <think>\n\n</think>\n\n).
 export ENABLE_THINKING=false
 export PALIGN_PROMPT=true
@@ -77,7 +77,7 @@ build_weighted() {   # $1 = signal parquet, $2 = out variant name
   local build="${DATA_DIR}-build-$2"
   rm -rf "${build}"; mkdir -p "${build}"
   ln -s "${BASE}/${SEGMENTED}" "${build}/train-segmented.jsonl"
-  python src/build_iwc_datasets.py --data-path "${build}/train-segmented.jsonl" --strengths "$1" \
+  python -m sgl.allocation.build --data-path "${build}/train-segmented.jsonl" --strengths "$1" \
     --energy-threshold-p "${IWC_ENERGY_THRESHOLD_P}" --temperature "${IWC_TEMPERATURE}" \
     --interpolation "${IWC_INTERPOLATION}" --clip "${IWC_CLIP}" --variants iwc-stable \
     2>&1 | tee "logs/${TRACK}-$2-masks.log"
@@ -103,10 +103,10 @@ if has_arm gain; then
   GAINS="${DATA_DIR}/signals/step_answer_gain.json"
   SIGNAL="${DATA_DIR}/signals/signal-answer-gain.parquet"
   if [[ ! -f "${GAINS}" ]]; then   # log p(gold answer | prefix up to step k) under the frozen student, via vLLM
-    CUDA_VISIBLE_DEVICES="${GPU_LIST[0]}" python src/answer_gain.py --data-path "${SEGMENTED}" \
+    CUDA_VISIBLE_DEVICES="${GPU_LIST[0]}" python -m sgl.signals.answer_gain --data-path "${SEGMENTED}" \
       --model "${MODEL_NAME}" --gpu-memory-utilization "${GAIN_GPU_MEM_UTIL:-0.4}" --output "${GAINS}" 2>&1 | tee "logs/${TRACK}-answer-gain.log"
   fi
-  [[ -f "${SIGNAL}" ]] || python src/build_gain_signal.py --data-path "${SEGMENTED}" --gains "${GAINS}" \
+  [[ -f "${SIGNAL}" ]] || python -m sgl.signals.gain_parquet --data-path "${SEGMENTED}" --gains "${GAINS}" \
     --output "${SIGNAL}" $([[ -f "${DATA_DIR}/spectral-strengths.parquet" ]] && echo "--strengths ${DATA_DIR}/spectral-strengths.parquet")
   [[ -f "${DATA_DIR}/train-iwc-stable-gain-nogate-l05.jsonl" ]] \
     || build_weighted "${SIGNAL}" iwc-stable-gain-nogate-l05
@@ -145,4 +145,4 @@ done
 
 # =========================== COMPARE ===========================
 # results/comparison-table.md + results/eval-summary.json (sampling seeds 43/44 are in results_evalseed/)
-"${PROJECT_ENV}/bin/python" "${BASE}/src/compare_results.py"
+"${PROJECT_ENV}/bin/python" -m sgl.eval.compare
