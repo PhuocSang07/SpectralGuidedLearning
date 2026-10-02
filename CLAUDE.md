@@ -60,25 +60,6 @@ scripts/, project_commands*.sh   legacy drivers (still used for tracks without c
 results*/, logs/      live output dirs written by runs; experiments/ holds old root logs
 ```
 
-## Invariants — do not break these
-
-- **Byte-identical datasets.** `tests/regression/pipeline.py` reruns every CPU stage on fixed
-  assets and compares hashes recorded from the pre-refactor code (commit `7990089`, "paper-v1").
-  A refactor must leave every existing hash unchanged. Only run `--update` when adding *new*
-  outputs or when a change is intended, and say so in the commit; check with a diff of
-  `golden.json` that no old entry moved.
-- **Configs launch what the legacy drivers launched.** `tests/regression/legacy_drivers.py` runs
-  the shell drivers with recording fake `python`/`torchrun` and compares every flag with
-  `plan_stage`. Keep it green when editing `configs/common` or `configs/sgl`.
-- **Ports match upstream.** `tests/test_ssft.py`, `tests/test_palign.py`,
-  `tests/test_segment_rules.py` import the untouched code in `references/` and compare against it
-  (IG values, `train_mask.py` labels, selection file, judge/continuation prompts, binary search,
-  published grader labels). `tests/test_palign_training_format.py` compares P-ALIGN token ids with
-  LLaMA-Factory's own encoder (skipped unless `llamafactory` is importable or
-  `LLAMAFACTORY_SRC=<checkout>/src`). Never edit `references/` to make a test pass.
-- **Default behaviour of shared stages is the SGL behaviour.** New options (e.g. `prepare
-  --segmenter / --instruction-separator / --stop-suffix`) must default to the old output.
-
 ## Conventions
 
 - **Stage modules** expose `build_parser()` and `main(argv=None)`; `sgl check` validates config
