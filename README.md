@@ -77,6 +77,7 @@ results/              eval summaries (summary.json per run), comparison table
 * [docs/reproducing.md](docs/reproducing.md): every published row and the command that produces it
 * [docs/extending.md](docs/extending.md): adding a signal, segmenter, method or experiment
 * [docs/FRAMEWORK_PLAN.md](docs/FRAMEWORK_PLAN.md): the refactor plan and its status
+* [CLAUDE.md](CLAUDE.md): invariants and conventions for contributors (and Claude Code)
 
 ## Tests
 
