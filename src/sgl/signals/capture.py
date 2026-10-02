@@ -221,7 +221,7 @@ def run_capture(
     print(f"strength spread (p90/p10) = {quantiles[2] / max(quantiles[0], 1e-12):.1f}x  (flat => selection drops little)")
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="optional yaml base; CLI flags below override it")
     parser.add_argument("--model-name", help="HF model id, e.g. Qwen/Qwen3-8B")
@@ -244,7 +244,12 @@ def main() -> None:
              "work) and just rebuilds strengths_path from what's on disk.",
     )
     parser.add_argument("--shard-index", type=int, default=0, help="this process's shard, in [0, num-shards)")
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     config = yaml.safe_load(Path(args.config).read_text()) if args.config else {}
     overrides = {

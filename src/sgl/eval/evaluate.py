@@ -169,7 +169,7 @@ def score_file(path: Path, grader: str = "palign") -> dict:
     return summary
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config")
     parser.add_argument("--model", help="checkpoint path")
@@ -217,7 +217,12 @@ def main() -> None:
         action=argparse.BooleanOptionalAction,
         help="render and tokenize chat prompts as P-ALIGN/src/test.py does (see build_prompts)",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     if args.rescore:
         print(json.dumps(score_file(Path(args.rescore), args.grader), indent=2))

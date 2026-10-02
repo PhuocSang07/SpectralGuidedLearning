@@ -100,7 +100,7 @@ def summarize(stats: list[dict]) -> dict:
     }
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="optional yaml base; CLI flags below override it")
     parser.add_argument("--data-path", help="segmented jsonl from sgl.data.prepare (Phase 2 output)")
@@ -117,7 +117,12 @@ def main() -> None:
         help="comma-separated p values to report drop-ratio stats for, e.g. 0.7,0.8,0.9,0.95 "
         "(no dataset files written; use this to pick p before committing to a training run)",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     config = yaml.safe_load(Path(args.config).read_text()) if args.config else {}
     overrides = {"output_path": args.data_path, "energy_threshold_p": args.energy_threshold_p}

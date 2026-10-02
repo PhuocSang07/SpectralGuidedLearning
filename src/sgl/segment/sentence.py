@@ -64,15 +64,19 @@ def step_token_spans(
     response: str,
     token_starts: list[int],
     offset: int = 0,
+    segmenter: str = "sentence",
 ) -> list[tuple[int, int]]:
     """Map the response's step boundaries onto token indices, shifted by `offset`.
 
-    A boundary landing inside a token assigns that whole token to the later step, since
-    `bisect_left` returns the first token starting at or after the boundary. Zero-token
-    steps (two boundaries falling within one token) are dropped so every span is non-empty.
+    A token belongs to the step holding its first character: a boundary landing inside a token
+    leaves that token in the earlier step, since `bisect_left` returns the first token starting
+    at or after the boundary. Zero-token steps (two boundaries falling within one token) are
+    dropped so every span is non-empty. `segmenter` names a lossless rule in sgl.segment.
     """
+    from sgl.segment import split
+
     cuts, position = [], 0
-    for text in split_into_step_texts(response):
+    for text in split(response, segmenter):
         cuts.append(position)
         position += len(text)
 

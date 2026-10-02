@@ -85,7 +85,7 @@ def build_training_arguments(config: dict) -> TrainingArguments:
     )
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config")
     parser.add_argument("--smoke", action="store_true", help="tiny run to validate the setup")
@@ -137,7 +137,12 @@ def main() -> None:
         "--resume", action=argparse.BooleanOptionalAction,
         help="resume from the last checkpoint in --output-dir if one exists (else start fresh)",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     config = yaml.safe_load(Path(args.config).read_text()) if args.config else {}
     overrides = {

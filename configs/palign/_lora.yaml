@@ -1,0 +1,11 @@
+# P-ALIGN LoRA (configs/qwen3_8b_palign_sft.yaml): r16 / alpha 16 / dropout 0.05 / all linear,
+# bf16 base weights, no DeepSpeed; adapters are evaluated on the base model.
+defaults: [../common/train/lora-r16.yaml]
+lora_adapter: true
+stages:
+  train:
+    args:
+      deepspeed-config: null
+  eval:
+    args:
+      gpu-memory-utilization: 0.5

@@ -10,6 +10,9 @@
 - assets/raw_aime24.jsonl (only when PALIGN_RESULT_DIR points at upstream P-ALIGN's
   data/result/): its published AIME24 generations in evaluate.py's raw format, each output cut
   to its tail (the grader only reads the last \\boxed{}), for the --rescore stage.
+- assets/palign_labels.jsonl (same condition): P-ALIGN's published AIME24/AIME25 generations with
+  the 0/1 labels its own evaluation.py assigned; texts are cut to their last 1500 characters unless
+  the label needs more of the text. tests/test_palign.py checks our grader reproduces every label.
 
 The regression test never rebuilds these: it only needs them to be fixed, not reproducible.
 """
@@ -62,6 +65,27 @@ def main() -> None:
     result_dir = os.environ.get("PALIGN_RESULT_DIR")
     if result_dir:
         write_raw_generations(Path(result_dir) / "aime24-output.jsonl", ASSETS / "raw_aime24.jsonl")
+        write_labelled_generations(
+            [Path(result_dir) / f"{name}-output.jsonl" for name in ("aime24", "aime25")],
+            ASSETS / "palign_labels.jsonl",
+        )
+
+
+def write_labelled_generations(sources: list[Path], output: Path, tail_chars: int = 1500) -> None:
+    from sgl.eval.graders.palign import grade_math_verify
+
+    with output.open("w") as out:
+        for source in sources:
+            for line in source.open():
+                row = json.loads(line)
+                texts = []
+                for text, label in zip(row["output"], row["label"]):
+                    tail = text[-tail_chars:]
+                    texts.append(tail if grade_math_verify([tail], str(row["answer"]))[0] == int(label) else text)
+                out.write(json.dumps({
+                    "benchmark": source.stem.replace("-output", ""), "answer": str(row["answer"]),
+                    "outputs": texts, "labels": [int(label) for label in row["label"]],
+                }, ensure_ascii=False) + "\n")
 
 
 def write_raw_generations(source: Path, output: Path, tail_chars: int = 600) -> None:

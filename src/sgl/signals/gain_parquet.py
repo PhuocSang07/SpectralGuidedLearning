@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", required=True, help="train-segmented.jsonl")
     parser.add_argument("--gains", required=True, help="step_answer_gain.json from sgl.signals.answer_gain")
@@ -24,7 +24,12 @@ def main() -> None:
         help="optional spectral-strengths.parquet whose step_strengths are carried over "
         "(default: ones, i.e. no spectral information)",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     records = [json.loads(line) for line in open(args.data_path)]
     gains = json.loads(Path(args.gains).read_text())

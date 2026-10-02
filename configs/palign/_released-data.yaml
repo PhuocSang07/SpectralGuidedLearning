@@ -1,0 +1,3 @@
+# Train on P-ALIGN's released prefix-aligned traces (966 rows, student Qwen2.5-7B-Instruct).
+defaults: [../common/data/palign-966.yaml]
+track: ${model.key}-palign

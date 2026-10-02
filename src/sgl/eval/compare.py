@@ -99,10 +99,15 @@ def format_table(models: dict[str, dict[str, dict[str, float]]], metric: str) ->
     return "\n".join(lines)
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--results-dir", default="results")
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     results_dir = Path(args.results_dir)
     models, samples = load_summaries(results_dir)

@@ -111,7 +111,23 @@ STAGES = [
         "--input_data_file", "ssft/segments-paragraph.jsonl", "--IG_score_data_file", "ssft/ig_compact.jsonl",
         "--output_data_file", "ssft/selected.jsonl",
     ], None),
+    # framework stages added after paper-v1: new outputs only, the ones above must not move
+    ("data_prep_paragraph", sgl("data.prepare") + PREP_ARGS + [
+        "--chat-template", "--no-enable-thinking", "--palign-prompt", "--segmenter", "paragraph",
+        "--output-path", "paragraph/train-segmented.jsonl",
+    ], None),
+    ("sgl_ssft_select", sgl("ssft.select") + [
+        "--data-path", "ssft/segments-paragraph.jsonl", "--ig", "ssft/ig_compact.jsonl",
+        "--output", "ssft/selected-sgl.jsonl",
+    ], None),
+    ("sgl_ssft_build", sgl("ssft.build") + [
+        "--data-path", "ssft/selected-sgl.jsonl", "--tokenizer", "tokenizer-chatml", "--output", "ssft/train-ssft.jsonl",
+        "--no-deepseek", "--think-prefix", "plain", "--prompt-style", "palign",
+    ], None),
 ]
+
+# Pairs of outputs that must be byte-identical: framework port vs the upstream script.
+SAME_OUTPUT = [("ssft/selected.jsonl", "ssft/selected-sgl.jsonl")]
 
 # Outputs that are figures or otherwise not byte-stable; everything else in the work dir is hashed.
 UNHASHED_SUFFIXES = {".png"}
@@ -124,6 +140,13 @@ def write_inputs(work: Path) -> None:
         target = results / summary.parent.name / "summary.json"
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(summary, target)
+
+    # Segment-Selective SFT probes for a plain ChatML generation prompt ("<|im_start|>assistant\n");
+    # the asset tokenizer opens <think> after it, so give that stage a plain-ChatML copy.
+    chatml = work / "tokenizer-chatml"
+    shutil.copytree(TOKENIZER, chatml)
+    template = chatml / "chat_template.jinja"
+    template.write_text(template.read_text().replace("assistant\n<think>\n", "assistant\n"))
 
     # SegmentSelectiveSFT reads question / solution / answer rows (its prepare_s1k.py format).
     (work / "ssft").mkdir()
@@ -215,7 +238,8 @@ def run_pipeline(work: Path) -> dict[str, str]:
 
 
 def diff(expected: dict[str, str], actual: dict[str, str]) -> list[str]:
-    problems = [f"missing output: {name}" for name in sorted(expected.keys() - actual.keys())]
+    problems = [f"port differs from upstream: {a} vs {b}" for a, b in SAME_OUTPUT if actual.get(a) != actual.get(b)]
+    problems += [f"missing output: {name}" for name in sorted(expected.keys() - actual.keys())]
     problems += [f"unexpected output: {name}" for name in sorted(actual.keys() - expected.keys())]
     problems += [
         f"changed: {name}" for name in sorted(expected.keys() & actual.keys())

@@ -16,6 +16,7 @@ from datasets import load_dataset
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
+from sgl.segment import SEGMENTERS
 from sgl.segment.sentence import encode_with_offsets, step_token_spans
 
 # Must stay byte-identical to benchmarks.MATH_PROMPT so the student sees the same instruction
@@ -98,6 +99,7 @@ def reconcile_thinking_markers(prompt: str, response: str) -> str:
 def build_record(
     tokenizer, problem: str, response: str, max_tokens: int,
     chat_template: bool = False, enable_thinking: bool = True, palign_prompt: bool = False,
+    segmenter: str = "sentence",
 ) -> dict | None:
     """Tokenize one problem/response pair and map its steps to absolute token spans.
 
@@ -117,7 +119,7 @@ def build_record(
     if len(prompt_ids) + len(response_ids) > max_tokens:
         return None
 
-    step_spans = step_token_spans(response, token_starts, offset=len(prompt_ids))
+    step_spans = step_token_spans(response, token_starts, offset=len(prompt_ids), segmenter=segmenter)
     # The stop token has to be part of the target, or the model is only ever supervised to
     # continue past its final answer and never to end the turn. It sits outside
     # response_token_span (which stays text-only so step spans still round-trip) and outside
@@ -280,6 +282,7 @@ def collect_records(tokenizer, config: dict, limit_scan: int) -> tuple[list[dict
             chat_template=config.get("chat_template", False),
             enable_thinking=config.get("enable_thinking", True),
             palign_prompt=config.get("palign_prompt", False),
+            segmenter=config.get("segmenter", "sentence"),
         )
         if record is None:
             counts["skipped_long"] += 1
@@ -297,7 +300,7 @@ def collect_records(tokenizer, config: dict, limit_scan: int) -> tuple[list[dict
     return records, counts
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="optional yaml base; CLI flags below override it")
     parser.add_argument("--dataset-name")
@@ -319,8 +322,17 @@ def main() -> None:
         "--response-mode", choices=RESPONSE_MODES,
         help="long_cot = thinking trajectory + final write-up (default); answer = ground-truth solution only",
     )
+    parser.add_argument(
+        "--segmenter", choices=sorted(SEGMENTERS),
+        help="step segmentation rule (default sentence; paragraph/cue are Segment-Selective SFT's)",
+    )
     parser.add_argument("--limit-scan", type=int, default=0, help="max source rows to scan; 0 means no scan cap")
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     config = yaml.safe_load(Path(args.config).read_text()) if args.config else {}
     overrides = {
@@ -336,6 +348,7 @@ def main() -> None:
         "enable_thinking": args.enable_thinking,
         "palign_prompt": args.palign_prompt,
         "response_mode": args.response_mode,
+        "segmenter": args.segmenter,
     }
     config.update({key: value for key, value in overrides.items() if value is not None})
     config.setdefault("dataset_split", "train")

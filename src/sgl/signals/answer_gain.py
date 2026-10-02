@@ -19,7 +19,7 @@ from sgl.eval.graders.answer_scoring import extract_boxed
 PROBE = "\n\nTherefore, the final answer is \\boxed{"
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", required=True, help="train-segmented.jsonl")
     parser.add_argument("--model", required=True)
@@ -27,7 +27,12 @@ def main() -> None:
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.4)
     parser.add_argument("--max-model-len", type=int, default=16384)
     parser.add_argument("--limit", type=int, default=None)
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams

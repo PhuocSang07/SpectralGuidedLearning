@@ -40,14 +40,19 @@ def transition_fields_for_record(tokenizer, record: dict, min_step_tokens: int) 
     )
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--segmented", required=True, help="sgl.data.prepare output (train-segmented.jsonl)")
     parser.add_argument("--masked", required=True, help="masked dataset to extend (train-vanilla.jsonl, train-spectral.jsonl, ...)")
     parser.add_argument("--output", required=True)
     parser.add_argument("--tokenizer", required=True, help="same tokenizer sgl.data.prepare used")
     parser.add_argument("--min-step-tokens", type=int, default=DEFAULT_MIN_STEP_TOKENS)
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
     segmented = {record["id"]: record for record in load_jsonl(Path(args.segmented))}

@@ -124,7 +124,7 @@ def build_training_arguments(config: dict) -> TrainingArguments:
     )
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     # --config is an optional yaml base; CLI flags below override it when both are given.
     parser.add_argument("--config")
@@ -230,7 +230,12 @@ def main() -> None:
         help="on every Nth optimizer step log ||dL_NLL/dH|| vs lambda*||dL_trans/dH|| at the "
         "transition layer (tensor hooks in the real backward, no extra passes; default 50, 0 = off)",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     config = yaml.safe_load(Path(args.config).read_text()) if args.config else {}
     overrides = {

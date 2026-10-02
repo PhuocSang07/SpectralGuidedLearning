@@ -82,7 +82,7 @@ def build(
     return counts
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", required=True, help="dir holding train-segmented.jsonl and train-vanilla.jsonl")
     parser.add_argument("--tokenizer", required=True)
@@ -91,7 +91,12 @@ def main() -> None:
         "--junction-tokens", type=int, default=0,
         help="label the first N continuation tokens as junction (token_source 3)",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     data_dir = Path(args.data_dir)
     output_path = data_dir / args.output_name

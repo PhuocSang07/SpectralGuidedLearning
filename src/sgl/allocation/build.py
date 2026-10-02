@@ -145,7 +145,7 @@ def summarize(stats: list[dict]) -> dict:
     }
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="optional yaml base; CLI flags override it")
     parser.add_argument("--data-path", help="segmented JSONL from sgl.data.prepare")
@@ -161,7 +161,23 @@ def main() -> None:
         help="comma-separated subset of iwc,iwc-stable,iwc-stable-lambda0,iwc-stable-shuffled,"
         "iwc-stable-reverse (default: iwc,iwc-stable)",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--check-mass", action="store_true",
+        help="fail unless every iwc-stable* variant keeps the selected token mass "
+        "(mean weighted/selected mass prints as 1.000000)",
+    )
+    parser.add_argument(
+        "--output-name",
+        help="with a single variant: write train-<output-name>.jsonl and "
+        "<output-name>-selection-stats.json instead of train-<variant>.jsonl and "
+        "iwc-selection-stats.json, so several arms can share one data dir",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     config = yaml.safe_load(Path(args.config).read_text()) if args.config else {}
     overrides = {
@@ -202,10 +218,13 @@ def main() -> None:
     if missing:
         raise ValueError(f"spectral signals missing for {len(missing)} records (first: {missing[0]})")
 
+    variants = config["variants"].split(",")
+    if args.output_name and len(variants) != 1:
+        parser.error("--output-name needs exactly one variant")
     data_dir = Path(config["data_path"]).parent
     summaries = {}
-    for variant in config["variants"].split(","):
-        output_path = data_dir / f"train-{variant}.jsonl"
+    for variant in variants:
+        output_path = data_dir / f"train-{args.output_name or variant}.jsonl"
         stats = emit_dataset(
             records, signals, output_path, config["energy_threshold_p"], variant,
             config["temperature"], config["interpolation"], config["clip"], config["epsilon"],
@@ -216,8 +235,13 @@ def main() -> None:
             f"{variant}: {len(stats)} records -> {output_path}; "
             f"mean weighted/selected mass={summaries[variant]['weight_mass_ratio_mean']:.6f}"
         )
+        mass = f"{summaries[variant]['weight_mass_ratio_mean']:.6f}"
+        if args.check_mass and variant.startswith("iwc-stable") and mass != "1.000000":
+            raise SystemExit(f"{variant}: token mass not preserved (mean weighted/selected mass={mass})")
 
-    summary_path = data_dir / "iwc-selection-stats.json"
+    summary_path = data_dir / (
+        f"{args.output_name}-selection-stats.json" if args.output_name else "iwc-selection-stats.json"
+    )
     summary_path.write_text(json.dumps({"config": config, "variants": summaries}, indent=2))
     print(f"diagnostics -> {summary_path}")
 

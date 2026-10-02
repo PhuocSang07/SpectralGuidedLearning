@@ -30,9 +30,9 @@ dependencies = [
 ]
 
 [project.scripts]
-sgl-prepare = "sgl.data.prepare:main"
-sgl-evaluate = "sgl.eval.evaluate:main"
-sgl-compare = "sgl.eval.compare:main"
+sgl = "sgl.cli:sgl_main"
+palign = "sgl.cli:palign_main"
+ssft = "sgl.cli:ssft_main"
 
 [build-system]
 requires = ["hatchling"]

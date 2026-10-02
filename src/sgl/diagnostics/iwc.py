@@ -386,7 +386,7 @@ def compute_correlations(
     return result
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-path", required=True, help="train-segmented.jsonl from sgl.data.prepare")
     parser.add_argument("--strengths", required=True, help="spectral-strengths.parquet from sgl.signals.capture")
@@ -399,7 +399,12 @@ def main() -> None:
     parser.add_argument("--tokenizer", help="HF tokenizer id/path, for numeric-token-density correlation")
     parser.add_argument("--n-traces", type=int, default=6, help="sample traces to draw in the heatmap")
     parser.add_argument("--seed", type=int, default=42)
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
