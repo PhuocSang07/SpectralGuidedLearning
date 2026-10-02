@@ -25,7 +25,7 @@ read them before changing a method.
 
 ```bash
 pytest                               # everything, ~2.5 min on CPU, no GPU or network needed
-pytest -m "not regression"           # unit + equivalence tests only (~15 s)
+pytest -m "not regression"           # unit + equivalence tests only (~30 s)
 pytest -m regression                 # golden outputs, legacy drivers, CLI end-to-end
 ruff check src tests scripts         # lint (config in pyproject.toml); CI runs both
 
