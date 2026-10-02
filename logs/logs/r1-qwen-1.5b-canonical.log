@@ -1,0 +1,2 @@
+Generating train split:   0%|          | 0/1000 [00:00<?, ? examples/s]Generating train split: 100%|██████████| 1000/1000 [00:00<00:00, 5490.56 examples/s]Generating train split: 100%|██████████| 1000/1000 [00:00<00:00, 5413.10 examples/s]
+wrote 1000 canonical traces (1000 closed) -> data/canonical/s1k11.jsonl

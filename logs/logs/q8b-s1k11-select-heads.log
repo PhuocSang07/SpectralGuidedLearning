@@ -1,0 +1,23 @@
+{
+  "excess_bg": {
+    "spearman": 0.9976865864768162,
+    "topk_overlap": [
+      1.0,
+      0.9375
+    ]
+  },
+  "kurtosis": {
+    "spearman": 0.9918687547236348,
+    "topk_overlap": [
+      0.9375,
+      0.9375
+    ]
+  },
+  "agreement_excess_bg_vs_kurtosis": {
+    "topk_overlap": [
+      0.875,
+      1.0
+    ],
+    "spearman_mean_scores": 0.25431171004310393
+  }
+}

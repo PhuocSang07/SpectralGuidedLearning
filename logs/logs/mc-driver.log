@@ -1,0 +1,850 @@
+models /path/models | data /path/datasets | benchmarks /path/datasets | env /mnt/local/uvenvs/crsd
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+67 passed, 15 warnings in 28.71s
+[08:05] ===== b0: mc-b0-sft-r1-qwen-1.5b
+skip mc-b0-sft-r1-qwen-1.5b: /root/project/new_nothingnew_2/crsd/checkpoints/mc-b0-sft-r1-qwen-1.5b already has a final adapter
+[skip] 4k mc-b0-sft-r1-qwen-1.5b
+[skip] mc-b0-sft-r1-qwen-1.5b: results-32k-aime/mc-b0-sft-r1-qwen-1.5b/summary.json exists
+### pass@1
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 18.89% ± 0.00% | 22.78% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 21.11% ± 0.00% | 23.89% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 22.22% ± 0.00% | 24.44% ± 0.00% | 23.33% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +2.22 | +1.11 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -4.44 | +5.56 | +0.56 |
+
+### pass@3
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 26.67% ± 0.00% | 35.00% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 46.67% ± 0.00% | 33.33% ± 0.00% | 40.00% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +6.67 | +5.00 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+
+### Paired permutation vs mc-b0-sft-r1-qwen-1.5b (problem level, Holm-corrected)
+
+| Arm | Δ pass@1 (pp, problem mean) | problems | p | p (Holm, CSRD family) |
+|---|---|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b | +1.11 | 60 | 0.8646 | 1.0000 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | +0.56 | 60 | 1.0000 | 1.0000 |
+
+### G5 (pass@1 criterion)
+
+- mc-b1-route-l0.2-r1-qwen-1.5b: +1.11 pp -> fail
+- mc-b3-raw-l0.2-r1-qwen-1.5b: +0.56 pp -> fail
+
+### Paired contrasts per benchmark (Δ pass@1 in pp, 95% bootstrap CI over problems, sign-flip p)
+
+| Contrast | aime24 | aime25 |
+|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -0.00 [-8.89, +8.89] p=1.000 | +2.22 [-6.67, +12.22] p=0.832 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -4.44 [-13.33, +4.44] p=0.489 | +5.56 [-1.11, +12.22] p=0.235 |
+[08:06] ===== b3: mc-b3-raw-l0.2-r1-qwen-1.5b
+skip mc-b3-raw-l0.2-r1-qwen-1.5b: /root/project/new_nothingnew_2/crsd/checkpoints/mc-b3-raw-l0.2-r1-qwen-1.5b already has a final adapter
+[skip] 4k mc-b3-raw-l0.2-r1-qwen-1.5b
+[skip] mc-b3-raw-l0.2-r1-qwen-1.5b: results-32k-aime/mc-b3-raw-l0.2-r1-qwen-1.5b/summary.json exists
+### pass@1
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 18.89% ± 0.00% | 22.78% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 21.11% ± 0.00% | 23.89% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 22.22% ± 0.00% | 24.44% ± 0.00% | 23.33% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +2.22 | +1.11 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -4.44 | +5.56 | +0.56 |
+
+### pass@3
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 26.67% ± 0.00% | 35.00% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 46.67% ± 0.00% | 33.33% ± 0.00% | 40.00% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +6.67 | +5.00 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+
+### Paired permutation vs mc-b0-sft-r1-qwen-1.5b (problem level, Holm-corrected)
+
+| Arm | Δ pass@1 (pp, problem mean) | problems | p | p (Holm, CSRD family) |
+|---|---|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b | +1.11 | 60 | 0.8646 | 1.0000 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | +0.56 | 60 | 1.0000 | 1.0000 |
+
+### G5 (pass@1 criterion)
+
+- mc-b1-route-l0.2-r1-qwen-1.5b: +1.11 pp -> fail
+- mc-b3-raw-l0.2-r1-qwen-1.5b: +0.56 pp -> fail
+
+### Paired contrasts per benchmark (Δ pass@1 in pp, 95% bootstrap CI over problems, sign-flip p)
+
+| Contrast | aime24 | aime25 |
+|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -0.00 [-8.89, +8.89] p=1.000 | +2.22 [-6.67, +12.22] p=0.832 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -4.44 [-13.33, +4.44] p=0.489 | +5.56 [-1.11, +12.22] p=0.235 |
+[08:06] ===== b1: mc-b1-route-l0.2-r1-qwen-1.5b
+skip mc-b1-route-l0.2-r1-qwen-1.5b: /root/project/new_nothingnew_2/crsd/checkpoints/mc-b1-route-l0.2-r1-qwen-1.5b already has a final adapter
+[skip] 4k mc-b1-route-l0.2-r1-qwen-1.5b
+[skip] mc-b1-route-l0.2-r1-qwen-1.5b: results-32k-aime/mc-b1-route-l0.2-r1-qwen-1.5b/summary.json exists
+### pass@1
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 18.89% ± 0.00% | 22.78% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 21.11% ± 0.00% | 23.89% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 22.22% ± 0.00% | 24.44% ± 0.00% | 23.33% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +2.22 | +1.11 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -4.44 | +5.56 | +0.56 |
+
+### pass@3
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 26.67% ± 0.00% | 35.00% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 46.67% ± 0.00% | 33.33% ± 0.00% | 40.00% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +6.67 | +5.00 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+
+### Paired permutation vs mc-b0-sft-r1-qwen-1.5b (problem level, Holm-corrected)
+
+| Arm | Δ pass@1 (pp, problem mean) | problems | p | p (Holm, CSRD family) |
+|---|---|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b | +1.11 | 60 | 0.8646 | 1.0000 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | +0.56 | 60 | 1.0000 | 1.0000 |
+
+### G5 (pass@1 criterion)
+
+- mc-b1-route-l0.2-r1-qwen-1.5b: +1.11 pp -> fail
+- mc-b3-raw-l0.2-r1-qwen-1.5b: +0.56 pp -> fail
+
+### Paired contrasts per benchmark (Δ pass@1 in pp, 95% bootstrap CI over problems, sign-flip p)
+
+| Contrast | aime24 | aime25 |
+|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -0.00 [-8.89, +8.89] p=1.000 | +2.22 [-6.67, +12.22] p=0.832 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -4.44 [-13.33, +4.44] p=0.489 | +5.56 [-1.11, +12.22] p=0.235 |
+[08:06] ===== b4: mc-b4-route-l0.0479-r1-qwen-1.5b
+skip mc-b4-route-l0.0479-r1-qwen-1.5b: /root/project/new_nothingnew_2/crsd/checkpoints/mc-b4-route-l0.0479-r1-qwen-1.5b already has a final adapter
+[skip] 4k mc-b4-route-l0.0479-r1-qwen-1.5b
+[08:06] [eval 32k] mc-b4-route-l0.0479-r1-qwen-1.5b <- checkpoints/mc-b4-route-l0.0479-r1-qwen-1.5b
+python /root/project/new_nothingnew_2/crsd/src/evaluate.py  --model checkpoints/mc-b4-route-l0.0479-r1-qwen-1.5b --tag mc-b4-route-l0.0479-r1-qwen-1.5b --protocol palign --benchmarks aime24,aime25 --temperature 0.6 --top-p 0.9 --repetition-penalty 1.05 --n-samples 3 --max-tokens 30720 --batch-size 64 --max-model-len 32768 --gpu-memory-utilization 0.5 --tensor-parallel-size 1 --enforce-eager --seed 42 --prompt-style sgl --grader palign --base-model /path/models/DeepSeek-R1-Distill-Qwen-1.5B --lora-adapter --lora-r 16 --results-dir results-32k-aime
+WARNING 09-29 08:06:55 [vllm.py:1194] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+WARNING 09-29 08:06:55 [vllm.py:1247] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(EngineCore pid=47821)
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=47821)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:01<00:00,  1.24s/it]
+(EngineCore pid=47821)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:01<00:00,  1.24s/it]
+(EngineCore pid=47821)
+(EngineCore pid=47821) WARNING 09-29 08:07:06 [utils.py:279] Using default LoRA kernel configs
+(EngineCore pid=47821) 2026-09-29 08:07:09,803 - INFO - autotuner.py:2397 - flashinfer.jit: [Autotuner]: Loaded 0 configs from /root/.cache/vllm/flashinfer_autotune_cache/0.6.16.post3/90a/98dc0db7a92bc4cc9ebca9fa68d3bf284ac9ca716d34a2ad7e1a32e4f2aefe6d/autotune_configs.json
+(EngineCore pid=47821) 2026-09-29 08:07:09,804 - INFO - autotuner.py:829 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=47821) 2026-09-29 08:07:11,148 - INFO - autotuner.py:852 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=47821) 2026-09-29 08:07:11,156 - INFO - autotuner.py:2269 - flashinfer.jit: [Autotuner]: Saved 0 configs to /root/.cache/vllm/flashinfer_autotune_cache/0.6.16.post3/90a/98dc0db7a92bc4cc9ebca9fa68d3bf284ac9ca716d34a2ad7e1a32e4f2aefe6d/autotune_configs.json (0 new, 0 from previous config)
+[aime24] 30 problems x 3 (palign)
+WARNING 09-29 08:08:26 [input_processor.py:166] vLLM has deprecated support for supporting different tokenizers for different LoRAs. By default, vLLM uses base model's tokenizer. If you are using a LoRA with its own tokenizer, consider specifying `--tokenizer [lora_path]` to use the LoRA tokenizer.
+(EngineCore pid=47821) WARNING 09-29 08:08:27 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _lora_shrink_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=47821) WARNING 09-29 08:08:27 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _lora_expand_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=47821) WARNING 09-29 08:08:27 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=47821) WARNING 09-29 08:08:27 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _topk_topp_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+[aime24] pass@1=25.56%  pass@3=36.67%  length=15008  truncated=7.78%
+[aime25] 30 problems x 3 (palign)
+[aime25] pass@1=22.22%  pass@3=30.00%  length=16324  truncated=16.67%
+
+mc-b4-route-l0.0479-r1-qwen-1.5b [palign]: mean pass@1 = 23.89%  mean pass@3 = 33.33%
+### pass@1
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 18.89% ± 0.00% | 22.78% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 21.11% ± 0.00% | 23.89% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 22.22% ± 0.00% | 24.44% ± 0.00% | 23.33% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 25.56% ± 0.00% | 22.22% ± 0.00% | 23.89% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +2.22 | +1.11 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -4.44 | +5.56 | +0.56 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -1.11 | +3.33 | +1.11 |
+
+### pass@3
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 26.67% ± 0.00% | 35.00% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 46.67% ± 0.00% | 33.33% ± 0.00% | 40.00% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 36.67% ± 0.00% | 30.00% ± 0.00% | 33.33% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +6.67 | +5.00 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -6.67 | +3.33 | -1.67 |
+
+### Paired permutation vs mc-b0-sft-r1-qwen-1.5b (problem level, Holm-corrected)
+
+| Arm | Δ pass@1 (pp, problem mean) | problems | p | p (Holm, CSRD family) |
+|---|---|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b | +1.11 | 60 | 0.8646 | 1.0000 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | +0.56 | 60 | 1.0000 | 1.0000 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | +1.11 | 60 | 0.8575 | 1.0000 |
+
+### G5 (pass@1 criterion)
+
+- mc-b1-route-l0.2-r1-qwen-1.5b: +1.11 pp -> fail
+- mc-b3-raw-l0.2-r1-qwen-1.5b: +0.56 pp -> fail
+- mc-b4-route-l0.0479-r1-qwen-1.5b: +1.11 pp -> fail
+
+### Paired contrasts per benchmark (Δ pass@1 in pp, 95% bootstrap CI over problems, sign-flip p)
+
+| Contrast | aime24 | aime25 |
+|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -0.00 [-8.89, +8.89] p=1.000 | +2.22 [-6.67, +12.22] p=0.832 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -4.44 [-13.33, +4.44] p=0.489 | +5.56 [-1.11, +12.22] p=0.235 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -1.11 [-11.11, +8.89] p=1.000 | +3.33 [-3.33, +8.89] p=0.532 |
+[08:49] ===== b2: mc-b2-syn-l0.2-r1-qwen-1.5b
+torchrun --nproc_per_node 1 --rdzv_backend static                   --nnodes 1                   --node_rank 0                   --master_addr localhost                   --master_port 6639 /root/project/new_nothingnew_2/crsd/src/train_sft.py  --model-name /path/models/DeepSeek-R1-Distill-Qwen-1.5B --data-path /root/project/new_nothingnew_2/crsd/data/records/s1k11-DeepSeek-R1-Distill-Qwen-1.5B-sgl.jsonl --output-dir /root/project/new_nothingnew_2/crsd/checkpoints/mc-b2-syn-l0.2-r1-qwen-1.5b --epochs 3 --learning-rate 5.0e-5 --min-learning-rate 1.0e-5 --warmup-ratio 0.1 --per-device-batch-size 1 --gradient-accumulation-steps 32 --attn-implementation sdpa --logging-steps 5 --save-strategy epoch --save-steps 500 --save-total-limit 6 --seed 42 --lora-r 16 --lora-alpha 16 --lora-dropout 0.05 --lora-target-modules q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj --deepspeed-config /root/project/new_nothingnew_2/crsd/configs/deepspeed/ds_config_zero2_offload.json --max-seq-len 32768 --gradient-checkpointing --metrics-log /root/project/new_nothingnew_2/crsd/logs/metrics-mc-b2-syn-l0.2-r1-qwen-1.5b.json --signal-bank /root/project/new_nothingnew_2/crsd/signals/q8b-s1k11-dmin4-excess_bg-mc.safetensors --csrd-objective mc_syn --csrd-lambda 0.2 --csrd-mass-ratio 0.1 --csrd-causal-ratio 0 --csrd-d-min 4 --csrd-bands 0,1 --csrd-queries 8 --csrd-k-student 16 --csrd-warmup-frac 0.1 --csrd-ramp-frac 0.1 --csrd-band-reduction mean --csrd-query-weighting unbiased --csrd-probe-microbatches 0 --csrd-grad-log-interval 10 --csrd-head-mode fixed --csrd-student-heads /root/project/new_nothingnew_2/crsd/checkpoints/mc-b0-sft-r1-qwen-1.5b/csrd-student-heads.json
+teacher signals: /path/models/Qwen3-8B score=excess_bg style=thinking source=s1k11 d_min=4
+1000 samples, 9,875,449 supervised tokens, causal targets on 0
+
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 339/339 [00:00<00:00, 5132.99it/s]
+trainable params: 18,464,768 || all params: 1,795,552,768 || trainable%: 1.0284
+CSRD: ce_chunk=4096 csrd_lambda=0.2 csrd_mass_ratio=0.1 csrd_causal_ratio=0.0 csrd_route_ratio=1.0 csrd_d_min=4 csrd_queries=8 csrd_k_student=16 csrd_head_mode=fixed csrd_score=excess_bg csrd_anchor_beta=0.0 csrd_loss_form=pooled csrd_warmup_frac=0.1 csrd_ramp_frac=0.1 csrd_grad_log_interval=10 csrd_objective=mc_syn csrd_band_reduction=mean csrd_query_weighting=unbiased csrd_probe_microbatches=0 csrd_bands=(0, 1) csrd_qk_adapter=None
+warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'bos_token_id': 151646, 'pad_token_id': 151643}.
+
+  0%|          | 0/96 [00:00<?, ?it/s]
+  1%|          | 1/96 [00:46<1:13:31, 46.43s/it]
+  2%|▏         | 2/96 [01:14<55:28, 35.41s/it]
+  3%|▎         | 3/96 [01:58<1:01:16, 39.53s/it]
+  4%|▍         | 4/96 [02:49<1:07:18, 43.90s/it]
+  5%|▌         | 5/96 [03:36<1:08:11, 44.97s/it]
+
+{'loss': '0.9624', 'grad_norm': '0.02356', 'learning_rate': '2e-05', 'loss_ce': '0.9624', 'csrd_lambda': '0', 'csrd_queries': '1166', 'loss_route': '2.687', 'loss_mass': '0.04685', 'loss_mc_syn': '0.5305', 'loss_mc_raw': '0.5344', 'loss_causal': '0', 'loss_route_mass': '2.691', 'csrd_zT_b0': '0.1499', 'csrd_zS_b0': '0.1825', 'csrd_ez_b0': '0.05775', 'csrd_mcber_b0': '0.01854', 'csrd_mccond_b0': '0.4316', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1565', 'csrd_zS_b1': '0.3015', 'csrd_ez_b1': '0.1462', 'csrd_mcber_b1': '0.07515', 'csrd_mccond_b1': '0.5435', 'csrd_dM_q': '0.05114', 'csrd_dM_[4,8)': '0.03259', 'csrd_dM_[8,16)': '0.02569', 'csrd_dM_[16,32)': '0.01127', 'csrd_dM_[32,64)': '-0.01499', 'csrd_dM_[64,inf)': '-0.03777', 'epoch': '0.16'}
+
+  5%|▌         | 5/96 [03:36<1:08:11, 44.97s/it]
+  6%|▋         | 6/96 [04:26<1:10:26, 46.96s/it]
+  7%|▋         | 7/96 [05:17<1:11:32, 48.23s/it]
+  8%|▊         | 8/96 [06:13<1:14:25, 50.74s/it]
+  9%|▉         | 9/96 [07:05<1:13:58, 51.02s/it]
+ 10%|█         | 10/96 [07:57<1:13:25, 51.22s/it]
+
+{'loss': '0.9692', 'grad_norm': '0.0262', 'learning_rate': '4.5e-05', 'loss_ce': '0.9692', 'csrd_lambda': '0', 'csrd_queries': '1224', 'loss_route': '2.727', 'loss_mass': '0.04701', 'loss_mc_syn': '0.5542', 'loss_mc_raw': '0.5589', 'loss_causal': '0', 'loss_route_mass': '2.732', 'csrd_zT_b0': '0.1549', 'csrd_zS_b0': '0.1873', 'csrd_ez_b0': '0.05664', 'csrd_mcber_b0': '0.01753', 'csrd_mccond_b0': '0.4545', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1623', 'csrd_zS_b1': '0.3105', 'csrd_ez_b1': '0.1496', 'csrd_mcber_b1': '0.07649', 'csrd_mccond_b1': '0.5693', 'csrd_dM_q': '0.0497', 'csrd_dM_[4,8)': '0.03348', 'csrd_dM_[8,16)': '0.02725', 'csrd_dM_[16,32)': '0.01307', 'csrd_dM_[32,64)': '-0.01363', 'csrd_dM_[64,inf)': '-0.04099', 'epoch': '0.32'}
+
+ 10%|█         | 10/96 [07:57<1:13:25, 51.22s/it]
+ 11%|█▏        | 11/96 [09:25<1:28:44, 62.65s/it]
+ 12%|█▎        | 12/96 [10:50<1:37:21, 69.55s/it]
+ 14%|█▎        | 13/96 [11:58<1:35:30, 69.05s/it]
+ 15%|█▍        | 14/96 [13:05<1:33:09, 68.16s/it]
+ 16%|█▌        | 15/96 [14:10<1:31:02, 67.44s/it]
+
+{'loss': '1.004', 'grad_norm': '0.02841', 'learning_rate': '4.979e-05', 'grad_ce_lora': '0.001947', 'grad_route_lora': '5.8e-05', 'grad_cos_ce_route': '-0.01169', 'grad_route_ratio': '0.02985', 'grad_ce_mlp': '0.001536', 'grad_ce_qk': '0.000525', 'grad_ce_vo': '0.001074', 'grad_route_mlp': '3.3e-05', 'grad_route_qk': '2.2e-05', 'grad_route_vo': '4.3e-05', 'loss_ce': '0.9714', 'csrd_lambda': '0.06', 'csrd_queries': '1270', 'loss_route': '2.689', 'loss_mass': '0.04612', 'loss_mc_syn': '0.5499', 'loss_mc_raw': '0.5545', 'loss_causal': '0', 'loss_route_mass': '2.693', 'csrd_zT_b0': '0.1567', 'csrd_zS_b0': '0.1895', 'csrd_ez_b0': '0.05732', 'csrd_mcber_b0': '0.0178', 'csrd_mccond_b0': '0.4518', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1649', 'csrd_zS_b1': '0.3113', 'csrd_ez_b1': '0.1476', 'csrd_mcber_b1': '0.07443', 'csrd_mccond_b1': '0.565', 'csrd_dM_q': '0.04956', 'csrd_dM_[4,8)': '0.03298', 'csrd_dM_[8,16)': '0.02724', 'csrd_dM_[16,32)': '0.01382', 'csrd_dM_[32,64)': '-0.01401', 'csrd_dM_[64,inf)': '-0.03924', 'epoch': '0.48'}
+
+ 16%|█▌        | 15/96 [14:10<1:31:02, 67.44s/it]
+ 17%|█▋        | 16/96 [15:05<1:24:59, 63.75s/it]
+ 18%|█▊        | 17/96 [16:14<1:25:44, 65.12s/it]
+ 19%|█▉        | 18/96 [17:22<1:26:02, 66.19s/it]
+ 20%|█▉        | 19/96 [18:24<1:23:14, 64.87s/it]
+ 21%|██        | 20/96 [19:38<1:25:40, 67.64s/it]
+
+{'loss': '1.066', 'grad_norm': '0.03004', 'learning_rate': '4.893e-05', 'loss_ce': '0.983', 'csrd_lambda': '0.16', 'csrd_queries': '1201', 'loss_route': '2.584', 'loss_mass': '0.04888', 'loss_mc_syn': '0.5149', 'loss_mc_raw': '0.5179', 'loss_causal': '0', 'loss_route_mass': '2.589', 'csrd_zT_b0': '0.1492', 'csrd_zS_b0': '0.1839', 'csrd_ez_b0': '0.05738', 'csrd_mcber_b0': '0.0181', 'csrd_mccond_b0': '0.4159', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1555', 'csrd_zS_b1': '0.3062', 'csrd_ez_b1': '0.1521', 'csrd_mcber_b1': '0.07967', 'csrd_mccond_b1': '0.5221', 'csrd_dM_q': '0.04879', 'csrd_dM_[4,8)': '0.03327', 'csrd_dM_[8,16)': '0.02737', 'csrd_dM_[16,32)': '0.01447', 'csrd_dM_[32,64)': '-0.01206', 'csrd_dM_[64,inf)': '-0.0391', 'epoch': '0.64'}
+
+ 21%|██        | 20/96 [19:38<1:25:40, 67.64s/it]
+ 22%|██▏       | 21/96 [20:11<1:11:27, 57.16s/it]
+ 23%|██▎       | 22/96 [20:50<1:03:54, 51.81s/it]
+ 24%|██▍       | 23/96 [21:43<1:03:11, 51.94s/it]
+ 25%|██▌       | 24/96 [22:14<54:47, 45.65s/it]
+ 26%|██▌       | 25/96 [23:46<1:10:29, 59.57s/it]
+
+{'loss': '1.023', 'grad_norm': '0.02889', 'learning_rate': '4.744e-05', 'grad_ce_lora': '0.001637', 'grad_route_lora': '0.000494', 'grad_cos_ce_route': '0.005249', 'grad_route_ratio': '0.3015', 'grad_ce_mlp': '0.001338', 'grad_ce_qk': '0.000439', 'grad_ce_vo': '0.000835', 'grad_route_mlp': '0.000333', 'grad_route_qk': '0.000222', 'grad_route_vo': '0.000289', 'loss_ce': '0.9118', 'csrd_lambda': '0.2', 'csrd_queries': '1267', 'loss_route': '2.791', 'loss_mass': '0.04491', 'loss_mc_syn': '0.5568', 'loss_mc_raw': '0.5614', 'loss_causal': '0', 'loss_route_mass': '2.795', 'csrd_zT_b0': '0.1565', 'csrd_zS_b0': '0.1874', 'csrd_ez_b0': '0.05633', 'csrd_mcber_b0': '0.01733', 'csrd_mccond_b0': '0.4583', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1642', 'csrd_zS_b1': '0.3087', 'csrd_ez_b1': '0.1457', 'csrd_mcber_b1': '0.07249', 'csrd_mccond_b1': '0.5747', 'csrd_dM_q': '0.05074', 'csrd_dM_[4,8)': '0.03272', 'csrd_dM_[8,16)': '0.02668', 'csrd_dM_[16,32)': '0.01412', 'csrd_dM_[32,64)': '-0.01352', 'csrd_dM_[64,inf)': '-0.04372', 'epoch': '0.8'}
+
+ 26%|██▌       | 25/96 [23:46<1:10:29, 59.57s/it]
+ 27%|██▋       | 26/96 [27:02<1:57:23, 100.62s/it]
+ 28%|██▊       | 27/96 [30:01<2:22:42, 124.09s/it]
+ 29%|██▉       | 28/96 [33:02<2:40:01, 141.19s/it]
+ 30%|███       | 29/96 [36:00<2:49:59, 152.23s/it]
+ 31%|███▏      | 30/96 [39:51<3:13:28, 175.88s/it]
+
+{'loss': '1.033', 'grad_norm': '0.02429', 'learning_rate': '4.537e-05', 'loss_ce': '0.9245', 'csrd_lambda': '0.2', 'csrd_queries': '1255', 'loss_route': '2.722', 'loss_mass': '0.04197', 'loss_mc_syn': '0.5442', 'loss_mc_raw': '0.5486', 'loss_causal': '0', 'loss_route_mass': '2.726', 'csrd_zT_b0': '0.1572', 'csrd_zS_b0': '0.1819', 'csrd_ez_b0': '0.05428', 'csrd_mcber_b0': '0.01659', 'csrd_mccond_b0': '0.4522', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1641', 'csrd_zS_b1': '0.3012', 'csrd_ez_b1': '0.1386', 'csrd_mcber_b1': '0.06735', 'csrd_mccond_b1': '0.5611', 'csrd_dM_q': '0.04519', 'csrd_dM_[4,8)': '0.03204', 'csrd_dM_[8,16)': '0.02602', 'csrd_dM_[16,32)': '0.0119', 'csrd_dM_[32,64)': '-0.01401', 'csrd_dM_[64,inf)': '-0.04159', 'epoch': '0.96'}
+
+ 31%|███▏      | 30/96 [39:51<3:13:28, 175.88s/it]
+ 32%|███▏      | 31/96 [44:17<3:39:47, 202.88s/it]
+ 33%|███▎      | 32/96 [45:31<2:55:13, 164.27s/it]
+ 34%|███▍      | 33/96 [48:38<2:59:41, 171.13s/it]
+ 35%|███▌      | 34/96 [52:32<3:16:21, 190.03s/it]
+ 36%|███▋      | 35/96 [56:00<3:18:42, 195.45s/it]
+
+{'loss': '1.009', 'grad_norm': '0.02439', 'learning_rate': '4.279e-05', 'grad_ce_lora': '0.001429', 'grad_route_lora': '0.000946', 'grad_cos_ce_route': '0.01199', 'grad_route_ratio': '0.6618', 'grad_ce_mlp': '0.001198', 'grad_ce_qk': '0.000368', 'grad_ce_vo': '0.000687', 'grad_route_mlp': '0.000626', 'grad_route_qk': '0.000345', 'grad_route_vo': '0.000619', 'loss_ce': '0.9175', 'csrd_lambda': '0.2', 'csrd_queries': '1200', 'loss_route': '2.601', 'loss_mass': '0.04161', 'loss_mc_syn': '0.5154', 'loss_mc_raw': '0.5183', 'loss_causal': '0', 'loss_route_mass': '2.605', 'csrd_zT_b0': '0.1533', 'csrd_zS_b0': '0.1761', 'csrd_ez_b0': '0.05283', 'csrd_mcber_b0': '0.01639', 'csrd_mccond_b0': '0.4237', 'csrd_clamped': '0', 'csrd_zT_b1': '0.159', 'csrd_zS_b1': '0.2936', 'csrd_ez_b1': '0.1359', 'csrd_mcber_b1': '0.06684', 'csrd_mccond_b1': '0.5296', 'csrd_dM_q': '0.03969', 'csrd_dM_[4,8)': '0.03206', 'csrd_dM_[8,16)': '0.02519', 'csrd_dM_[16,32)': '0.01141', 'csrd_dM_[32,64)': '-0.01428', 'csrd_dM_[64,inf)': '-0.03398', 'epoch': '1.096'}
+
+ 36%|███▋      | 35/96 [56:00<3:18:42, 195.45s/it]
+ 38%|███▊      | 36/96 [59:33<3:20:31, 200.53s/it]
+ 39%|███▊      | 37/96 [1:03:37<3:29:57, 213.52s/it]
+ 40%|███▉      | 38/96 [1:07:58<3:40:24, 228.00s/it]
+ 41%|████      | 39/96 [1:12:02<3:41:06, 232.75s/it]
+ 42%|████▏     | 40/96 [1:16:30<3:47:04, 243.30s/it]
+
+{'loss': '1.034', 'grad_norm': '0.02477', 'learning_rate': '3.979e-05', 'loss_ce': '0.9277', 'csrd_lambda': '0.2', 'csrd_queries': '1294', 'loss_route': '2.616', 'loss_mass': '0.03795', 'loss_mc_syn': '0.5326', 'loss_mc_raw': '0.5367', 'loss_causal': '0', 'loss_route_mass': '2.62', 'csrd_zT_b0': '0.1562', 'csrd_zS_b0': '0.1738', 'csrd_ez_b0': '0.0502', 'csrd_mcber_b0': '0.01486', 'csrd_mccond_b0': '0.4424', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1639', 'csrd_zS_b1': '0.2908', 'csrd_ez_b1': '0.1282', 'csrd_mcber_b1': '0.06104', 'csrd_mccond_b1': '0.555', 'csrd_dM_q': '0.03582', 'csrd_dM_[4,8)': '0.03142', 'csrd_dM_[8,16)': '0.02407', 'csrd_dM_[16,32)': '0.01045', 'csrd_dM_[32,64)': '-0.0144', 'csrd_dM_[64,inf)': '-0.03564', 'epoch': '1.256'}
+
+ 42%|████▏     | 40/96 [1:16:30<3:47:04, 243.30s/it]
+ 43%|████▎     | 41/96 [1:20:38<3:44:23, 244.79s/it]
+ 44%|████▍     | 42/96 [1:24:52<3:42:45, 247.51s/it]
+ 45%|████▍     | 43/96 [1:28:24<3:29:13, 236.85s/it]
+ 46%|████▌     | 44/96 [1:32:27<3:26:48, 238.63s/it]
+ 47%|████▋     | 45/96 [1:36:04<3:17:13, 232.03s/it]
+
+{'loss': '1.026', 'grad_norm': '0.02148', 'learning_rate': '3.646e-05', 'grad_ce_lora': '0.002202', 'grad_route_lora': '0.000664', 'grad_cos_ce_route': '-0.03049', 'grad_route_ratio': '0.3016', 'grad_ce_mlp': '0.001662', 'grad_ce_qk': '0.000607', 'grad_ce_vo': '0.001312', 'grad_route_mlp': '0.000503', 'grad_route_qk': '0.000257', 'grad_route_vo': '0.000349', 'loss_ce': '0.9177', 'csrd_lambda': '0.2', 'csrd_queries': '1316', 'loss_route': '2.633', 'loss_mass': '0.03523', 'loss_mc_syn': '0.5404', 'loss_mc_raw': '0.544', 'loss_causal': '0', 'loss_route_mass': '2.637', 'csrd_zT_b0': '0.162', 'csrd_zS_b0': '0.1744', 'csrd_ez_b0': '0.05046', 'csrd_mcber_b0': '0.0149', 'csrd_mccond_b0': '0.4479', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1717', 'csrd_zS_b1': '0.2916', 'csrd_ez_b1': '0.1219', 'csrd_mcber_b1': '0.05555', 'csrd_mccond_b1': '0.5697', 'csrd_dM_q': '0.03494', 'csrd_dM_[4,8)': '0.03064', 'csrd_dM_[8,16)': '0.02308', 'csrd_dM_[16,32)': '0.01004', 'csrd_dM_[32,64)': '-0.01727', 'csrd_dM_[64,inf)': '-0.03509', 'epoch': '1.416'}
+
+ 47%|████▋     | 45/96 [1:36:04<3:17:13, 232.03s/it]
+ 48%|████▊     | 46/96 [1:39:33<3:07:36, 225.14s/it]
+ 49%|████▉     | 47/96 [1:41:43<2:40:31, 196.56s/it]
+ 50%|█████     | 48/96 [1:44:04<2:24:03, 180.08s/it]
+ 51%|█████     | 49/96 [1:46:35<2:14:06, 171.20s/it]
+ 52%|█████▏    | 50/96 [1:49:46<2:15:56, 177.32s/it]
+
+{'loss': '1.015', 'grad_norm': '0.0204', 'learning_rate': '3.291e-05', 'loss_ce': '0.9191', 'csrd_lambda': '0.2', 'csrd_queries': '1154', 'loss_route': '2.534', 'loss_mass': '0.03401', 'loss_mc_syn': '0.4816', 'loss_mc_raw': '0.4844', 'loss_causal': '0', 'loss_route_mass': '2.538', 'csrd_zT_b0': '0.1497', 'csrd_zS_b0': '0.1607', 'csrd_ez_b0': '0.04758', 'csrd_mcber_b0': '0.01441', 'csrd_mccond_b0': '0.3968', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1548', 'csrd_zS_b1': '0.2689', 'csrd_ez_b1': '0.116', 'csrd_mcber_b1': '0.05362', 'csrd_mccond_b1': '0.5038', 'csrd_dM_q': '0.02973', 'csrd_dM_[4,8)': '0.02925', 'csrd_dM_[8,16)': '0.02197', 'csrd_dM_[16,32)': '0.008414', 'csrd_dM_[32,64)': '-0.01572', 'csrd_dM_[64,inf)': '-0.02818', 'epoch': '1.576'}
+
+ 52%|█████▏    | 50/96 [1:49:46<2:15:56, 177.32s/it]
+ 53%|█████▎    | 51/96 [1:53:20<2:21:07, 188.16s/it]
+ 54%|█████▍    | 52/96 [1:55:36<2:06:38, 172.69s/it]
+ 55%|█████▌    | 53/96 [1:58:04<1:58:19, 165.10s/it]
+ 56%|█████▋    | 54/96 [2:00:23<1:50:02, 157.20s/it]
+ 57%|█████▋    | 55/96 [2:03:02<1:47:47, 157.73s/it]
+
+{'loss': '1.066', 'grad_norm': '0.02058', 'learning_rate': '2.927e-05', 'grad_ce_lora': '0.001447', 'grad_route_lora': '0.000627', 'grad_cos_ce_route': '0.01291', 'grad_route_ratio': '0.433', 'grad_ce_mlp': '0.001171', 'grad_ce_qk': '0.000358', 'grad_ce_vo': '0.000772', 'grad_route_mlp': '0.000457', 'grad_route_qk': '0.000223', 'grad_route_vo': '0.000366', 'loss_ce': '0.9649', 'csrd_lambda': '0.2', 'csrd_queries': '1267', 'loss_route': '2.539', 'loss_mass': '0.03393', 'loss_mc_syn': '0.5043', 'loss_mc_raw': '0.507', 'loss_causal': '0', 'loss_route_mass': '2.542', 'csrd_zT_b0': '0.1551', 'csrd_zS_b0': '0.1652', 'csrd_ez_b0': '0.04971', 'csrd_mcber_b0': '0.01519', 'csrd_mccond_b0': '0.4156', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1632', 'csrd_zS_b1': '0.276', 'csrd_ez_b1': '0.1156', 'csrd_mcber_b1': '0.05267', 'csrd_mccond_b1': '0.5306', 'csrd_dM_q': '0.02553', 'csrd_dM_[4,8)': '0.0285', 'csrd_dM_[8,16)': '0.0222', 'csrd_dM_[16,32)': '0.009268', 'csrd_dM_[32,64)': '-0.01475', 'csrd_dM_[64,inf)': '-0.02144', 'epoch': '1.736'}
+
+ 57%|█████▋    | 55/96 [2:03:02<1:47:47, 157.73s/it]
+ 58%|█████▊    | 56/96 [2:05:37<1:44:43, 157.08s/it]
+ 59%|█████▉    | 57/96 [2:08:00<1:39:21, 152.85s/it]
+ 60%|██████    | 58/96 [2:09:56<1:29:45, 141.72s/it]
+ 61%|██████▏   | 59/96 [2:12:24<1:28:35, 143.65s/it]
+ 62%|██████▎   | 60/96 [2:14:35<1:23:52, 139.78s/it]
+
+{'loss': '1.025', 'grad_norm': '0.0179', 'learning_rate': '2.565e-05', 'loss_ce': '0.9315', 'csrd_lambda': '0.2', 'csrd_queries': '1154', 'loss_route': '2.459', 'loss_mass': '0.03222', 'loss_mc_syn': '0.4693', 'loss_mc_raw': '0.4722', 'loss_causal': '0', 'loss_route_mass': '2.462', 'csrd_zT_b0': '0.1497', 'csrd_zS_b0': '0.1582', 'csrd_ez_b0': '0.04828', 'csrd_mcber_b0': '0.01511', 'csrd_mccond_b0': '0.3847', 'csrd_clamped': '0', 'csrd_zT_b1': '0.156', 'csrd_zS_b1': '0.2627', 'csrd_ez_b1': '0.1097', 'csrd_mcber_b1': '0.04933', 'csrd_mccond_b1': '0.4953', 'csrd_dM_q': '0.02008', 'csrd_dM_[4,8)': '0.02773', 'csrd_dM_[8,16)': '0.02057', 'csrd_dM_[16,32)': '0.007623', 'csrd_dM_[32,64)': '-0.01478', 'csrd_dM_[64,inf)': '-0.01337', 'epoch': '1.896'}
+
+ 62%|██████▎   | 60/96 [2:14:35<1:23:52, 139.78s/it]
+ 64%|██████▎   | 61/96 [2:16:29<1:16:59, 131.98s/it]
+ 65%|██████▍   | 62/96 [2:19:49<1:26:27, 152.58s/it]
+ 66%|██████▌   | 63/96 [2:23:02<1:30:37, 164.78s/it]
+ 67%|██████▋   | 64/96 [2:24:03<1:11:07, 133.37s/it]
+ 68%|██████▊   | 65/96 [2:26:56<1:15:06, 145.38s/it]
+
+{'loss': '1.066', 'grad_norm': '0.01947', 'learning_rate': '2.218e-05', 'grad_ce_lora': '0.001946', 'grad_route_lora': '0.000634', 'grad_cos_ce_route': '-0.03618', 'grad_route_ratio': '0.3255', 'grad_ce_mlp': '0.001641', 'grad_ce_qk': '0.000446', 'grad_ce_vo': '0.000947', 'grad_route_mlp': '0.0004', 'grad_route_qk': '0.000245', 'grad_route_vo': '0.000426', 'loss_ce': '0.9277', 'csrd_lambda': '0.2', 'csrd_queries': '1259', 'loss_route': '2.533', 'loss_mass': '0.03121', 'loss_mc_syn': '0.4894', 'loss_mc_raw': '0.4918', 'loss_causal': '0', 'loss_route_mass': '2.536', 'csrd_zT_b0': '0.1551', 'csrd_zS_b0': '0.1636', 'csrd_ez_b0': '0.04804', 'csrd_mcber_b0': '0.01456', 'csrd_mccond_b0': '0.402', 'csrd_clamped': '0', 'csrd_zT_b1': '0.163', 'csrd_zS_b1': '0.27', 'csrd_ez_b1': '0.1095', 'csrd_mcber_b1': '0.04787', 'csrd_mccond_b1': '0.5192', 'csrd_dM_q': '0.02101', 'csrd_dM_[4,8)': '0.02783', 'csrd_dM_[8,16)': '0.02015', 'csrd_dM_[16,32)': '0.007615', 'csrd_dM_[32,64)': '-0.01555', 'csrd_dM_[64,inf)': '-0.01425', 'epoch': '2.032'}
+
+ 68%|██████▊   | 65/96 [2:26:56<1:15:06, 145.38s/it]
+ 69%|██████▉   | 66/96 [2:29:54<1:17:35, 155.20s/it]
+ 70%|██████▉   | 67/96 [2:31:28<1:06:05, 136.74s/it]
+ 71%|███████   | 68/96 [2:34:20<1:08:49, 147.49s/it]
+ 72%|███████▏  | 69/96 [2:37:01<1:08:05, 151.32s/it]
+ 73%|███████▎  | 70/96 [2:39:27<1:04:54, 149.79s/it]
+
+{'loss': '1.043', 'grad_norm': '0.01752', 'learning_rate': '1.896e-05', 'loss_ce': '0.9472', 'csrd_lambda': '0.2', 'csrd_queries': '1245', 'loss_route': '2.415', 'loss_mass': '0.03031', 'loss_mc_syn': '0.4776', 'loss_mc_raw': '0.4805', 'loss_causal': '0', 'loss_route_mass': '2.418', 'csrd_zT_b0': '0.1517', 'csrd_zS_b0': '0.1589', 'csrd_ez_b0': '0.04695', 'csrd_mcber_b0': '0.01423', 'csrd_mccond_b0': '0.3919', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1593', 'csrd_zS_b1': '0.2602', 'csrd_ez_b1': '0.1043', 'csrd_mcber_b1': '0.0464', 'csrd_mccond_b1': '0.5085', 'csrd_dM_q': '0.01908', 'csrd_dM_[4,8)': '0.02712', 'csrd_dM_[8,16)': '0.02017', 'csrd_dM_[16,32)': '0.00742', 'csrd_dM_[32,64)': '-0.01336', 'csrd_dM_[64,inf)': '-0.01931', 'epoch': '2.192'}
+
+ 73%|███████▎  | 70/96 [2:39:27<1:04:54, 149.79s/it]
+ 74%|███████▍  | 71/96 [2:41:24<58:17, 139.89s/it]
+ 75%|███████▌  | 72/96 [2:43:43<55:53, 139.75s/it]
+ 76%|███████▌  | 73/96 [2:45:50<52:09, 136.05s/it]
+ 77%|███████▋  | 74/96 [2:47:02<42:47, 116.71s/it]
+ 78%|███████▊  | 75/96 [2:49:44<45:34, 130.23s/it]
+
+{'loss': '1.01', 'grad_norm': '0.01787', 'learning_rate': '1.612e-05', 'grad_ce_lora': '0.001579', 'grad_route_lora': '0.000384', 'grad_cos_ce_route': '-0.00704', 'grad_route_ratio': '0.2434', 'grad_ce_mlp': '0.001304', 'grad_ce_qk': '0.000387', 'grad_ce_vo': '0.000802', 'grad_route_mlp': '0.000265', 'grad_route_qk': '0.00016', 'grad_route_vo': '0.000228', 'loss_ce': '0.92', 'csrd_lambda': '0.2', 'csrd_queries': '1149', 'loss_route': '2.351', 'loss_mass': '0.03062', 'loss_mc_syn': '0.4494', 'loss_mc_raw': '0.4522', 'loss_causal': '0', 'loss_route_mass': '2.354', 'csrd_zT_b0': '0.1464', 'csrd_zS_b0': '0.1543', 'csrd_ez_b0': '0.04689', 'csrd_mcber_b0': '0.01465', 'csrd_mccond_b0': '0.3685', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1514', 'csrd_zS_b1': '0.2517', 'csrd_ez_b1': '0.1033', 'csrd_mcber_b1': '0.04661', 'csrd_mccond_b1': '0.4747', 'csrd_dM_q': '0.01745', 'csrd_dM_[4,8)': '0.02705', 'csrd_dM_[8,16)': '0.01969', 'csrd_dM_[16,32)': '0.008208', 'csrd_dM_[32,64)': '-0.01384', 'csrd_dM_[64,inf)': '-0.01456', 'epoch': '2.352'}
+
+ 78%|███████▊  | 75/96 [2:49:44<45:34, 130.23s/it]
+ 79%|███████▉  | 76/96 [2:53:09<50:52, 152.61s/it]
+ 80%|████████  | 77/96 [2:56:36<53:29, 168.92s/it]
+ 81%|████████▏ | 78/96 [2:59:57<53:38, 178.80s/it]
+ 82%|████████▏ | 79/96 [3:01:18<42:20, 149.41s/it]
+ 83%|████████▎ | 80/96 [3:03:56<40:28, 151.81s/it]
+
+{'loss': '1.066', 'grad_norm': '0.01739', 'learning_rate': '1.373e-05', 'loss_ce': '0.9644', 'csrd_lambda': '0.2', 'csrd_queries': '1387', 'loss_route': '2.524', 'loss_mass': '0.02812', 'loss_mc_syn': '0.5078', 'loss_mc_raw': '0.51', 'loss_causal': '0', 'loss_route_mass': '2.527', 'csrd_zT_b0': '0.1618', 'csrd_zS_b0': '0.1688', 'csrd_ez_b0': '0.0475', 'csrd_mcber_b0': '0.01388', 'csrd_mccond_b0': '0.4203', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1717', 'csrd_zS_b1': '0.27', 'csrd_ez_b1': '0.1019', 'csrd_mcber_b1': '0.04237', 'csrd_mccond_b1': '0.5434', 'csrd_dM_q': '0.01671', 'csrd_dM_[4,8)': '0.02768', 'csrd_dM_[8,16)': '0.02087', 'csrd_dM_[16,32)': '0.009063', 'csrd_dM_[32,64)': '-0.01162', 'csrd_dM_[64,inf)': '-0.01986', 'epoch': '2.512'}
+
+ 83%|████████▎ | 80/96 [3:03:56<40:28, 151.81s/it]
+ 84%|████████▍ | 81/96 [3:06:48<39:29, 157.97s/it]
+ 85%|████████▌ | 82/96 [3:09:16<36:11, 155.10s/it]
+ 86%|████████▋ | 83/96 [3:11:42<33:01, 152.39s/it]
+ 88%|████████▊ | 84/96 [3:13:35<28:06, 140.58s/it]
+ 89%|████████▊ | 85/96 [3:15:00<22:42, 123.89s/it]
+
+{'loss': '0.984', 'grad_norm': '0.01747', 'learning_rate': '1.189e-05', 'grad_ce_lora': '0.0021', 'grad_route_lora': '0.001351', 'grad_cos_ce_route': '-0.006614', 'grad_route_ratio': '0.6432', 'grad_ce_mlp': '0.001737', 'grad_ce_qk': '0.000481', 'grad_ce_vo': '0.001078', 'grad_route_mlp': '0.001016', 'grad_route_qk': '0.000559', 'grad_route_vo': '0.000693', 'loss_ce': '0.8899', 'csrd_lambda': '0.2', 'csrd_queries': '1213', 'loss_route': '2.446', 'loss_mass': '0.02653', 'loss_mc_syn': '0.4707', 'loss_mc_raw': '0.4743', 'loss_causal': '0', 'loss_route_mass': '2.448', 'csrd_zT_b0': '0.1524', 'csrd_zS_b0': '0.1556', 'csrd_ez_b0': '0.04612', 'csrd_mcber_b0': '0.01411', 'csrd_mccond_b0': '0.3929', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1587', 'csrd_zS_b1': '0.248', 'csrd_ez_b1': '0.09397', 'csrd_mcber_b1': '0.03895', 'csrd_mccond_b1': '0.5027', 'csrd_dM_q': '0.01724', 'csrd_dM_[4,8)': '0.02568', 'csrd_dM_[8,16)': '0.0176', 'csrd_dM_[16,32)': '0.006215', 'csrd_dM_[32,64)': '-0.01719', 'csrd_dM_[64,inf)': '-0.0162', 'epoch': '2.672'}
+
+ 89%|████████▊ | 85/96 [3:15:00<22:42, 123.89s/it]
+ 90%|████████▉ | 86/96 [3:16:16<18:12, 109.28s/it]
+ 91%|█████████ | 87/96 [3:16:51<13:05, 87.24s/it]
+ 92%|█████████▏| 88/96 [3:17:22<09:22, 70.30s/it]
+ 93%|█████████▎| 89/96 [3:17:48<06:39, 57.09s/it]
+ 94%|█████████▍| 90/96 [3:18:15<04:47, 47.87s/it]
+
+{'loss': '1.024', 'grad_norm': '0.01779', 'learning_rate': '1.065e-05', 'loss_ce': '0.9316', 'csrd_lambda': '0.2', 'csrd_queries': '1129', 'loss_route': '2.446', 'loss_mass': '0.02853', 'loss_mc_syn': '0.4653', 'loss_mc_raw': '0.468', 'loss_causal': '0', 'loss_route_mass': '2.449', 'csrd_zT_b0': '0.151', 'csrd_zS_b0': '0.1583', 'csrd_ez_b0': '0.04787', 'csrd_mcber_b0': '0.01481', 'csrd_mccond_b0': '0.3839', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1569', 'csrd_zS_b1': '0.2491', 'csrd_ez_b1': '0.09693', 'csrd_mcber_b1': '0.04224', 'csrd_mccond_b1': '0.495', 'csrd_dM_q': '0.01615', 'csrd_dM_[4,8)': '0.02659', 'csrd_dM_[8,16)': '0.019', 'csrd_dM_[16,32)': '0.006777', 'csrd_dM_[32,64)': '-0.01921', 'csrd_dM_[64,inf)': '-0.01202', 'epoch': '2.832'}
+
+ 94%|█████████▍| 90/96 [3:18:15<04:47, 47.87s/it]
+ 95%|█████████▍| 91/96 [3:18:45<03:32, 42.47s/it]
+ 96%|█████████▌| 92/96 [3:19:08<02:26, 36.65s/it]
+ 97%|█████████▋| 93/96 [3:19:36<01:41, 34.00s/it]
+ 98%|█████████▊| 94/96 [3:20:05<01:05, 32.60s/it]
+ 99%|█████████▉| 95/96 [3:20:32<00:30, 30.97s/it]
+
+{'loss': '1.03', 'grad_norm': '0.01715', 'learning_rate': '1.005e-05', 'grad_ce_lora': '0.00095', 'grad_route_lora': '0.000532', 'grad_cos_ce_route': '-0.02272', 'grad_route_ratio': '0.5603', 'grad_ce_mlp': '0.00078', 'grad_ce_qk': '0.000224', 'grad_ce_vo': '0.000495', 'grad_route_mlp': '0.000364', 'grad_route_qk': '0.000209', 'grad_route_vo': '0.000327', 'loss_ce': '0.9288', 'csrd_lambda': '0.2', 'csrd_queries': '1314', 'loss_route': '2.522', 'loss_mass': '0.02675', 'loss_mc_syn': '0.5054', 'loss_mc_raw': '0.5086', 'loss_causal': '0', 'loss_route_mass': '2.525', 'csrd_zT_b0': '0.1621', 'csrd_zS_b0': '0.1667', 'csrd_ez_b0': '0.04793', 'csrd_mcber_b0': '0.01419', 'csrd_mccond_b0': '0.4219', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1706', 'csrd_zS_b1': '0.2623', 'csrd_ez_b1': '0.09692', 'csrd_mcber_b1': '0.03931', 'csrd_mccond_b1': '0.5419', 'csrd_dM_q': '0.01732', 'csrd_dM_[4,8)': '0.02635', 'csrd_dM_[8,16)': '0.01925', 'csrd_dM_[16,32)': '0.007066', 'csrd_dM_[32,64)': '-0.01516', 'csrd_dM_[64,inf)': '-0.0189', 'epoch': '2.992'}
+
+ 99%|█████████▉| 95/96 [3:20:32<00:30, 30.97s/it]
+100%|██████████| 96/96 [3:20:37<00:00, 23.19s/it]
+
+{'train_runtime': '1.204e+04', 'train_samples_per_second': '0.249', 'train_steps_per_second': '0.008', 'train_loss': '1.021', 'loss_ce': '0.6719', 'csrd_lambda': '0.2', 'csrd_queries': '1039', 'loss_route': '2.44', 'loss_mass': '0.02139', 'loss_mc_syn': '0.4041', 'loss_mc_raw': '0.4049', 'loss_causal': '0', 'loss_route_mass': '2.442', 'csrd_zT_b0': '0.1479', 'csrd_zS_b0': '0.1473', 'csrd_ez_b0': '0.04463', 'csrd_mcber_b0': '0.01347', 'csrd_mccond_b0': '0.3466', 'csrd_clamped': '0', 'csrd_zT_b1': '0.1453', 'csrd_zS_b1': '0.2193', 'csrd_ez_b1': '0.07812', 'csrd_mcber_b1': '0.02932', 'csrd_mccond_b1': '0.4205', 'csrd_dM_q': '0.0148', 'csrd_dM_[4,8)': '0.02474', 'csrd_dM_[8,16)': '0.01751', 'csrd_dM_[16,32)': '0.002865', 'csrd_dM_[32,64)': '-0.01877', 'csrd_dM_[64,inf)': '-0.01779', 'epoch': '3'}
+
+100%|██████████| 96/96 [3:20:41<00:00, 23.19s/it]
+100%|██████████| 96/96 [3:20:41<00:00, 125.43s/it]
+>>> STOP AND READ logs/mc-b2-syn-l0.2-r1-qwen-1.5b.log: loss_ce should match mc-b0-sft; csrd_ez_b* (|Z_S - Z_T|) and csrd_dM_* (mass gap
+>>> per distance bin) are the v4 calibration metrics, loss_mc_raw = sum_b csrd_mcber_b + csrd_mccond_b (chain rule).
+python /root/project/new_nothingnew_2/crsd/src/evaluate.py  --model checkpoints/mc-b2-syn-l0.2-r1-qwen-1.5b --tag mc-b2-syn-l0.2-r1-qwen-1.5b --protocol palign --benchmarks math500,aime24,aime25,amc12 --temperature 0.6 --top-p 0.9 --repetition-penalty 1.05 --n-samples 3 --max-tokens 3584 --batch-size 64 --max-model-len 4096 --gpu-memory-utilization 0.3 --tensor-parallel-size 1 --enforce-eager --seed 42 --prompt-style sgl --grader palign --base-model /path/models/DeepSeek-R1-Distill-Qwen-1.5B --lora-adapter --lora-r 16 --results-dir results-palign
+WARNING 09-29 12:11:21 [vllm.py:1194] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+WARNING 09-29 12:11:21 [vllm.py:1247] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(EngineCore pid=287505)
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=287505)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:08<00:00,  8.33s/it]
+(EngineCore pid=287505)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:08<00:00,  8.34s/it]
+(EngineCore pid=287505)
+(EngineCore pid=287505) WARNING 09-29 12:11:40 [utils.py:279] Using default LoRA kernel configs
+(EngineCore pid=287505) 2026-09-29 12:11:47,215 - INFO - autotuner.py:2397 - flashinfer.jit: [Autotuner]: Loaded 0 configs from /root/.cache/vllm/flashinfer_autotune_cache/0.6.16.post3/90a/b2f62b3e9fae4d1cd34dcbcd519f8037160536e1de89887729dde319a38ddb92/autotune_configs.json
+(EngineCore pid=287505) 2026-09-29 12:11:47,218 - INFO - autotuner.py:829 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=287505) 2026-09-29 12:11:47,462 - INFO - autotuner.py:852 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=287505) 2026-09-29 12:11:47,472 - INFO - autotuner.py:2269 - flashinfer.jit: [Autotuner]: Saved 0 configs to /root/.cache/vllm/flashinfer_autotune_cache/0.6.16.post3/90a/b2f62b3e9fae4d1cd34dcbcd519f8037160536e1de89887729dde319a38ddb92/autotune_configs.json (0 new, 0 from previous config)
+[math500] 500 problems x 3 (palign)
+WARNING 09-29 12:11:52 [input_processor.py:166] vLLM has deprecated support for supporting different tokenizers for different LoRAs. By default, vLLM uses base model's tokenizer. If you are using a LoRA with its own tokenizer, consider specifying `--tokenizer [lora_path]` to use the LoRA tokenizer.
+(EngineCore pid=287505) WARNING 09-29 12:11:52 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _lora_shrink_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=287505) WARNING 09-29 12:11:52 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _lora_expand_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=287505) WARNING 09-29 12:11:52 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=287505) WARNING 09-29 12:11:53 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _topk_topp_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+Timeout during comparison
+[math500] pass@1=70.53%  pass@3=84.40%  length=2575  truncated=35.20%
+[aime24] 30 problems x 3 (palign)
+[aime24] pass@1=16.67%  pass@3=23.33%  length=3504  truncated=91.11%
+[aime25] 30 problems x 3 (palign)
+[aime25] pass@1=14.44%  pass@3=23.33%  length=3496  truncated=91.11%
+[amc12] 83 problems x 3 (palign)
+[amc12] pass@1=44.18%  pass@3=56.63%  length=3155  truncated=64.66%
+
+mc-b2-syn-l0.2-r1-qwen-1.5b [palign]: mean pass@1 = 36.46%  mean pass@3 = 46.92%
+[12:44] [eval 32k] mc-b2-syn-l0.2-r1-qwen-1.5b <- checkpoints/mc-b2-syn-l0.2-r1-qwen-1.5b
+python /root/project/new_nothingnew_2/crsd/src/evaluate.py  --model checkpoints/mc-b2-syn-l0.2-r1-qwen-1.5b --tag mc-b2-syn-l0.2-r1-qwen-1.5b --protocol palign --benchmarks aime24,aime25 --temperature 0.6 --top-p 0.9 --repetition-penalty 1.05 --n-samples 3 --max-tokens 30720 --batch-size 64 --max-model-len 32768 --gpu-memory-utilization 0.5 --tensor-parallel-size 1 --enforce-eager --seed 42 --prompt-style sgl --grader palign --base-model /path/models/DeepSeek-R1-Distill-Qwen-1.5B --lora-adapter --lora-r 16 --results-dir results-32k-aime
+WARNING 09-29 12:44:55 [vllm.py:1194] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+WARNING 09-29 12:44:55 [vllm.py:1247] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(EngineCore pid=304706)
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=304706)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  1.19it/s]
+(EngineCore pid=304706)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  1.19it/s]
+(EngineCore pid=304706)
+(EngineCore pid=304706) WARNING 09-29 12:45:04 [utils.py:279] Using default LoRA kernel configs
+(EngineCore pid=304706) 2026-09-29 12:45:06,521 - INFO - autotuner.py:2397 - flashinfer.jit: [Autotuner]: Loaded 0 configs from /root/.cache/vllm/flashinfer_autotune_cache/0.6.16.post3/90a/98dc0db7a92bc4cc9ebca9fa68d3bf284ac9ca716d34a2ad7e1a32e4f2aefe6d/autotune_configs.json
+(EngineCore pid=304706) 2026-09-29 12:45:06,521 - INFO - autotuner.py:829 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=304706) 2026-09-29 12:45:06,633 - INFO - autotuner.py:852 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=304706) 2026-09-29 12:45:06,642 - INFO - autotuner.py:2269 - flashinfer.jit: [Autotuner]: Saved 0 configs to /root/.cache/vllm/flashinfer_autotune_cache/0.6.16.post3/90a/98dc0db7a92bc4cc9ebca9fa68d3bf284ac9ca716d34a2ad7e1a32e4f2aefe6d/autotune_configs.json (0 new, 0 from previous config)
+[aime24] 30 problems x 3 (palign)
+WARNING 09-29 12:45:09 [input_processor.py:166] vLLM has deprecated support for supporting different tokenizers for different LoRAs. By default, vLLM uses base model's tokenizer. If you are using a LoRA with its own tokenizer, consider specifying `--tokenizer [lora_path]` to use the LoRA tokenizer.
+(EngineCore pid=304706) WARNING 09-29 12:45:09 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _lora_shrink_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=304706) WARNING 09-29 12:45:09 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _lora_expand_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=304706) WARNING 09-29 12:45:09 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=304706) WARNING 09-29 12:45:10 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _topk_topp_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+[aime24] pass@1=28.89%  pass@3=43.33%  length=15637  truncated=21.11%
+[aime25] 30 problems x 3 (palign)
+[aime25] pass@1=25.56%  pass@3=30.00%  length=15000  truncated=15.56%
+
+mc-b2-syn-l0.2-r1-qwen-1.5b [palign]: mean pass@1 = 27.22%  mean pass@3 = 36.67%
+### pass@1
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 18.89% ± 0.00% | 22.78% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 21.11% ± 0.00% | 23.89% |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | 1 | 28.89% ± 0.00% | 25.56% ± 0.00% | 27.22% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 22.22% ± 0.00% | 24.44% ± 0.00% | 23.33% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 25.56% ± 0.00% | 22.22% ± 0.00% | 23.89% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +2.22 | +1.11 |
+| **Δ mc-b2-syn-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +2.22 | +6.67 | +4.44 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -4.44 | +5.56 | +0.56 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -1.11 | +3.33 | +1.11 |
+
+### pass@3
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| mc-b0-sft-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 26.67% ± 0.00% | 35.00% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 46.67% ± 0.00% | 33.33% ± 0.00% | 40.00% |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 36.67% ± 0.00% | 30.00% ± 0.00% | 33.33% |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +6.67 | +5.00 |
+| **Δ mc-b2-syn-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -6.67 | +3.33 | -1.67 |
+
+### Paired permutation vs mc-b0-sft-r1-qwen-1.5b (problem level, Holm-corrected)
+
+| Arm | Δ pass@1 (pp, problem mean) | problems | p | p (Holm, CSRD family) |
+|---|---|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b | +1.11 | 60 | 0.8646 | 1.0000 |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | +4.44 | 60 | 0.1998 | 0.7992 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | +0.56 | 60 | 1.0000 | 1.0000 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | +1.11 | 60 | 0.8575 | 1.0000 |
+
+### G5 (pass@1 criterion)
+
+- mc-b1-route-l0.2-r1-qwen-1.5b: +1.11 pp -> fail
+- mc-b2-syn-l0.2-r1-qwen-1.5b: +4.44 pp -> PASS
+- mc-b3-raw-l0.2-r1-qwen-1.5b: +0.56 pp -> fail
+- mc-b4-route-l0.0479-r1-qwen-1.5b: +1.11 pp -> fail
+
+### Paired contrasts per benchmark (Δ pass@1 in pp, 95% bootstrap CI over problems, sign-flip p)
+
+| Contrast | aime24 | aime25 |
+|---|---|---|
+| mc-b1-route-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -0.00 [-8.89, +8.89] p=1.000 | +2.22 [-6.67, +12.22] p=0.832 |
+| mc-b2-syn-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | +2.22 [-7.78, +12.22] p=0.832 | +6.67 [+1.11, +13.33] p=0.113 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -4.44 [-13.33, +4.44] p=0.489 | +5.56 [-1.11, +12.22] p=0.235 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -1.11 [-11.11, +8.89] p=1.000 | +3.33 [-3.33, +8.89] p=0.532 |
+python /root/project/new_nothingnew_2/crsd/src/evaluate.py  --model /path/models/DeepSeek-R1-Distill-Qwen-1.5B --tag base-r1-qwen-1.5b --protocol palign --benchmarks math500,aime24,aime25,amc12 --temperature 0.6 --top-p 0.9 --repetition-penalty 1.05 --n-samples 3 --max-tokens 3584 --batch-size 64 --max-model-len 4096 --gpu-memory-utilization 0.3 --tensor-parallel-size 1 --enforce-eager --seed 42 --prompt-style sgl --grader palign --base-model /path/models/DeepSeek-R1-Distill-Qwen-1.5B --no-lora-adapter --results-dir results-palign
+WARNING 09-29 13:23:52 [vllm.py:1194] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+WARNING 09-29 13:23:52 [vllm.py:1247] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(EngineCore pid=324676)
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=324676)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:01<00:00,  1.20s/it]
+(EngineCore pid=324676)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:01<00:00,  1.20s/it]
+(EngineCore pid=324676)
+(EngineCore pid=324676) 2026-09-29 13:24:05,001 - INFO - autotuner.py:829 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=324676) 2026-09-29 13:24:05,040 - INFO - autotuner.py:852 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=324676) 2026-09-29 13:24:05,055 - INFO - autotuner.py:2269 - flashinfer.jit: [Autotuner]: Saved 0 configs to /root/.cache/vllm/flashinfer_autotune_cache/0.6.16.post3/90a/57616a7b623cef84eead23d9dcf0f83c59de88df150864847618f7fc2ca3ceb9/autotune_configs.json (0 new, 0 from previous config)
+(EngineCore pid=324676) WARNING 09-29 13:24:09 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=324676) WARNING 09-29 13:24:09 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _topk_topp_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+[math500] 500 problems x 3 (palign)
+[math500] pass@1=71.53%  pass@3=82.80%  length=2446  truncated=31.40%
+[aime24] 30 problems x 3 (palign)
+[aime24] pass@1=8.89%  pass@3=13.33%  length=3529  truncated=92.22%
+[aime25] 30 problems x 3 (palign)
+[aime25] pass@1=12.22%  pass@3=20.00%  length=3481  truncated=87.78%
+[amc12] 83 problems x 3 (palign)
+[amc12] pass@1=44.58%  pass@3=57.83%  length=3146  truncated=63.05%
+
+base-r1-qwen-1.5b [palign]: mean pass@1 = 34.31%  mean pass@3 = 43.49%
+[13:35] [eval 32k] base-r1-qwen-1.5b <- base
+python /root/project/new_nothingnew_2/crsd/src/evaluate.py  --model /path/models/DeepSeek-R1-Distill-Qwen-1.5B --tag base-r1-qwen-1.5b --protocol palign --benchmarks aime24,aime25 --temperature 0.6 --top-p 0.9 --repetition-penalty 1.05 --n-samples 3 --max-tokens 30720 --batch-size 64 --max-model-len 32768 --gpu-memory-utilization 0.5 --tensor-parallel-size 1 --enforce-eager --seed 42 --prompt-style sgl --grader palign --base-model /path/models/DeepSeek-R1-Distill-Qwen-1.5B --no-lora-adapter --results-dir results-32k-aime
+WARNING 09-29 13:35:49 [vllm.py:1194] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+WARNING 09-29 13:35:49 [vllm.py:1247] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(EngineCore pid=331108)
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+(EngineCore pid=331108)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  1.66it/s]
+(EngineCore pid=331108)
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  1.66it/s]
+(EngineCore pid=331108)
+(EngineCore pid=331108) 2026-09-29 13:35:58,458 - INFO - autotuner.py:829 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(EngineCore pid=331108) 2026-09-29 13:35:58,477 - INFO - autotuner.py:852 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=331108) 2026-09-29 13:35:58,488 - INFO - autotuner.py:2269 - flashinfer.jit: [Autotuner]: Saved 0 configs to /root/.cache/vllm/flashinfer_autotune_cache/0.6.16.post3/90a/3b6532ad314ab8e9049054f1354fec3e4234e01f1a9eedd6b77df19226bd08a8/autotune_configs.json (0 new, 0 from previous config)
+(EngineCore pid=331108) WARNING 09-29 13:36:01 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(EngineCore pid=331108) WARNING 09-29 13:36:01 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _topk_topp_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+[aime24] 30 problems x 3 (palign)
+[aime24] pass@1=34.44%  pass@3=56.67%  length=15467  truncated=18.89%
+[aime25] 30 problems x 3 (palign)
+[aime25] pass@1=22.22%  pass@3=30.00%  length=14518  truncated=12.22%
+
+base-r1-qwen-1.5b [palign]: mean pass@1 = 28.33%  mean pass@3 = 43.33%
+### pass@1
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| base-r1-qwen-1.5b | 1 | 34.44% ± 0.00% | 22.22% ± 0.00% | 28.33% |
+| mc-b0-sft-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 18.89% ± 0.00% | 22.78% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 21.11% ± 0.00% | 23.89% |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | 1 | 28.89% ± 0.00% | 25.56% ± 0.00% | 27.22% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 22.22% ± 0.00% | 24.44% ± 0.00% | 23.33% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 25.56% ± 0.00% | 22.22% ± 0.00% | 23.89% |
+| **Δ base-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +7.78 | +3.33 | +5.56 |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +2.22 | +1.11 |
+| **Δ mc-b2-syn-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +2.22 | +6.67 | +4.44 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -4.44 | +5.56 | +0.56 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -1.11 | +3.33 | +1.11 |
+
+### pass@3
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| base-r1-qwen-1.5b | 1 | 56.67% ± 0.00% | 30.00% ± 0.00% | 43.33% |
+| mc-b0-sft-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 26.67% ± 0.00% | 35.00% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 46.67% ± 0.00% | 33.33% ± 0.00% | 40.00% |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 36.67% ± 0.00% | 30.00% ± 0.00% | 33.33% |
+| **Δ base-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +13.33 | +3.33 | +8.33 |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +6.67 | +5.00 |
+| **Δ mc-b2-syn-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -6.67 | +3.33 | -1.67 |
+
+### Paired permutation vs mc-b0-sft-r1-qwen-1.5b (problem level, Holm-corrected)
+
+| Arm | Δ pass@1 (pp, problem mean) | problems | p | p (Holm, CSRD family) |
+|---|---|---|---|---|
+| base-r1-qwen-1.5b | +5.56 | 60 | 0.1149 | nan |
+| mc-b1-route-l0.2-r1-qwen-1.5b | +1.11 | 60 | 0.8646 | 1.0000 |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | +4.44 | 60 | 0.1998 | 0.7992 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | +0.56 | 60 | 1.0000 | 1.0000 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | +1.11 | 60 | 0.8575 | 1.0000 |
+
+### G5 (pass@1 criterion)
+
+- base-r1-qwen-1.5b: +5.56 pp -> PASS
+- mc-b1-route-l0.2-r1-qwen-1.5b: +1.11 pp -> fail
+- mc-b2-syn-l0.2-r1-qwen-1.5b: +4.44 pp -> PASS
+- mc-b3-raw-l0.2-r1-qwen-1.5b: +0.56 pp -> fail
+- mc-b4-route-l0.0479-r1-qwen-1.5b: +1.11 pp -> fail
+
+### Paired contrasts per benchmark (Δ pass@1 in pp, 95% bootstrap CI over problems, sign-flip p)
+
+| Contrast | aime24 | aime25 |
+|---|---|---|
+| base-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | +7.78 [+0.00, +17.78] p=0.177 | +3.33 [-3.33, +12.22] p=0.696 |
+| mc-b1-route-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -0.00 [-8.89, +8.89] p=1.000 | +2.22 [-6.67, +12.22] p=0.832 |
+| mc-b2-syn-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | +2.22 [-7.78, +12.22] p=0.832 | +6.67 [+1.11, +13.33] p=0.113 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -4.44 [-13.33, +4.44] p=0.489 | +5.56 [-1.11, +12.22] p=0.235 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -1.11 [-11.11, +8.89] p=1.000 | +3.33 [-3.33, +8.89] p=0.532 |
+Timeout during comparison
+Timeout during comparison
+### pass@1
+
+| Arm | seeds | aime24 | aime25 | amc12 | math500 | Avg |
+|---|---|---|---|---|---|---|
+| base-r1-qwen-1.5b | 1 | 8.89% ± 0.00% | 12.22% ± 0.00% | 44.58% ± 0.00% | 71.53% ± 0.00% | 34.31% |
+| csrd-lora-l0.1-m1.0-r1-qwen-1.5b | 1 | 11.11% ± 0.00% | 7.78% ± 0.00% | 36.95% ± 0.00% | 68.80% ± 0.00% | 31.16% |
+| csrd-lora-l0.1-r1-qwen-1.5b | 1 | 10.00% ± 0.00% | 14.44% ± 0.00% | 41.37% ± 0.00% | 66.40% ± 0.00% | 33.05% |
+| mc-b0-sft-r1-qwen-1.5b | 1 | 13.33% ± 0.00% | 13.33% ± 0.00% | 39.76% ± 0.00% | 69.93% ± 0.00% | 34.09% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 8.89% ± 0.00% | 14.44% ± 0.00% | 42.57% ± 0.00% | 69.20% ± 0.00% | 33.78% |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | 1 | 16.67% ± 0.00% | 14.44% ± 0.00% | 44.18% ± 0.00% | 70.53% ± 0.00% | 36.46% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 14.44% ± 0.00% | 16.67% ± 0.00% | 46.18% ± 0.00% | 70.27% ± 0.00% | 36.89% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 12.22% ± 0.00% | 13.33% ± 0.00% | 41.77% ± 0.00% | 70.80% ± 0.00% | 34.53% |
+| **Δ base-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -4.44 | -1.11 | +4.82 | +1.60 | +0.22 |
+| **Δ csrd-lora-l0.1-m1.0-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -2.22 | -5.56 | -2.81 | -1.13 | -2.93 |
+| **Δ csrd-lora-l0.1-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -3.33 | +1.11 | +1.61 | -3.53 | -1.04 |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -4.44 | +1.11 | +2.81 | -0.73 | -0.31 |
+| **Δ mc-b2-syn-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +1.11 | +4.42 | +0.60 | +2.37 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +1.11 | +3.33 | +6.43 | +0.33 | +2.80 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -1.11 | +0.00 | +2.01 | +0.87 | +0.44 |
+
+### pass@3
+
+| Arm | seeds | aime24 | aime25 | amc12 | math500 | Avg |
+|---|---|---|---|---|---|---|
+| base-r1-qwen-1.5b | 1 | 13.33% ± 0.00% | 20.00% ± 0.00% | 57.83% ± 0.00% | 82.80% ± 0.00% | 43.49% |
+| csrd-lora-l0.1-m1.0-r1-qwen-1.5b | 1 | 23.33% ± 0.00% | 16.67% ± 0.00% | 46.99% ± 0.00% | 82.20% ± 0.00% | 42.30% |
+| csrd-lora-l0.1-r1-qwen-1.5b | 1 | 16.67% ± 0.00% | 23.33% ± 0.00% | 55.42% ± 0.00% | 79.40% ± 0.00% | 43.71% |
+| mc-b0-sft-r1-qwen-1.5b | 1 | 20.00% ± 0.00% | 20.00% ± 0.00% | 54.22% ± 0.00% | 81.00% ± 0.00% | 43.80% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 13.33% ± 0.00% | 30.00% ± 0.00% | 56.63% ± 0.00% | 81.00% ± 0.00% | 45.24% |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | 1 | 23.33% ± 0.00% | 23.33% ± 0.00% | 56.63% ± 0.00% | 84.40% ± 0.00% | 46.92% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 23.33% ± 0.00% | 23.33% ± 0.00% | 56.63% ± 0.00% | 82.80% ± 0.00% | 46.52% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 16.67% ± 0.00% | 23.33% ± 0.00% | 57.83% ± 0.00% | 82.40% ± 0.00% | 45.06% |
+| **Δ base-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -6.67 | +0.00 | +3.61 | +1.80 | -0.31 |
+| **Δ csrd-lora-l0.1-m1.0-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | -3.33 | -7.23 | +1.20 | -1.51 |
+| **Δ csrd-lora-l0.1-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -3.33 | +3.33 | +1.20 | -1.60 | -0.10 |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -6.67 | +10.00 | +2.41 | +0.00 | +1.44 |
+| **Δ mc-b2-syn-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +3.33 | +2.41 | +3.40 | +3.12 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +3.33 | +2.41 | +1.80 | +2.72 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -3.33 | +3.33 | +3.61 | +1.40 | +1.25 |
+
+### Paired permutation vs mc-b0-sft-r1-qwen-1.5b (problem level, Holm-corrected)
+
+| Arm | Δ pass@1 (pp, problem mean) | problems | p | p (Holm, CSRD family) |
+|---|---|---|---|---|
+| base-r1-qwen-1.5b | +1.61 | 643 | 0.0974 | nan |
+| csrd-lora-l0.1-m1.0-r1-qwen-1.5b | -1.61 | 643 | 0.1134 | nan |
+| csrd-lora-l0.1-r1-qwen-1.5b | -2.64 | 643 | 0.0075 | nan |
+| mc-b1-route-l0.2-r1-qwen-1.5b | -0.36 | 643 | 0.7432 | 0.7432 |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | +1.24 | 643 | 0.2140 | 0.7272 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | +1.30 | 643 | 0.1818 | 0.7272 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | +0.88 | 643 | 0.3694 | 0.7388 |
+
+### G5 (pass@1 criterion)
+
+- base-r1-qwen-1.5b: +0.22 pp -> fail
+- csrd-lora-l0.1-m1.0-r1-qwen-1.5b: -2.93 pp -> fail
+- csrd-lora-l0.1-r1-qwen-1.5b: -1.04 pp -> fail
+- mc-b1-route-l0.2-r1-qwen-1.5b: -0.31 pp -> fail
+- mc-b2-syn-l0.2-r1-qwen-1.5b: +2.37 pp -> PASS
+- mc-b3-raw-l0.2-r1-qwen-1.5b: +2.80 pp -> PASS
+- mc-b4-route-l0.0479-r1-qwen-1.5b: +0.44 pp -> fail
+
+### Paired contrasts per benchmark (Δ pass@1 in pp, 95% bootstrap CI over problems, sign-flip p)
+
+| Contrast | aime24 | aime25 | amc12 | math500 |
+|---|---|---|---|---|
+| base-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -4.44 [-14.44, +3.33] p=0.501 | -1.11 [-7.78, +5.56] p=1.000 | +4.82 [-0.40, +10.44] p=0.120 | +1.60 [-0.53, +3.67] p=0.152 |
+| csrd-lora-l0.1-m1.0-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -2.22 [-10.00, +5.56] p=0.794 | -5.56 [-15.56, +3.33] p=0.395 | -2.81 [-8.84, +3.21] p=0.432 | -1.13 [-3.27, +1.07] p=0.339 |
+| csrd-lora-l0.1-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -3.33 [-10.00, +1.11] p=0.501 | +1.11 [-10.00, +10.00] p=1.000 | +1.61 [-4.82, +7.63] p=0.705 | -3.53 [-5.67, -1.53] p=0.001 |
+| mc-b1-route-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -4.44 [-13.33, +2.22] p=0.492 | +1.11 [-5.56, +7.78] p=1.000 | +2.81 [-2.01, +8.03] p=0.365 | -0.73 [-2.80, +1.33] p=0.540 |
+| mc-b2-syn-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | +3.33 [-5.56, +12.22] p=0.637 | +1.11 [-6.67, +8.89] p=1.000 | +4.42 [-1.20, +9.64] p=0.148 | +0.60 [-1.53, +2.73] p=0.629 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | +1.11 [-4.44, +6.67] p=1.000 | +3.33 [-4.44, +11.11] p=0.593 | +6.43 [+0.40, +12.45] p=0.048 | +0.33 [-1.73, +2.40] p=0.800 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -1.11 [-7.78, +5.56] p=1.000 | -0.00 [-3.33, +3.33] p=1.000 | +2.01 [-4.02, +8.03] p=0.594 | +0.87 [-1.20, +2.93] p=0.448 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b1-route-l0.2-r1-qwen-1.5b | +5.56 [+0.00, +12.22] p=0.191 | +2.22 [-5.56, +11.11] p=0.795 | +3.61 [-0.80, +8.03] p=0.163 | +1.07 [-1.07, +3.20] p=0.354 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b2-syn-l0.2-r1-qwen-1.5b | -2.22 [-10.00, +4.44] p=0.783 | +2.22 [-3.33, +7.78] p=0.684 | +2.01 [-3.21, +7.63] p=0.564 | -0.27 [-2.40, +1.87] p=0.854 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b4-route-l0.0479-r1-qwen-1.5b | +2.22 [-3.33, +7.78] p=0.689 | +3.33 [-4.44, +11.11] p=0.591 | +4.42 [-0.40, +10.04] p=0.136 | -0.53 [-2.73, +1.67] p=0.674 |
+### pass@1
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| base-r1-qwen-1.5b | 1 | 34.44% ± 0.00% | 22.22% ± 0.00% | 28.33% |
+| mc-b0-sft-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 18.89% ± 0.00% | 22.78% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 26.67% ± 0.00% | 21.11% ± 0.00% | 23.89% |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | 1 | 28.89% ± 0.00% | 25.56% ± 0.00% | 27.22% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 22.22% ± 0.00% | 24.44% ± 0.00% | 23.33% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 25.56% ± 0.00% | 22.22% ± 0.00% | 23.89% |
+| **Δ base-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +7.78 | +3.33 | +5.56 |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +2.22 | +1.11 |
+| **Δ mc-b2-syn-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +2.22 | +6.67 | +4.44 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -4.44 | +5.56 | +0.56 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -1.11 | +3.33 | +1.11 |
+
+### pass@3
+
+| Arm | seeds | aime24 | aime25 | Avg |
+|---|---|---|---|---|
+| base-r1-qwen-1.5b | 1 | 56.67% ± 0.00% | 30.00% ± 0.00% | 43.33% |
+| mc-b0-sft-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 26.67% ± 0.00% | 35.00% |
+| mc-b1-route-l0.2-r1-qwen-1.5b | 1 | 46.67% ± 0.00% | 33.33% ± 0.00% | 40.00% |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | 1 | 43.33% ± 0.00% | 30.00% ± 0.00% | 36.67% |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | 1 | 36.67% ± 0.00% | 30.00% ± 0.00% | 33.33% |
+| **Δ base-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +13.33 | +3.33 | +8.33 |
+| **Δ mc-b1-route-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +3.33 | +6.67 | +5.00 |
+| **Δ mc-b2-syn-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+| **Δ mc-b3-raw-l0.2-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | +0.00 | +3.33 | +1.67 |
+| **Δ mc-b4-route-l0.0479-r1-qwen-1.5b − mc-b0-sft-r1-qwen-1.5b (pp)** | | -6.67 | +3.33 | -1.67 |
+
+### Paired permutation vs mc-b0-sft-r1-qwen-1.5b (problem level, Holm-corrected)
+
+| Arm | Δ pass@1 (pp, problem mean) | problems | p | p (Holm, CSRD family) |
+|---|---|---|---|---|
+| base-r1-qwen-1.5b | +5.56 | 60 | 0.1149 | nan |
+| mc-b1-route-l0.2-r1-qwen-1.5b | +1.11 | 60 | 0.8646 | 1.0000 |
+| mc-b2-syn-l0.2-r1-qwen-1.5b | +4.44 | 60 | 0.1998 | 0.7992 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b | +0.56 | 60 | 1.0000 | 1.0000 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b | +1.11 | 60 | 0.8575 | 1.0000 |
+
+### G5 (pass@1 criterion)
+
+- base-r1-qwen-1.5b: +5.56 pp -> PASS
+- mc-b1-route-l0.2-r1-qwen-1.5b: +1.11 pp -> fail
+- mc-b2-syn-l0.2-r1-qwen-1.5b: +4.44 pp -> PASS
+- mc-b3-raw-l0.2-r1-qwen-1.5b: +0.56 pp -> fail
+- mc-b4-route-l0.0479-r1-qwen-1.5b: +1.11 pp -> fail
+
+### Paired contrasts per benchmark (Δ pass@1 in pp, 95% bootstrap CI over problems, sign-flip p)
+
+| Contrast | aime24 | aime25 |
+|---|---|---|
+| base-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | +7.78 [+0.00, +17.78] p=0.177 | +3.33 [-3.33, +12.22] p=0.696 |
+| mc-b1-route-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -0.00 [-8.89, +8.89] p=1.000 | +2.22 [-6.67, +12.22] p=0.832 |
+| mc-b2-syn-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | +2.22 [-7.78, +12.22] p=0.832 | +6.67 [+1.11, +13.33] p=0.113 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -4.44 [-13.33, +4.44] p=0.489 | +5.56 [-1.11, +12.22] p=0.235 |
+| mc-b4-route-l0.0479-r1-qwen-1.5b vs mc-b0-sft-r1-qwen-1.5b | -1.11 [-11.11, +8.89] p=1.000 | +3.33 [-3.33, +8.89] p=0.532 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b1-route-l0.2-r1-qwen-1.5b | -4.44 [-14.47, +5.56] p=0.547 | +3.33 [-3.33, +11.11] p=0.567 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b2-syn-l0.2-r1-qwen-1.5b | -6.67 [-16.67, +2.22] p=0.245 | -1.11 [-5.56, +2.22] p=1.000 |
+| mc-b3-raw-l0.2-r1-qwen-1.5b vs mc-b4-route-l0.0479-r1-qwen-1.5b | -3.33 [-13.33, +6.67] p=0.672 | +2.22 [-3.33, +8.89] p=0.747 |
+python /root/project/new_nothingnew_2/crsd/src/data_prep.py  --canonical data/canonical/openr1-heldout.jsonl --tokenizer /path/models/Qwen3-8B --style thinking --segment-mode paragraph --min-step-chars 40 --max-steps 400 --max-tokens 32768 --output-path data/records/openr1-heldout-Qwen3-8B-thinking.jsonl
+
+nodes: 0trace [00:00, ?trace/s]
+nodes: 8trace [00:00, 79.95trace/s]
+nodes: 16trace [00:00, 72.41trace/s]
+nodes: 24trace [00:00, 73.26trace/s]
+nodes: 32trace [00:00, 61.18trace/s]
+nodes: 40trace [00:00, 62.04trace/s]
+nodes: 50trace [00:00, 71.95trace/s]
+nodes: 58trace [00:00, 73.41trace/s]
+nodes: 67trace [00:00, 76.62trace/s]
+nodes: 75trace [00:01, 72.66trace/s]
+nodes: 83trace [00:01, 69.18trace/s]
+nodes: 91trace [00:01, 70.31trace/s]
+nodes: 99trace [00:01, 70.80trace/s]
+nodes: 107trace [00:01, 71.33trace/s]
+nodes: 115trace [00:01, 72.03trace/s]
+nodes: 123trace [00:01, 71.06trace/s]
+nodes: 131trace [00:01, 64.89trace/s]
+nodes: 139trace [00:01, 68.21trace/s]
+nodes: 148trace [00:02, 69.34trace/s]
+nodes: 156trace [00:02, 71.17trace/s]
+nodes: 166trace [00:02, 76.54trace/s]
+nodes: 174trace [00:02, 75.66trace/s]
+nodes: 182trace [00:02, 70.54trace/s]
+nodes: 192trace [00:02, 75.22trace/s]
+nodes: 200trace [00:02, 71.44trace/s]
+nodes: 211trace [00:02, 79.02trace/s]
+nodes: 219trace [00:03, 78.49trace/s]
+nodes: 227trace [00:03, 76.71trace/s]
+nodes: 235trace [00:03, 70.88trace/s]
+nodes: 243trace [00:03, 64.74trace/s]
+nodes: 253trace [00:03, 72.46trace/s]
+nodes: 261trace [00:03, 71.14trace/s]
+nodes: 269trace [00:03, 72.91trace/s]
+nodes: 281trace [00:03, 84.07trace/s]
+nodes: 290trace [00:03, 80.36trace/s]
+nodes: 299trace [00:04, 73.73trace/s]
+nodes: 300trace [00:04, 72.49trace/s]
+wrote 300 records (thinking) -> data/records/openr1-heldout-Qwen3-8B-thinking.jsonl  ({'ok': 300})
+tokens/trace : mean=5802 p10=1999 median=4669 p90=11791 max=17263
+steps/trace  : mean=74.1 p10=19 median=56 p90=168 max=281
+tokens/step  : mean=69.8 p10=21 median=51 p90=136 max=2057
+far pairs by distance (d_min = 4): [4,8)=83586 [8,16)=152928 [16,32)=253203 [32,64)=346784 [64,inf)=437333
+labeled 22544 nodes in 300 records (heuristic) -> data/records/openr1-heldout-Qwen3-8B-thinking.jsonl
+active_computation=48.9% fact_retrieval=0.8% final_answer=5.0% planning=5.8% result_consolidation=13.4% self_checking=0.2% uncertainty_management=25.8%
+python /root/project/new_nothingnew_2/crsd/src/data_prep.py  --canonical data/canonical/openr1-heldout.jsonl --tokenizer /path/models/DeepSeek-R1-Distill-Qwen-1.5B --style sgl --segment-mode paragraph --min-step-chars 40 --max-steps 400 --max-tokens 32768 --output-path data/records/openr1-heldout-DeepSeek-R1-Distill-Qwen-1.5B-sgl.jsonl
+
+nodes: 0trace [00:00, ?trace/s]
+nodes: 8trace [00:00, 76.03trace/s]
+nodes: 16trace [00:00, 63.53trace/s]
+nodes: 23trace [00:00, 63.35trace/s]
+nodes: 30trace [00:00, 57.97trace/s]
+nodes: 36trace [00:00, 52.63trace/s]Token indices sequence length is longer than the specified maximum sequence length for this model (17162 > 16384). Running this sequence through the model will result in indexing errors
+
+nodes: 44trace [00:00, 59.60trace/s]
+nodes: 53trace [00:00, 66.65trace/s]
+nodes: 61trace [00:00, 65.85trace/s]
+nodes: 69trace [00:01, 68.13trace/s]
+nodes: 76trace [00:01, 67.89trace/s]
+nodes: 83trace [00:01, 63.18trace/s]
+nodes: 91trace [00:01, 64.33trace/s]
+nodes: 98trace [00:01, 64.08trace/s]
+nodes: 105trace [00:01, 64.48trace/s]
+nodes: 114trace [00:01, 66.33trace/s]
+nodes: 121trace [00:01, 66.55trace/s]
+nodes: 128trace [00:02, 63.24trace/s]
+nodes: 135trace [00:02, 57.32trace/s]
+nodes: 144trace [00:02, 65.11trace/s]
+nodes: 151trace [00:02, 60.06trace/s]
+nodes: 160trace [00:02, 67.25trace/s]
+nodes: 170trace [00:02, 75.17trace/s]
+nodes: 178trace [00:02, 70.66trace/s]
+nodes: 186trace [00:02, 66.27trace/s]
+nodes: 193trace [00:02, 63.41trace/s]
+nodes: 200trace [00:03, 64.56trace/s]
+nodes: 210trace [00:03, 73.85trace/s]
+nodes: 218trace [00:03, 71.65trace/s]
+nodes: 226trace [00:03, 67.85trace/s]
+nodes: 233trace [00:03, 58.35trace/s]
+nodes: 240trace [00:03, 52.32trace/s]
+nodes: 248trace [00:03, 58.52trace/s]
+nodes: 256trace [00:03, 62.63trace/s]
+nodes: 264trace [00:04, 65.19trace/s]
+nodes: 273trace [00:04, 70.72trace/s]
+nodes: 283trace [00:04, 78.23trace/s]
+nodes: 292trace [00:04, 73.99trace/s]
+nodes: 300trace [00:04, 68.64trace/s]
+nodes: 300trace [00:04, 65.34trace/s]
+wrote 300 records (sgl) -> data/records/openr1-heldout-DeepSeek-R1-Distill-Qwen-1.5B-sgl.jsonl  ({'ok': 300})
+tokens/trace : mean=5797 p10=1994 median=4664 p90=11786 max=17258
+steps/trace  : mean=74.1 p10=19 median=56 p90=168 max=281
+tokens/step  : mean=69.8 p10=21 median=51 p90=136 max=2057
+far pairs by distance (d_min = 4): [4,8)=83586 [8,16)=152928 [16,32)=253203 [32,64)=346784 [64,inf)=437333
+labeled 22544 nodes in 300 records (heuristic) -> data/records/openr1-heldout-DeepSeek-R1-Distill-Qwen-1.5B-sgl.jsonl
+active_computation=48.9% fact_retrieval=0.8% final_answer=5.0% planning=5.8% result_consolidation=13.4% self_checking=0.2% uncertainty_management=25.8%
+data/records/openr1-heldout-DeepSeek-R1-Distill-Qwen-1.5B-sgl.jsonl: 300/300 records have a teacher rendering

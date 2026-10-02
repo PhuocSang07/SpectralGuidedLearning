@@ -1,0 +1,13 @@
+...................................................................      [100%]
+=============================== warnings summary ===============================
+tests/test_csrd_trainer.py: 14 warnings
+  /mnt/local/uvenvs/crsd/lib/python3.12/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+tests/test_mc_csrd.py::test_hierarchical_equals_flat_loss_and_gradient
+  /root/project/new_nothingnew_2/crsd/tests/test_mc_csrd.py:68: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+    assert abs(float(flat - hier)) < 1e-10
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+67 passed, 15 warnings in 28.71s
