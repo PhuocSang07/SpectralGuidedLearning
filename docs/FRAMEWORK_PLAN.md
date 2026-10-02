@@ -1,6 +1,6 @@
 # Kế hoạch hợp nhất SGL + P-ALIGN + SegmentSelectiveSFT thành một framework
 
-Trạng thái: **đề xuất, chưa triển khai**. Tài liệu này dựa trên `main` @ `7990089`
+Trạng thái: **đang triển khai** — xem §8 cho các quyết định đã chốt và tiến độ. Tài liệu này dựa trên `main` @ `7990089`
 (sau commit "Add P-ALIGN and SegmentSelectiveSFT reference code").
 
 ---
@@ -279,3 +279,26 @@ Tổ hợp mới (vd. IG làm tín hiệu allocation thay vì selection) chỉ l
 4. **Code gốc P-ALIGN/SSFT**: xoá hẳn sau khi port (đề xuất, ghi commit hash upstream) hay giữ trong `references/`?
 5. **Ngôn ngữ comment**: SSFT fork dùng tiếng Việt không dấu; SGL dùng tiếng Anh. Đề xuất thống nhất **tiếng Anh** cho code/comment của framework.
 6. Thứ tự: đề xuất làm Phase 0→3 trước (thuần refactor, an toàn), rồi Phase 4 (SSFT) và 5 (P-ALIGN) có thể làm song song.
+
+---
+
+## 8. Quyết định đã chốt và tiến độ
+
+| # | Câu hỏi | Quyết định |
+|---|---|---|
+| 1 | Tên package | `sgl` |
+| 2 | Backend train | HF mặc định; Unsloth là extra; LLaMA-Factory chỉ để đối chứng |
+| 3 | Logs / kết quả cũ | Giữ trong git, gom vào `experiments/` |
+| 4 | Code gốc P-ALIGN / SSFT | Giữ trong `references/` (không xoá ở Phase 6) |
+| 5 | Ngôn ngữ comment | Không quan trọng → giữ tiếng Anh như SGL hiện tại |
+
+- [x] **Phase 0** — tag `paper-v1` (= `7990089`); `tests/regression/`: tokenizer BPE cục bộ + 16 mẫu
+  P-ALIGN + 30 bài AIME24 đã sinh của P-ALIGN; 21 stage CPU (data_prep, masks, IWC ×5 biến thể,
+  gain, provenance, trans, diagnostics, rescore, compare, SSFT split/select) → 53 output được băm
+  trong `golden.json`. `pytest` chạy cả bộ (~1 phút CPU).
+- [ ] Phase 1 — package hoá
+- [ ] Phase 2 — config + CLI
+- [ ] Phase 3 — hợp nhất phân đoạn
+- [ ] Phase 4 — SegmentSelectiveSFT
+- [ ] Phase 5 — P-ALIGN
+- [ ] Phase 6 — tài liệu, CI

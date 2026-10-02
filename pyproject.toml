@@ -41,3 +41,7 @@ torchaudio = { index = "pytorch", marker = "sys_platform == 'linux'" }
 name = "pytorch"
 url = "https://download.pytorch.org/whl/cu130"
 explicit = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["regression: end-to-end pipeline regression against golden outputs (~1 min, CPU)"]
