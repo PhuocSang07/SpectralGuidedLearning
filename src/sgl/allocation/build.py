@@ -21,6 +21,7 @@ from sgl.allocation.iwc import (
     vanilla_iwc_step_weights,
 )
 from sgl.allocation.region import (
+    PREFIX,
     region_budget,
     region_gain_ratio,
     region_stable_step_weights,
@@ -43,8 +44,9 @@ _STABLE_VARIANTS = {
 }
 
 # Region variants (sgl.allocation.region, SARW) need the prefix/continuation region of each step:
-# region-iwc = a_k only, region-gain = b_r only, sarw = a_k * b_r.
-_REGION_VARIANTS = ("region-iwc", "region-gain", "sarw")
+# region-iwc = a_k only, region-gain = b_r only, sarw = a_k * b_r, region-cont = the teacher-prefix
+# steps dropped from the loss (continuation-only SFT, the b_P -> 0 limit without inflating weights).
+_REGION_VARIANTS = ("region-iwc", "region-gain", "sarw", "region-cont")
 
 
 def build_example(
@@ -69,6 +71,10 @@ def build_example(
             f"entropies={len(entropies)}"
         )
     selected = select_steps_by_energy(strengths, threshold)
+    if variant == "region-cont":
+        if regions is None or len(regions) != len(step_spans):
+            raise ValueError(f"record {record['id']}: {variant} needs one region per step")
+        selected = [index for index in selected if regions[index] != PREFIX]
     selected_entropies = [entropies[index] for index in selected]
     selected_lengths = [step_spans[index][1] - step_spans[index][0] for index in selected]
     if variant == "iwc":
@@ -80,6 +86,8 @@ def build_example(
             selected_entropies, selected_lengths, temperature, interpolation, clip, epsilon,
             seed + record["id"],
         )
+    elif variant == "region-cont":
+        selected_weights = [1.0] * len(selected)
     elif variant in _REGION_VARIANTS:
         if regions is None or len(regions) != len(step_spans):
             raise ValueError(f"record {record['id']}: {variant} needs one region per step")

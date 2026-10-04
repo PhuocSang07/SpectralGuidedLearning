@@ -145,3 +145,14 @@ def test_region_gain_ratio_tail_fraction_drops_the_answer_steps():
     gains, lengths, regions = [[1.0, 1.0, 9.0]], [[2, 2, 1]], [[P, C, C]]
     assert region_gain_ratio(gains, lengths, regions)[2] == pytest.approx(0.5 / (10.0 / 3))
     assert region_gain_ratio(gains, lengths, regions, tail_fraction=0.1)[2] == pytest.approx(1.0)
+
+
+def test_region_cont_drops_prefix_steps_and_keeps_unit_weights():
+    example, stats = build_example(
+        RECORD, [1.0] * 4, [2.0, 1.0, 0.5, 0.1], 1.0, "region-cont", 1.0, 1.0, 2.0, 1e-8,
+        regions=[P, P, J, C],
+    )
+    # prefix steps (tokens 1..5) unsupervised; junction, continuation and stop token at weight 1
+    assert example["loss_mask"] == [0] * 6 + [1] * 7
+    assert example["loss_weights"] == [0.0] * 6 + [1.0] * 7
+    assert stats["weight_mass_ratio"] == pytest.approx(1.0)
