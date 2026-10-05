@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Offline B200 driver: answer-gain allocation (IWC-Stable, lambda 0.5, no gate) with LoRA on Qwen2.5-7B-Instruct
-# and Qwen3-8B -> eval under the P-ALIGN protocol. The arms are configs/sgl/<model>-palign/iwc-gain-l05-lora.yaml
+# Offline B200 driver: answer-gain allocation (IWC-Stable, lambda 0.5) behind SGL's spectral gate (p=0.95) with
+# LoRA on Qwen2.5-7B-Instruct and Qwen3-8B -> eval under the P-ALIGN protocol. The arms are
+# configs/sgl/<model>-palign/iwc-gain-gate95-l05-lora.yaml
 # unchanged; only where resources come from differs: the venv, every model and every benchmark are read from
 # fixed local paths (override with the env vars below), and every network path is switched off, so a missing
 # file fails instead of being downloaded.
@@ -8,8 +9,9 @@
 #   MODELS=qwen3-8b GPUS=1 bash project_commands_b200_gain.sh    # one model on another GPU
 #   EXTRA_EVAL_SEEDS="43 44" bash project_commands_b200_gain.sh  # + the paper's other sampling seeds
 #   DRY_RUN=1 bash project_commands_b200_gain.sh                 # print every stage command, run nothing
-# Stages whose output already exists are skipped: copy data/<model>-palign/ from a machine that has it to skip
-# prepare, capture and answer gain. FORCE=1 reruns every stage.
+# Every stage runs from scratch, data included (prepare -> capture -> answer gain -> gain signal -> gated weights
+# -> train -> eval), even when its output exists. RESUME=1 instead skips stages whose output exists, to continue
+# an interrupted run.
 # Scores go to RESULTS_DIR / EVALSEED_RESULTS_DIR (results_b200, results_b200_evalseed): results/ already tracks
 # this machine's summary.json for the same run names, which would make the eval stage skip as done.
 # GPU memory: answer gain and eval cap vLLM at GAIN_GPU_MEM_UTIL / EVAL_GPU_MEM_UTIL of the card (0.4 / 0.5,
@@ -19,8 +21,8 @@ BASE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${BASE}"
 
 PROJECT_ENV="${PROJECT_ENV:-/mnt/local/uvenvs/spectral_guided_learning_train}"
-LOCAL_MODELS_ROOT="${LOCAL_MODELS_ROOT:-/mnt/local/_models/aiskylimit_new_nothingnew_2}"
-LOCAL_DATA_ROOT="${LOCAL_DATA_ROOT:-/mnt/local/_data/aiskylimit_new_nothingnew_2}"
+LOCAL_MODELS_ROOT="${LOCAL_MODELS_ROOT:-/mnt/local/_models/aiskylimit_new_nothing}"
+LOCAL_DATA_ROOT="${LOCAL_DATA_ROOT:-/mnt/local/_data/aiskylimit_new_nothing}"
 export BENCH_DATA_ROOT="${BENCH_DATA_ROOT:-${LOCAL_DATA_ROOT}}"
 MODELS="${MODELS:-qwen25-7b qwen3-8b}"
 GPUS="${GPUS:-0}"
@@ -66,10 +68,10 @@ done
 
 GPU_LIST="[${GPUS// /,}]"
 RUN_FLAGS=()
-[[ "${FORCE:-0}" == 1 ]] && RUN_FLAGS+=(--force)
+[[ "${RESUME:-0}" == 1 ]] || RUN_FLAGS+=(--force)
 [[ "${DRY_RUN:-0}" == 1 ]] && RUN_FLAGS+=(--dry-run)
 for key in ${MODELS}; do
-  config="${key}-palign/iwc-gain-l05-lora"
+  config="${key}-palign/iwc-gain-gate95-l05-lora"
   overrides=(
     "run.gpus=${GPU_LIST}"
     "model.name=$(model_dir "${key}")"
@@ -77,7 +79,7 @@ for key in ${MODELS}; do
     "stages.eval.args.gpu-memory-utilization=${EVAL_GPU_MEM_UTIL}"
   )
   echo "===================== ${config} (model $(model_dir "${key}"), GPU ${GPUS}) ====================="
-  # prepare -> capture -> answer_gain -> gain_signal -> weights -> train -> eval (sampling seed 42)
+  # prepare -> capture -> answer_gain -> gain_signal -> weights (gate p=0.95) -> train -> eval (sampling seed 42)
   python -m sgl.cli run "${config}" ${RUN_FLAGS[@]+"${RUN_FLAGS[@]}"} "${overrides[@]}" "results_dir=${RESULTS_DIR}"
   for seed in ${EXTRA_EVAL_SEEDS}; do
     python -m sgl.cli run "${config}" --stages eval ${RUN_FLAGS[@]+"${RUN_FLAGS[@]}"} "${overrides[@]}" \
