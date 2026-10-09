@@ -467,6 +467,8 @@ Why the pass@1 gain vanishes on Qwen2.5-7B-Instruct, and whether the gains hold 
 
 Our experiments cover mathematical reasoning with three Qwen-based students and one public set of teacher traces under a fixed evaluation protocol; extending answer-gain allocation to other domains, model families and generation budgets is left to future work.
 Answer gain relies on a checkable final answer, so tasks without verifiable answers would need a different probe or answer signal.
+Answer gain measures how recoverable a step makes the gold answer for the frozen student, not the step's causal or logical contribution; a step can both derive and state the answer, and separating the two remains open.
+In our single-seed ablation, weighting steps by how easy they are to predict is competitive with answer gain, so we do not claim that answer gain is the better score.
 We fixed the answer probe and explored the weighting hyperparameters in a single-seed sweep (Appendix~\ref{app:ablation}), and we study allocation on its own; combining it with selective masks and other trace sources (\S\ref{sec:compose}) is a natural next step.
 
 % \paragraph{Effect size and variance.}
@@ -923,8 +925,11 @@ Keeping every trace's budget fixed is therefore part of what makes allocation wo
 \paragraph{Score.}
 Table~\ref{tab:abl-score} compares step scores at $\lambda=0.5$.
 Answer gain is not a proxy for how easy a step is: within a trace, its Spearman correlation with the step's mean log-probability has a median of $-0.02$ (interquartile range $-0.14$ to $0.10$), and the 10\% highest-scoring steps under the two scores overlap by a median of 17\%.
-Up-weighting easy steps is also strong on pass@1 (42.79) but below $\tau=1$ on pass@3 (53.67), and up-weighting hard steps gives 41.88 / 53.42.
+Up-weighting easy steps is a strong baseline: at $\tau=2$ it reaches 42.79 / 53.67, above answer-gain allocation at the same $\tau$ (42.46 / 53.09); it is level with answer-gain allocation at $\tau=1$ on pass@1 (42.78) and below it on pass@3 (54.70), but we did not run it at $\tau=1$.
+Up-weighting hard steps gives 41.88 / 53.42.
+With one training seed, answer gain is therefore a distinct allocation signal that is competitive with predictability weighting, not one shown to be better.
 Keeping steps that only restate the answer at uniform weight gives 40.51 / 53.74, against 42.46 / 53.09 for answer-gain allocation at the same $\tau=2$: pass@1 drops by about two points while pass@3 does not, so the pass@3 gains do not rely on up-weighting such steps.
+This ablation changes only the training weights: the gains are still scored on traces that contain the answer, so it does not separate what a step derives from the answer it states.
 Under every answer-gain setting of Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-tau}, 43\% of the 10\% most up-weighted steps contain a computation and 23\% the gold answer, against 28\% and 6.7\% of all steps, so $\lambda$ and $\tau$ change only how strongly these steps are up-weighted; permuting the gains removes this targeting.
 
 \section{An Example Trace}
