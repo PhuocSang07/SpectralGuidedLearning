@@ -269,7 +269,7 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & 65.30 & 80.40
     & 30.30 & 42.10 \\
 
-    SGL \citep{fan2026sgl}
+    SGL \citep{fan2026sgl}$^{\ast}$
     & 2.50 & 7.50
     & 6.67 & 11.67
     & 30.72 & 46.39
@@ -353,6 +353,7 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     \underline{underline}, respectively.
     Zero-shot results are excluded from ranking.
     Tied scores receive the same formatting.
+    $^{\ast}$Evaluated with four samples per problem instead of three.
   }
   \label{tab:main}
 \end{table*}
@@ -374,7 +375,6 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
 \end{table}
 
 \paragraph{Data.}
-We study allocation in a post-adaptation setting, where the training traces have already been constructed and are held fixed.
 We use the 966 public traces released by \citet{liu2026palign} (\texttt{palign\_sft\_qwen2.5-7b}), built from 966 of the 1,000 s1K-1.1 problems \citep{muennighoff2025s1}.
 Each response is a DeepSeek-R1 prefix, closed by an \eop{} marker, followed by a continuation written by Qwen2.5-7B \citep{qwen2024qwen25}; our method treats the marker as ordinary text and uses no other part of the pipeline that produced the traces.
 The responses therefore differ from the full DeepSeek-R1 traces of s1K-1.1 on which the SFT, SGL and Segment-Selective SFT baselines were trained.
@@ -419,22 +419,13 @@ Our \textbf{answer gain} arm keeps every token and allocates supervision using $
 \label{sec:results}
 
 Table~\ref{tab:main} gives the results for all three students.
-Because SFT, SGL and Segment-Selective SFT were trained on s1K-1.1 rather than on the 966 adapted traces, their rows are reference points, not evidence for or against loss allocation.
-We therefore focus on the comparison with P-ALIGN, which trains the same traces uniformly.
+We focus on the comparison with P-ALIGN, which trains the same traces uniformly; the s1K-1.1 rows are reference points (\S\ref{sec:setup}).
 On the 1.5B student, answer-gain allocation raises average pass@1 over P-ALIGN from 40.76 to 42.78 (+2.02) and pass@3 from 52.03 to 54.70 (+2.67).
 
 \paragraph{Larger students.}
 On Qwen3-8B the gain is larger: answer-gain allocation raises average pass@1 over P-ALIGN from 49.24 to 53.07 (+3.83) and pass@3 from 58.82 to 62.41 (+3.59), with a higher pass@1 on all four benchmarks and a higher pass@3 on all but AMC12.
-On Qwen2.5-7B-Instruct, the results
-are mixed. Answer-gain allocation
-achieves 33.45 pass@1 and 46.09
-pass@3, compared with 33.72 and
-44.64 for P-ALIGN. Thus, allocation
-trails P-ALIGN by 0.27 points in
-pass@1 but improves pass@3 by 1.45
-points. Its pass@1 remains close to
-the zero-shot result (33.24).
-These results suggest that redistributing supervision across steps can add to what data adaptation provides, even after the traces have been adapted to a student.
+On Qwen2.5-7B-Instruct the results are mixed: allocation trails P-ALIGN by 0.27 pass@1 (33.45 against 33.72) but improves pass@3 by 1.45 (46.09 against 44.64), and its pass@1 stays close to the zero-shot student (33.24).
+Redistributing supervision across steps can thus add to data adaptation, even on traces already adapted to a student.
 
 \section{Analysis}
 \label{sec:analysis}
@@ -446,9 +437,8 @@ These traces have already been adapted to a student, and applying the SGL gate a
 With $p=0.95$ the gate drops only 18\% of the 47,532 steps but 41\% of the 2.92M response tokens, because the long, low-leverage continuation steps fall below the threshold.
 It removes 20\% of the teacher prefix, 49\% of the continuation, and the step that writes the final \boxedtok{} in 362 of 966 traces (37\%).
 Under the spectral strengths of the larger students the same gate removes more of the response: 18\% of the steps, 44\% of the response tokens and the final \boxedtok{} step in 467 traces (48\%) for Qwen2.5-7B-Instruct, and 20\% of the steps, 49\% of the tokens (18\% of the prefix, 60\% of the continuation) and the final \boxedtok{} step in 672 traces (70\%) for Qwen3-8B.
-Hard gating would thus remove a substantial share of the token-level supervision of the adapted traces, often including the final-answer step, which motivates allocation strategies that keep supervision over the full trace.
-This analysis characterizes the gate on the 966 adapted traces; it does not establish how SGL performs when trained on them, which we did not test.
-The SGL accuracy in Table~\ref{tab:main} comes from training on s1K-1.1 and is included only as a reference.
+Hard gating would thus remove much of the supervision of the adapted traces, often including the final-answer step, which motivates keeping supervision over the full trace.
+This characterizes the gate only: we did not train SGL on these traces, and its accuracy in Table~\ref{tab:main} comes from s1K-1.1.
 
 \subsection{What answer gain rewards}
 \label{sec:what-gain}
@@ -462,43 +452,9 @@ Qwen2.5-7B-Instruct and Qwen3-8B have similar shares of rising and falling steps
 After weighting, about one step in five has $w_k>1$ in the median trace, and the up-weighted steps are mostly long steps near the end of a trace that compute or state the answer (Appendix~\ref{app:weights}).
 
 
-\subsection{Effect of Token-Mass Normalization}
+\subsection{Per-trace normalization matters}
 \label{sec:normalization_ablation}
-
-Our allocation rule preserves the total response-token loss-coefficient mass of each training trace (Eq.~\ref{eq:budget}). To test the role of this constraint, we compare the proposed \emph{per-trace} normalization against two alternatives: \emph{global} normalization, which preserves the token mass only over the full training corpus, and \emph{no} mass normalization, which uses the unnormalized exponential scores. All variants use the same frozen-student answer gains, within-trace score standardization, and training protocol, with $\lambda=0.5$, $\tau=1$, and $c=2$. We retain the shrinkage toward uniform weighting in all three variants, changing only the normalization applied before shrinkage.
-
-Let $\ell_{ik}$, $r_{ik}$, and $w_{ik}$ denote the number of supervised tokens, exponential score, and final weight for step $k$ in trace $i$. The three alternatives define the pre-shrinkage weight $\hat w_{ik}$ as
-\begin{equation}
-\hat w_{ik}=
-\begin{cases}
- r_{ik}\,\dfrac{\sum_j\ell_{ij}}{\sum_j\ell_{ij}r_{ij}}, & \text{per-trace (ours)},\\[7pt]
- r_{ik}\,\dfrac{\sum_{i',j}\ell_{i'j}}{\sum_{i',j}\ell_{i'j}r_{i'j}}, & \text{global},\\[7pt]
- r_{ik}, & \text{none}.
-\end{cases}
-\label{eq:normalization_variants}
-\end{equation}
-In each case, the final weight is $w_{ik}=(1-\lambda)+\lambda\hat w_{ik}$. We measure the supervision-budget ratio for trace $i$ as $B_i=\sum_k\ell_{ik}w_{ik}/\sum_k\ell_{ik}$ and the corpus-wide token-mass ratio as $\mathcal{M}=\sum_{i,k}\ell_{ik}w_{ik}/\sum_{i,k}\ell_{ik}$.
-
-\begin{table*}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lcccccccc}
-\toprule
-Normalization & AIME24 & AIME25 & AMC12 & MATH500 & Average & $\mathcal{M}$ & $\mathrm{Std}(B_i)$ & $w$: P10 / P50 / P90 \\
-\midrule
-\textbf{Per-trace (ours)} & \textbf{17.78 / 30.00} & \textbf{23.33 / 33.33} & 53.01 / 67.47 & 77.00 / \textbf{88.00} & \textbf{42.78 / 54.70} & $1.000^{\dagger}$ & $0.000^{\dagger}$ & 0.595 / 0.761 / 1.233 \\
-Global corpus & 15.56 / 26.67 & 20.00 / 30.00 & 51.00 / 66.27 & \textbf{78.00} / 87.80 & 41.14 / 52.68 & 1.000 & 0.260 & 0.600 / 0.712 / 1.045 \\
-None & 15.56 / 26.67 & 14.44 / 20.00 & \textbf{53.01 / 68.67} & 77.47 / 87.00 & 40.12 / 50.59 & 1.572 & 0.556 & 0.715 / 0.954 / 1.667 \\
-\bottomrule
-\end{tabular}
-\caption{Token-mass normalization ablation on DeepSeek-R1-Distill-Qwen-1.5B (training seed 42; $\lambda=0.5$, $\tau=1$, $c=2$). Benchmark and average entries are pass@1 / pass@3 in percent, with the average calculated equally across the four benchmarks. $\mathcal{M}$ is the corpus-wide token-mass ratio, $\mathrm{Std}(B_i)$ measures variation in per-trace budget ratios, and the final column reports percentiles of step weights. $^{\dagger}$Values for per-trace normalization follow analytically from the normalization constraint and were not separately recorded in the supplied summary.}
-\label{tab:normalization_ablation}
-\end{table*}
-
-As shown in Table~\ref{tab:normalization_ablation}, per-trace normalization achieves the highest average accuracy: 42.78\% pass@1 and 54.70\% pass@3, exceeding global normalization by 1.64 and 2.02 percentage points and no normalization by 2.66 and 4.11 points, respectively. Global normalization matches the overall corpus token mass ($\mathcal{M}=1.000$) but allows individual trace budgets to vary ($\mathrm{Std}(B_i)=0.260$), whereas per-trace normalization enforces $B_i=1$ for every trace by construction. Without mass normalization, the corpus-wide mass increases to 1.572 and the between-trace budget dispersion rises to 0.556. These results are consistent with the benefit of controlling supervision at the trace level rather than only in aggregate.
-
-The comparison with global normalization is particularly informative because both methods preserve the total corpus-wide loss-coefficient mass. In contrast, the no-normalization variant also changes the overall loss scale, so its lower accuracy cannot be attributed solely to the loss of per-trace budget preservation. Results are based on one training seed, and we do not infer statistical significance from these differences.
+On the 1.5B student, replacing the per-trace normalization of Eq.~\ref{eq:mass} by one over the whole corpus lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68, and removing it gives 40.12 / 50.59 (one training seed; Appendix~\ref{app:ablation}).
 
 \section{Conclusion}
 
@@ -706,33 +662,9 @@ The other steps are lowered only moderately, because the shrinkage of Eq.~\ref{e
 \section{Ablations}
 \label{app:ablation}
 
-
-We ablate the step-scoring signal,
-allocation strength, and token-mass
-normalization on the 1.5B student
-(Tables~\ref{tab:abl-score}--\ref{tab:abl-norm}).
-
-All arms start from the same checkpoint
-and share the training data, step
-segmentation, training recipe, and
-evaluation protocol of \S\ref{sec:setup}
-(training seed 42, one evaluation run).
-
-The step-score ablation compares uniform
-allocation, answer-gain allocation,
-predictability-based weighting of easy
-or hard steps, random assignment of
-answer gains, and a variant that keeps
-steps merely restating the gold answer
-at unit weight.
-
-The remaining ablations examine the
-shrinkage parameter $\lambda$,
-temperature $\tau$, and token-mass
-normalization.
-
-
-
+We ablate the step score, the allocation strength and the token-mass normalization on the 1.5B student (Tables~\ref{tab:abl-score}--\ref{tab:abl-norm}).
+All arms start from the same checkpoint and share the training data, step segmentation, training recipe and evaluation protocol of \S\ref{sec:setup} (training seed 42, one evaluation run); they differ only in the score fed to Eqs.~\ref{eq:z}--\ref{eq:weights}, in $\lambda$ and $\tau$, or in the normalization.
+The step-score ablation runs at $\lambda=0.5$, $\tau=2$ and compares uniform allocation, answer-gain allocation, predictability-based weighting of easy or hard steps (the frozen student's mean token log-probability of the step or its negative), random assignment of the gains within each trace, and a variant that keeps steps that only restate the gold answer (a \boxedtok{} answer with at most a short wrapper such as ``the final answer is'') at unit weight and allocates over the other steps.
 
 \begin{table*}[t]
   \centering
@@ -755,28 +687,28 @@ normalization.
     & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
     & p@1 & p@3 & p@1 & p@3 \\
     \midrule
-    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B}} \\
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, step score, $\lambda=0.5$, $\tau=2$}} \\
     Uniform allocation
-    & 16.67 & 26.67
-    & 17.78 & \textbf{30.00}
-    & 50.20 & 63.86
-    & \textbf{78.40} & 87.60
-    & 40.76 & 52.03 \\
+    & 15.56 & 20.00
+    & \textbf{21.11} & \textbf{33.33}
+    & 51.00 & 66.27
+    & 77.73 & 87.20
+    & 41.35 & 51.70 \\
     Answer-gain allocation
-    & \textbf{23.33} & \textbf{33.33}
-    & 17.78 & \textbf{30.00}
-    & 53.01 & 67.47
-    & 77.00 & 88.00
-    & 42.78 & \textbf{54.70} \\
+    & 14.44 & 20.00
+    & 18.89 & \textbf{33.33}
+    & 50.60 & 66.27
+    & \textbf{78.13} & 87.40
+    & 40.52 & 51.75 \\
     Predictability -- easy
-    & 20.00 & \textbf{33.33}
+    & \textbf{20.00} & \textbf{33.33}
     & 18.89 & 26.67
     & \textbf{55.02} & 68.67
     & 77.27 & 86.00
     & \textbf{42.79} & 53.67 \\
     Predictability -- hard
+    & \textbf{20.00} & 30.00
     & 20.00 & 30.00
-    & \textbf{20.00} & \textbf{30.00}
     & 50.60 & 66.27
     & 76.93 & 87.40
     & 41.88 & 53.42 \\
@@ -791,18 +723,11 @@ normalization.
     & 14.44 & 23.33
     & 52.21 & \textbf{69.88}
     & 77.60 & \textbf{88.40}
-    & 40.51 & 53.74 \\
+    & 40.51 & \textbf{53.74} \\
     \bottomrule
   \end{tabular}
   \end{threeparttable}
-  \caption{Ablation of the step score on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$, $\tau=1$, $c=2$). ALG denotes answer-gain allocation.
-Predictability-based methods up-weight easy or hard
-steps using the frozen student's mean token
-log-probability or its negative, respectively.
-Random assignment permutes answer gains within
-each trace, while ALG + no-answer upweight keeps
-steps that only restate the gold answer at unit
-weight.}
+  \caption{Ablation of the step score on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$, $\tau=2$, $c=2$). ALG denotes answer-gain allocation. Predictability-based methods up-weight easy or hard steps using the frozen student's mean token log-probability or its negative, respectively. Random assignment permutes answer gains within each trace, while ALG + no-answer upweight keeps steps that only restate the gold answer at unit weight.}
   \label{tab:abl-score}
 
   \medskip
@@ -826,22 +751,22 @@ weight.}
     \midrule
     \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, shrinkage $\lambda$, $\tau=2$}} \\
     ALG ($\lambda=0$)
-    & 16.67 & \textbf{26.67}
-    & 17.78 & 30.00
-    & 50.20 & 63.86
-    & 78.40 & 87.60
-    & 40.76 & 52.03 \\
+    & 15.56 & 20.00
+    & \textbf{21.11} & \textbf{33.33}
+    & 51.00 & \textbf{66.27}
+    & 77.73 & 87.20
+    & \textbf{41.35} & 51.70 \\
     ALG ($\lambda=0.5$)
-    & \textbf{18.15} & \textbf{26.67}
-    & \textbf{20.00} & \textbf{31.11}
-    & \textbf{53.68} & \textbf{66.67}
-    & 78.02 & \textbf{87.93}
-    & \textbf{42.46} & \textbf{53.09} \\
+    & 14.44 & 20.00
+    & 18.89 & \textbf{33.33}
+    & 50.60 & \textbf{66.27}
+    & 78.13 & 87.40
+    & 40.52 & \textbf{51.75} \\
     ALG ($\lambda=1$)
-    & 17.78 & 23.33
+    & \textbf{17.78} & \textbf{23.33}
     & 16.67 & 30.00
-    & 51.41 & 63.86
-    & \textbf{78.73} & 87.60
+    & \textbf{51.41} & 63.86
+    & \textbf{78.73} & \textbf{87.60}
     & 41.15 & 51.20 \\
     \bottomrule
   \end{tabular}
@@ -849,7 +774,6 @@ weight.}
   \caption{Ablation of the shrinkage $\lambda$ of Eq.~\ref{eq:weights} on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=2$). $\lambda=0$ recovers uniform SFT.}
   \label{tab:abl-lambda}
 \end{table*}
-
 
 \begin{table*}[t]
   \centering
@@ -876,15 +800,15 @@ weight.}
     ALG ($\tau=1$)
     & \textbf{23.33} & \textbf{33.33}
     & 17.78 & 30.00
-    & 53.01 & \textbf{67.47}
+    & \textbf{53.01} & \textbf{67.47}
     & 77.00 & 88.00
     & \textbf{42.78} & \textbf{54.70} \\
     ALG ($\tau=2$)
-    & 18.15 & 26.67
-    & \textbf{20.00} & \textbf{31.11}
-    & \textbf{53.68} & 66.67
-    & 78.02 & 87.93
-    & 42.46 & 53.09 \\
+    & 14.44 & 20.00
+    & \textbf{18.89} & \textbf{33.33}
+    & 50.60 & 66.27
+    & \textbf{78.13} & 87.40
+    & 40.52 & 51.75 \\
     ALG ($\tau=4$)
     & 18.89 & 23.33
     & 13.33 & 13.33
@@ -916,7 +840,7 @@ weight.}
     & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
     & p@1 & p@3 & p@1 & p@3 \\
     \midrule
-    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B}} \\
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, normalization, $\tau=1$, $\lambda=0.5$}} \\
     Per-trace (Eq.~\ref{eq:mass})
     & \textbf{23.33} & \textbf{33.33}
     & \textbf{17.78} & \textbf{30.00}
@@ -945,34 +869,54 @@ weight.}
 \paragraph{Allocation strength.}
 Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-tau} vary $\lambda$ and $\tau$.
 A sharper temperature gives the strongest arm: with $\tau=1$, answer-gain allocation reaches the highest pass@3 of all arms, 54.70 against 51.70 for uniform SFT, and 42.78 pass@1, level with the best, while a smoother temperature ($\tau=4$) gives the lowest pass@3.
-Full allocation ($\lambda=1$, 41.15 / 51.20) stays close to the default, so the results are not very sensitive to the shrinkage.
-Both settings concentrate the weight: the 10\% most up-weighted steps carry 29.7\% of the token-weighted mass at the default, 38.6\% with $\lambda=1$ and 39.5\% with $\tau=1$, against 24.9\% with $\tau=4$.
-
-At $\tau=2$, answer-gain allocation
-with $\lambda=0.5$ reaches
-42.46 pass@1 and 53.09 pass@3,
-compared with 40.76 and 52.03
-for uniform SFT.
+Full allocation ($\lambda=1$, 41.15 / 51.20) stays close to $\lambda=0.5$, so the results are not very sensitive to the shrinkage.
+Both settings concentrate the weight: the 10\% most up-weighted steps carry 29.7\% of the token-weighted mass at $\lambda=0.5$, $\tau=2$, 38.6\% with $\lambda=1$ and 39.5\% with $\tau=1$, against 24.9\% with $\tau=4$.
+At $\tau=2$, allocation matches uniform SFT on pass@3 (51.75 against 51.70) and is within one point on pass@1; two earlier runs of the same configuration and seed on another machine scored 42.31 and 42.74 pass@1, so differences of this size are within run-to-run variation, and more training seeds are needed to rank the arms.
 
 \paragraph{Normalization.}
-Normalizing the token mass within each trace matters (Table~\ref{tab:abl-norm}).
-At $\tau=1$, a single normalization over the whole corpus (e9) keeps the total weight of the data but lets the budget of each trace drift from uniform (standard deviation 0.26 across traces), and lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68.
-Without normalization (e10), the total weight grows by 57\%, trace budgets vary more (standard deviation 0.56), and the scores drop to 40.12 / 50.59, below uniform SFT.
-Keeping every trace's budget fixed is therefore part of what makes allocation work, not only a convenience.
+Our allocation preserves the response-token loss mass of each trace (Eq.~\ref{eq:budget}).
+To test this constraint, we compare it with \emph{global} normalization, which preserves the token mass only over the whole training corpus, and with \emph{no} mass normalization, which uses the unnormalized exponential scores.
+All three variants use the same answer gains, within-trace standardization and shrinkage ($\tau=1$, $\lambda=0.5$, $c=2$) and change only the normalization applied before shrinkage.
+Let $\ell_{ik}$, $r_{ik}$, and $w_{ik}$ denote the number of supervised tokens, exponential score, and final weight for step $k$ in trace $i$. The three alternatives define the pre-shrinkage weight $\hat w_{ik}$ as
+\begin{equation}
+\hat w_{ik}=
+\begin{cases}
+ r_{ik}\,\dfrac{\sum_j\ell_{ij}}{\sum_j\ell_{ij}r_{ij}}, & \text{per-trace (ours)},\\[7pt]
+ r_{ik}\,\dfrac{\sum_{i',j}\ell_{i'j}}{\sum_{i',j}\ell_{i'j}r_{i'j}}, & \text{global},\\[7pt]
+ r_{ik}, & \text{none}.
+\end{cases}
+\label{eq:normalization_variants}
+\end{equation}
+In each case, the final weight is $w_{ik}=(1-\lambda)+\lambda\hat w_{ik}$. We measure the supervision-budget ratio for trace $i$ as $B_i=\sum_k\ell_{ik}w_{ik}/\sum_k\ell_{ik}$ and the corpus-wide token-mass ratio as $\mathcal{M}=\sum_{i,k}\ell_{ik}w_{ik}/\sum_{i,k}\ell_{ik}$.
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{lccc}
+    \toprule
+    Normalization & $\mathcal{M}$ & $\mathrm{Std}(B_i)$ & $w$: P10 / P50 / P90 \\
+    \midrule
+    Per-trace (ours) & 1.000 & 0.000 & 0.595 / 0.761 / 1.233 \\
+    Global corpus & 1.000 & 0.260 & 0.600 / 0.712 / 1.045 \\
+    None & 1.572 & 0.556 & 0.715 / 0.954 / 1.667 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Weights of the normalization variants on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=1$, $\lambda=0.5$): corpus-wide token-mass ratio $\mathcal{M}$, standard deviation of the per-trace budget ratios $B_i$, and percentiles of the step weights $w_k$. The per-trace values of $\mathcal{M}$ and $\mathrm{Std}(B_i)$ hold by construction (Eq.~\ref{eq:budget}).}
+  \label{tab:norm-diag}
+\end{table}
+
+Global normalization matches the corpus token mass ($\mathcal{M}=1$) but lets trace budgets drift from uniform (standard deviation 0.26 across traces, Table~\ref{tab:norm-diag}), and lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68 (Table~\ref{tab:abl-norm}).
+Without normalization, the total weight grows by 57\%, trace budgets vary more (standard deviation 0.56), and the scores drop to 40.12 / 50.59, below uniform SFT.
+The comparison with global normalization is the more informative one, because both variants keep the corpus-wide loss mass, whereas removing normalization also changes the overall loss scale.
+Keeping every trace's budget fixed is therefore part of what makes allocation work, not only a convenience, although these differences come from one training seed.
 
 \paragraph{Score.}
-Table~\ref{tab:abl-score} compares step scores at the default $\lambda$ and $\tau$.
+Table~\ref{tab:abl-score} compares step scores at $\lambda=0.5$, $\tau=2$.
 Answer gain is not a proxy for how easy a step is: within a trace, its Spearman correlation with the step's mean log-probability has a median of $-0.02$ (interquartile range $-0.14$ to $0.10$), and the 10\% highest-scoring steps under the two scores overlap by a median of 17\%.
-Up-weighting easy steps (e2) is also strong on pass@1 (42.79) but below $\tau=1$ on pass@3 (53.67), and up-weighting hard steps (e3) gives 41.88 / 53.42.
-
-Keeping steps that merely restate the
-gold answer at unit weight yields
-40.51 pass@1 and 53.74 pass@3,
-compared with 42.78 and 54.70
-for answer-gain allocation. The
-restriction therefore reduces
-performance under the tested setting.
-Under every answer-gain setting (e1, e6--e8), 43\% of the 10\% most up-weighted steps contain a computation and 23\% the gold answer, against 28\% and 6.7\% of all steps, so $\lambda$ and $\tau$ change only how strongly these steps are up-weighted; permuting the gains (e4) removes this targeting.
+Up-weighting easy steps is also strong on pass@1 (42.79) but below $\tau=1$ on pass@3 (53.67), and up-weighting hard steps gives 41.88 / 53.42.
+Keeping steps that only restate the answer at uniform weight leaves pass@1 unchanged (40.51 against 40.52) and raises pass@3 from 51.75 to 53.74, so the method does not rely on up-weighting such steps.
+Under every answer-gain setting of Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-tau}, 43\% of the 10\% most up-weighted steps contain a computation and 23\% the gold answer, against 28\% and 6.7\% of all steps, so $\lambda$ and $\tau$ change only how strongly these steps are up-weighted; permuting the gains removes this targeting.
 
 \section{An Example Trace}
 \label{app:example}
