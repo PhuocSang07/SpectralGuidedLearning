@@ -91,7 +91,8 @@ Each step is scored by its \emph{answer-likelihood gain} (\emph{answer gain} for
 A step with high gain, which we call \emph{decisive}, is one that makes the answer accessible to the student, whether or not it is difficult for the student to predict \citep{xu2020usable}.
 We standardize the gains within each trace and turn them into soft weights that preserve the trace's total token weight, so no step is cut, every step keeps at least a fixed share of its uniform weight, and hard selection is a limiting case (Figure~\ref{fig:method}; Appendix~\ref{app:limit}).
 The scores are computed offline, without sampling, gradients or models other than the student, and because the weights act only on the loss they can be added to the trace sources and selective masks above.
-We evaluate the method under a shared protocol on three students: it improves on every compared method for DeepSeek-R1-Distill-Qwen-1.5B and for the LoRA-trained Qwen3-8B, but not for Qwen2.5-7B-Instruct.
+We study allocation after data adaptation: the training traces are the 966 student-adapted traces of P-ALIGN \citep{liu2026palign}, held fixed, and our primary comparison is P-ALIGN itself, which trains the same traces uniformly.
+Against it, allocation raises both pass@1 and pass@3 for DeepSeek-R1-Distill-Qwen-1.5B and for the LoRA-trained Qwen3-8B, and raises pass@3 but not pass@1 for Qwen2.5-7B-Instruct.
 
 \begin{figure*}[t]
   \centering
@@ -105,7 +106,7 @@ Our contributions are:
   \setlength\itemsep{0pt}
   \item \textbf{Answer-gain allocation for distillation.} We weight the steps of fixed traces by the frozen student's answer-likelihood gain, with gains standardized within each trace and weights normalized by token mass, so that every token stays supervised and every trace keeps its total weight. The scores need no sampling, gradients or step-level labels, and the weights compose with other trace sources and selective masks (\S\ref{sec:method}).
   \item \textbf{An analysis of selection and allocation.} We measure how much supervision a hard spectral gate removes from these traces and which steps answer gain up-weights, for each student (\S\ref{sec:analysis}).
-  \item \textbf{Results under a shared protocol.} We compare against selection and adaptation baselines on three students with the data, recipe and evaluation fixed, and state where the method does not help (\S\ref{sec:results}).
+  \item \textbf{Results on fixed adapted traces.} On three students and one evaluation protocol, we compare against uniform SFT of the same 966 traces (P-ALIGN) and against other allocation signals, report selection baselines trained on a different corpus (s1K-1.1) for context only, and state where the method does not help (\S\ref{sec:results}).
 \end{itemize}
 
 \section{Related Work}
@@ -129,7 +130,7 @@ All three edit the training traces, and their supervised stage weights every rem
 SGL \citep{fan2026sgl} scores each step by its spectral strength, its load on a low-rank consensus subspace of the loss gradients, keeps the smallest set of steps whose total strength reaches a preset share of the trace's total, and masks the loss of the rest.
 Segment-Selective SFT \citep{wang2026segattr} keeps the segments that carry most of the integrated-gradient attribution toward the answer (a 0.7 share) but whose attributions are not uniformly signed (consistency below 0.8), plus the first and last segments, with both thresholds set by search.
 Both decisions are binary: a step just below the threshold receives no gradient at all.
-On the traces we study, SGL's gate removes 41--49\% of response tokens depending on the student, including the step that writes the final answer in 37--70\% of traces, and SGL does not improve on P-ALIGN, which trains the same traces uniformly (\S\ref{sec:selection-analysis}).
+Applied to the adapted traces we study, SGL's gate would mask 41--49\% of response tokens depending on the student, including the step that writes the final answer in 37--70\% of traces (\S\ref{sec:selection-analysis}); this measures what the gate removes, not how SGL performs when trained on these traces.
 What survives the cut is again trained uniformly, so a restatement and the derivation of the answer weigh the same.
 The signals are also costly: SGL needs per-token gradients and an SVD per response, and Segment-Selective SFT integrated gradients with 50 interpolation steps per trace.
 EDIT \citep{dai2024edit} finds key steps by contrasting dual CoTs, KPOD \citep{feng2024kpod} learns token masks from an answer-prediction loss, Rho-1 \citep{lin2024rho1} keeps tokens with high excess loss against a reference model, and critical-token fine-tuning \citep{ruan2025criticaltoken} keeps tokens whose substitution flips correctness; they too decide what is trained and weight it uniformly.
@@ -173,7 +174,7 @@ Data-side methods select before training, by keeping, deleting or rewriting step
 The hard selectors in \S\ref{sec:related} set $M_k$ and keep $w_k=1$ on what they keep; soft reweighting methods such as DFT instead change the loss coefficient, usually per token rather than per step.
 
 \paragraph{Hard selection by a threshold.}
-SGL is a representative objective-side selector, and the one we test.
+SGL is a representative objective-side selector, and the one whose gate we apply to our traces (\S\ref{sec:selection-analysis}).
 It scores each step by its \emph{spectral strength}, the average leverage of the step's tokens on the dominant subspace of the response's per-token loss gradients (Appendix~\ref{app:sgl}), and sets $M_k=1$ for the smallest set of strongest steps whose total strength reaches a fraction $p$ of the trace's total; we use $p=0.95$, the energy level at which SGL truncates the gradient spectrum.
 Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, plus a consistency cut); in both, a step just below the threshold receives no gradient.
 
@@ -190,61 +191,62 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
   \small
   \setlength{\tabcolsep}{3.2pt}
   \resizebox{\textwidth}{!}{%
-  \begin{tabular}{lcccccccccc}
+  \begin{tabular}{llcccccccccc}
     \toprule
-    & \multicolumn{2}{c}{AIME25}
+    & & \multicolumn{2}{c}{AIME25}
     & \multicolumn{2}{c}{AIME24}
     & \multicolumn{2}{c}{AMC12}
     & \multicolumn{2}{c}{MATH500}
     & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){2-3}
-    \cmidrule(lr){4-5}
-    \cmidrule(lr){6-7}
-    \cmidrule(lr){8-9}
-    \cmidrule(lr){10-11}
-    Method & p@1 & p@3 & p@1 & p@3
+    \cmidrule(lr){3-4}
+    \cmidrule(lr){5-6}
+    \cmidrule(lr){7-8}
+    \cmidrule(lr){9-10}
+    \cmidrule(lr){11-12}
+    Method & Data & p@1 & p@3 & p@1 & p@3
            & p@1 & p@3 & p@1 & p@3
            & p@1 & p@3 \\
     \midrule
 
-    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, full fine-tuning}} \\
+    \multicolumn{12}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, full fine-tuning}} \\
 
-    Zero-shot
+    Zero-shot & --
     & 10.00 & 20.00
     & 15.56 & 33.33
     & 49.80 & 63.86
     & 72.33 & 81.80
     & 36.92 & 49.75 \\
 
-    SFT (long CoT)
+    SFT (long CoT) & s1K
     & 10.00 & 20.00
     & 15.56 & \textbf{30.00}
     & 44.58 & 61.45
     & 68.40 & 83.00
     & 34.63 & 48.61 \\
 
-    SGL \citep{fan2026sgl}
+    SGL \citep{fan2026sgl} & s1K
     & 16.67 & 23.33
     & \textbf{17.78} & \underline{23.33}
     & 48.59 & 59.04
     & 74.13 & 86.00
     & 39.29 & 47.93 \\
 
-    Segment-Selective SFT \citep{wang2026segattr}
+    Segment-Selective SFT \citep{wang2026segattr} & s1K
     & \underline{21.11} & \underline{30.00}
     & \underline{16.67} & \underline{23.33}
     & \underline{50.60} & \underline{65.06}
     & 74.87 & 84.60
     & \underline{40.81} & 50.75 \\
 
-    P-ALIGN \citep{liu2026palign}
+    \addlinespace[3pt]
+    P-ALIGN \citep{liu2026palign} & 966
     & 16.67 & 26.67
     & \textbf{17.78} & \textbf{30.00}
     & 50.20 & 63.86
     & \textbf{78.40} & \underline{87.60}
     & 40.76 & \underline{52.03} \\
 
-    Answer-gain allocation (ours)
+    Answer-gain allocation (ours) & 966
     & \textbf{23.33} & \textbf{33.33}
     & \textbf{17.78} & \textbf{30.00}
     & \textbf{53.01} & \textbf{67.47}
@@ -252,44 +254,45 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & \textbf{42.78} & \textbf{54.70} \\
 
     \midrule
-    \multicolumn{11}{l}{\textit{Qwen2.5-7B-Instruct, LoRA}} \\
+    \multicolumn{12}{l}{\textit{Qwen2.5-7B-Instruct, LoRA}} \\
 
-    Zero-shot
+    Zero-shot & --
     & 4.44 & 10.00
     & 8.89 & 13.33
     & 44.98 & 63.86
     & 74.67 & 85.20
     & 33.24 & 43.10 \\
 
-    SFT (long CoT)
+    SFT (long CoT) & s1K
     & \underline{12.20} & \underline{20.00}
     & 8.90 & \underline{20.00}
     & 34.90 & 48.20
     & 65.30 & 80.40
     & 30.30 & 42.10 \\
 
-    SGL \citep{fan2026sgl}
+    SGL \citep{fan2026sgl} & s1K
     & 2.50 & 7.50
     & 6.67 & 11.67
     & 30.72 & 46.39
     & 65.75 & 81.60
     & 26.41 & 36.79 \\
 
-    Segment-Selective SFT \citep{wang2026segattr}
+    Segment-Selective SFT \citep{wang2026segattr} & s1K
     & 6.67 & 13.33
     & \underline{12.22} & \textbf{23.33}
     & \textbf{42.57} & \textbf{65.06}
     & 66.20 & 81.40
     & 31.92 & \underline{45.78} \\
 
-    P-ALIGN \citep{liu2026palign}
+    \addlinespace[3pt]
+    P-ALIGN \citep{liu2026palign} & 966
     & \textbf{12.22} & \textbf{23.33}
     & \underline{12.22} & \underline{20.00}
     & 38.55 & 51.81
     & \textbf{71.87} & \underline{83.40}
     & \textbf{33.72} & 44.64 \\
 
-    Answer-gain allocation (ours)
+    Answer-gain allocation (ours) & 966
     & 11.11 & \textbf{23.33}
     & \textbf{13.33} & \underline{20.00}
     & \underline{39.36} & \underline{56.63}
@@ -297,44 +300,45 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & \underline{33.45} & \textbf{46.09} \\
 
     \midrule
-    \multicolumn{11}{l}{\textit{Qwen3-8B, LoRA}} \\
+    \multicolumn{12}{l}{\textit{Qwen3-8B, LoRA}} \\
 
-    Zero-shot
+    Zero-shot & --
     & 20.00 & 23.33
     & 22.22 & 33.33
     & 52.61 & 68.67
     & 77.00 & 84.80
     & 42.96 & 52.53 \\
 
-    SFT (long CoT)
+    SFT (long CoT) & s1K
     & 20.00 & 23.33
     & 22.22 & 33.33
     & 57.43 & 71.08
     & 81.50 & 89.80
     & 45.29 & 54.39 \\
 
-    SGL \citep{fan2026sgl}
+    SGL \citep{fan2026sgl} & s1K
     & 21.11 & 26.67
     & 23.33 & 33.33
     & 50.60 & 67.47
     & 81.20 & 89.00
     & 44.06 & 54.12 \\
 
-    Segment-Selective SFT \citep{wang2026segattr}
+    Segment-Selective SFT \citep{wang2026segattr} & s1K
     & \underline{22.22} & \textbf{33.33}
     & 22.22 & 33.33
     & 55.42 & 68.67
     & 80.33 & 89.40
     & 45.05 & 56.18 \\
 
-    P-ALIGN \citep{liu2026palign}
+    \addlinespace[3pt]
+    P-ALIGN \citep{liu2026palign} & 966
     & 21.11 & \underline{30.00}
     & \underline{30.00} & \underline{40.00}
     & \underline{60.64} & \textbf{73.49}
     & \underline{85.20} & \underline{91.80}
     & \underline{49.24} & \underline{58.82} \\
 
-    Answer-gain allocation (ours)
+    Answer-gain allocation (ours) & 966
     & \textbf{25.56} & \textbf{33.33}
     & \textbf{37.78} & \textbf{50.00}
     & \textbf{61.85} & \underline{72.29}
@@ -345,8 +349,14 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
   \end{tabular}}
   \caption{
     Results (\%) across four mathematical reasoning benchmarks
-    for three student models, using the same 966 training traces
-    and evaluation protocol.
+    for three student models under the evaluation protocol of
+    \S\ref{sec:setup}.
+    Data gives each row's training corpus: SFT, SGL and
+    Segment-Selective SFT are reference results trained on
+    s1K-1.1, whereas P-ALIGN and answer-gain allocation train on
+    the same 966 P-ALIGN-adapted traces.
+    The matched-data comparison is between these two rows;
+    the s1K-1.1 rows give context.
     The best and second-best distinct results among fine-tuning
     methods are highlighted in \textbf{bold} and
     \underline{underline}, respectively.
@@ -373,8 +383,11 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
 \end{table}
 
 \paragraph{Data.}
-We use the 966 public traces released by \citet{liu2026palign} (\texttt{palign\_sft\_qwen2.5-7b}) as a fixed testbed, because the baselines we compare were trained and evaluated on them under one protocol.
+We study allocation in a post-adaptation setting, where the training traces have already been constructed and are held fixed.
+We use the 966 public traces released by \citet{liu2026palign} (\texttt{palign\_sft\_qwen2.5-7b}), built from 966 of the 1,000 s1K-1.1 problems \citep{muennighoff2025s1}.
 Each response is a DeepSeek-R1 prefix, closed by an \eop{} marker, followed by a continuation written by Qwen2.5-7B \citep{qwen2024qwen25}; our method treats the marker as ordinary text and uses no other part of the pipeline that produced the traces.
+The responses therefore differ from the full DeepSeek-R1 traces of s1K-1.1 on which the SFT, SGL and Segment-Selective SFT baselines were trained.
+Our goal is not to compare ways of constructing training data, but to ask how supervision should be distributed across the steps of traces that are already fixed.
 The prefix holds 27\% of the 2.92M response tokens (3,022 per trace on average).
 We split responses into steps at sentence boundaries (a sentence-final punctuation mark or closing bracket followed by whitespace and a capital letter), which gives 47,532 steps (median 34 per trace).
 The three students' tokenizers give the same token and step counts.
@@ -399,7 +412,11 @@ We follow the shared protocol of \citet{liu2026palign}: vLLM, $n=3$ samples per 
 We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems), AIME25 (30), AMC12 (83) and MATH500 (500; \citealp{hendrycks2021math,lightman2024verify}), and their unweighted average.
 
 \paragraph{Compared methods.}
-The baseline rows come from the shared results table of each student: the zero-shot student, SFT on full long CoT, SGL, Segment-Selective SFT, and P-ALIGN, which is uniform SFT on these same traces in its original pipeline.
+The baseline rows come from the shared results table of each student and fall into two groups.
+The first, SFT on full long CoT, SGL and Segment-Selective SFT, was trained on s1K-1.1 rather than on the 966 adapted traces; these rows place our results among existing long-CoT distillation methods but are not controlled comparisons, because their training data differ.
+The primary comparison is P-ALIGN, which is uniform SFT on the same 966 traces in its original LlamaFactory-based pipeline; answer-gain allocation keeps these traces unchanged and modifies only the step-level loss weights.
+The two pipelines differ in implementation details (P-ALIGN separates the instruction from the question with a newline and decays the learning rate to 0), so this comparison matches data and evaluation but not every detail of training.
+The ablations in Appendix~\ref{app:ablation} vary only the step weights within our own pipeline, comparing answer gain with predictability-based and randomly permuted scores on the same traces.
 On Qwen2.5-7B-Instruct, P-ALIGN is our
 reproduction with LlamaFactory-based
 P-ALIGN training code (LoRA as above,
@@ -412,10 +429,12 @@ Our \textbf{answer gain} arm keeps every token and allocates supervision using $
 \label{sec:results}
 
 Table~\ref{tab:main} gives the results for all three students.
-On the 1.5B student, answer-gain allocation raises average pass@1 over P-ALIGN from 40.76 to 42.46 (+1.70) and pass@3 from 52.03 to 53.09 (+1.06); both are the highest among the rows for this student.
+Because SFT, SGL and Segment-Selective SFT were trained on s1K-1.1 rather than on the 966 adapted traces, their rows are reference points, not evidence for or against loss allocation.
+We therefore focus on the comparison with P-ALIGN, which trains the same traces uniformly.
+On the 1.5B student, answer-gain allocation raises average pass@1 over P-ALIGN from 40.76 to 42.78 (+2.02) and pass@3 from 52.03 to 54.70 (+2.67).
 
 \paragraph{Larger students.}
-On Qwen3-8B the gain is larger: answer-gain allocation raises average pass@1 over P-ALIGN from 49.24 to 53.07 (+3.83) and pass@3 from 58.82 to 62.41 (+3.59), again the highest among the rows for this student, with a higher pass@1 on all four benchmarks and a higher pass@3 on all but AMC12.
+On Qwen3-8B the gain is larger: answer-gain allocation raises average pass@1 over P-ALIGN from 49.24 to 53.07 (+3.83) and pass@3 from 58.82 to 62.41 (+3.59), with a higher pass@1 on all four benchmarks and a higher pass@3 on all but AMC12.
 On Qwen2.5-7B-Instruct, the results
 are mixed. Answer-gain allocation
 achieves 33.45 pass@1 and 46.09
@@ -424,9 +443,8 @@ pass@3, compared with 33.72 and
 trails P-ALIGN by 0.27 points in
 pass@1 but improves pass@3 by 1.45
 points. Its pass@1 remains close to
-the zero-shot result (33.24), while
-its pass@3 exceeds Segment-Selective
-SFT by 0.31 points.
+the zero-shot result (33.24).
+These results suggest that redistributing supervision across steps can add to what data adaptation provides, even after the traces have been adapted to a student.
 
 \section{Analysis}
 \label{sec:analysis}
@@ -434,12 +452,13 @@ SFT by 0.31 points.
 \subsection{Hard selection removes substantial supervision}
 \label{sec:selection-analysis}
 
-These traces have already been adapted to a student, and a second selection stage removes a large share of their supervision.
+These traces have already been adapted to a student, and applying the SGL gate as a second selection stage would remove a large share of their supervision.
 With $p=0.95$ the gate drops only 18\% of the 47,532 steps but 41\% of the 2.92M response tokens, because the long, low-leverage continuation steps fall below the threshold.
 It removes 20\% of the teacher prefix, 49\% of the continuation, and the step that writes the final \boxedtok{} in 362 of 966 traces (37\%).
-Under the spectral strengths of the larger students the same gate removes more of the response: 18\% of the steps, 44\% of the response tokens and the final \boxedtok{} step in 467 traces (48\%) for Qwen2.5-7B-Instruct, and 20\% of the steps, 49\% of the tokens (18\% of the prefix, 60\% of the continuation) and the final \boxedtok{} step in 672 traces (70\%) for Qwen3-8B; we did not train gated arms on these students.
-On the 1.5B student, SGL scores 39.29 / 47.93 pass@1 / pass@3, below P-ALIGN at 40.76 / 52.03 (Table~\ref{tab:main}).
-This does not isolate the gate as the cause, but the tested hard selector does not improve on P-ALIGN on these traces.
+Under the spectral strengths of the larger students the same gate removes more of the response: 18\% of the steps, 44\% of the response tokens and the final \boxedtok{} step in 467 traces (48\%) for Qwen2.5-7B-Instruct, and 20\% of the steps, 49\% of the tokens (18\% of the prefix, 60\% of the continuation) and the final \boxedtok{} step in 672 traces (70\%) for Qwen3-8B.
+Hard gating would thus remove a substantial share of the token-level supervision of the adapted traces, often including the final-answer step, which motivates allocation strategies that keep supervision over the full trace.
+This analysis characterizes the gate on the 966 adapted traces; it does not establish how SGL performs when trained on them, which we did not test.
+The SGL accuracy in Table~\ref{tab:main} comes from training on s1K-1.1 and is included only as a reference.
 
 \subsection{What answer gain rewards}
 \label{sec:what-gain}
@@ -494,9 +513,9 @@ The comparison with global normalization is particularly informative because bot
 \section{Conclusion}
 
 We allocated supervision across the steps of fixed long-CoT traces by the frozen student's answer-likelihood gain, keeping every token and each trace's total weight.
-On one set of 966 traces, it improved pass@1 over P-ALIGN by +1.70 on a 1.5B student and by +3.83 on a LoRA-trained Qwen3-8B; on Qwen2.5-7B-Instruct, it improves
-pass@3 but not pass@1 over P-ALIGN.
-Why it does not help Qwen2.5-7B-Instruct, and whether it holds across training seeds and other trace sources, remain open.
+On one fixed set of 966 student-adapted traces, it improved pass@1 over P-ALIGN, which trains the same traces uniformly, by +2.02 on a 1.5B student and by +3.83 on a LoRA-trained Qwen3-8B; on Qwen2.5-7B-Instruct, it improved pass@3 but not pass@1.
+Data adaptation decides which traces the student learns from; answer-gain allocation decides how the student's supervision is spread over the steps of those traces.
+Why the pass@1 gain vanishes on Qwen2.5-7B-Instruct, and whether the gains hold across training seeds and other trace sources, remain open.
 
 \section*{Limitations}
 
