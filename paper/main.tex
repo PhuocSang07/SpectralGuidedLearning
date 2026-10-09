@@ -191,62 +191,61 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
   \small
   \setlength{\tabcolsep}{3.2pt}
   \resizebox{\textwidth}{!}{%
-  \begin{tabular}{llcccccccccc}
+  \begin{tabular}{lcccccccccc}
     \toprule
-    & & \multicolumn{2}{c}{AIME25}
+    & \multicolumn{2}{c}{AIME25}
     & \multicolumn{2}{c}{AIME24}
     & \multicolumn{2}{c}{AMC12}
     & \multicolumn{2}{c}{MATH500}
     & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){3-4}
-    \cmidrule(lr){5-6}
-    \cmidrule(lr){7-8}
-    \cmidrule(lr){9-10}
-    \cmidrule(lr){11-12}
-    Method & Data & p@1 & p@3 & p@1 & p@3
+    \cmidrule(lr){2-3}
+    \cmidrule(lr){4-5}
+    \cmidrule(lr){6-7}
+    \cmidrule(lr){8-9}
+    \cmidrule(lr){10-11}
+    Method & p@1 & p@3 & p@1 & p@3
            & p@1 & p@3 & p@1 & p@3
            & p@1 & p@3 \\
     \midrule
 
-    \multicolumn{12}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, full fine-tuning}} \\
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, full fine-tuning}} \\
 
-    Zero-shot & --
+    Zero-shot
     & 10.00 & 20.00
     & 15.56 & 33.33
     & 49.80 & 63.86
     & 72.33 & 81.80
     & 36.92 & 49.75 \\
 
-    SFT (long CoT) & s1K
+    SFT (long CoT)
     & 10.00 & 20.00
     & 15.56 & \textbf{30.00}
     & 44.58 & 61.45
     & 68.40 & 83.00
     & 34.63 & 48.61 \\
 
-    SGL \citep{fan2026sgl} & s1K
+    SGL \citep{fan2026sgl}
     & 16.67 & 23.33
     & \textbf{17.78} & \underline{23.33}
     & 48.59 & 59.04
     & 74.13 & 86.00
     & 39.29 & 47.93 \\
 
-    Segment-Selective SFT \citep{wang2026segattr} & s1K
+    Segment-Selective SFT \citep{wang2026segattr}
     & \underline{21.11} & \underline{30.00}
     & \underline{16.67} & \underline{23.33}
     & \underline{50.60} & \underline{65.06}
     & 74.87 & 84.60
     & \underline{40.81} & 50.75 \\
 
-    \addlinespace[3pt]
-    P-ALIGN \citep{liu2026palign} & 966
+    P-ALIGN \citep{liu2026palign}
     & 16.67 & 26.67
     & \textbf{17.78} & \textbf{30.00}
     & 50.20 & 63.86
     & \textbf{78.40} & \underline{87.60}
     & 40.76 & \underline{52.03} \\
 
-    Answer-gain allocation (ours) & 966
+    Answer-gain allocation (ours)
     & \textbf{23.33} & \textbf{33.33}
     & \textbf{17.78} & \textbf{30.00}
     & \textbf{53.01} & \textbf{67.47}
@@ -254,45 +253,44 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & \textbf{42.78} & \textbf{54.70} \\
 
     \midrule
-    \multicolumn{12}{l}{\textit{Qwen2.5-7B-Instruct, LoRA}} \\
+    \multicolumn{11}{l}{\textit{Qwen2.5-7B-Instruct, LoRA}} \\
 
-    Zero-shot & --
+    Zero-shot
     & 4.44 & 10.00
     & 8.89 & 13.33
     & 44.98 & 63.86
     & 74.67 & 85.20
     & 33.24 & 43.10 \\
 
-    SFT (long CoT) & s1K
+    SFT (long CoT)
     & \underline{12.20} & \underline{20.00}
     & 8.90 & \underline{20.00}
     & 34.90 & 48.20
     & 65.30 & 80.40
     & 30.30 & 42.10 \\
 
-    SGL \citep{fan2026sgl} & s1K
+    SGL \citep{fan2026sgl}
     & 2.50 & 7.50
     & 6.67 & 11.67
     & 30.72 & 46.39
     & 65.75 & 81.60
     & 26.41 & 36.79 \\
 
-    Segment-Selective SFT \citep{wang2026segattr} & s1K
+    Segment-Selective SFT \citep{wang2026segattr}
     & 6.67 & 13.33
     & \underline{12.22} & \textbf{23.33}
     & \textbf{42.57} & \textbf{65.06}
     & 66.20 & 81.40
     & 31.92 & \underline{45.78} \\
 
-    \addlinespace[3pt]
-    P-ALIGN \citep{liu2026palign} & 966
+    P-ALIGN \citep{liu2026palign}
     & \textbf{12.22} & \textbf{23.33}
     & \underline{12.22} & \underline{20.00}
     & 38.55 & 51.81
     & \textbf{71.87} & \underline{83.40}
     & \textbf{33.72} & 44.64 \\
 
-    Answer-gain allocation (ours) & 966
+    Answer-gain allocation (ours)
     & 11.11 & \textbf{23.33}
     & \textbf{13.33} & \underline{20.00}
     & \underline{39.36} & \underline{56.63}
@@ -300,45 +298,44 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & \underline{33.45} & \textbf{46.09} \\
 
     \midrule
-    \multicolumn{12}{l}{\textit{Qwen3-8B, LoRA}} \\
+    \multicolumn{11}{l}{\textit{Qwen3-8B, LoRA}} \\
 
-    Zero-shot & --
+    Zero-shot
     & 20.00 & 23.33
     & 22.22 & 33.33
     & 52.61 & 68.67
     & 77.00 & 84.80
     & 42.96 & 52.53 \\
 
-    SFT (long CoT) & s1K
+    SFT (long CoT)
     & 20.00 & 23.33
     & 22.22 & 33.33
     & 57.43 & 71.08
     & 81.50 & 89.80
     & 45.29 & 54.39 \\
 
-    SGL \citep{fan2026sgl} & s1K
+    SGL \citep{fan2026sgl}
     & 21.11 & 26.67
     & 23.33 & 33.33
     & 50.60 & 67.47
     & 81.20 & 89.00
     & 44.06 & 54.12 \\
 
-    Segment-Selective SFT \citep{wang2026segattr} & s1K
+    Segment-Selective SFT \citep{wang2026segattr}
     & \underline{22.22} & \textbf{33.33}
     & 22.22 & 33.33
     & 55.42 & 68.67
     & 80.33 & 89.40
     & 45.05 & 56.18 \\
 
-    \addlinespace[3pt]
-    P-ALIGN \citep{liu2026palign} & 966
+    P-ALIGN \citep{liu2026palign}
     & 21.11 & \underline{30.00}
     & \underline{30.00} & \underline{40.00}
     & \underline{60.64} & \textbf{73.49}
     & \underline{85.20} & \underline{91.80}
     & \underline{49.24} & \underline{58.82} \\
 
-    Answer-gain allocation (ours) & 966
+    Answer-gain allocation (ours)
     & \textbf{25.56} & \textbf{33.33}
     & \textbf{37.78} & \textbf{50.00}
     & \textbf{61.85} & \underline{72.29}
@@ -350,13 +347,7 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
   \caption{
     Results (\%) across four mathematical reasoning benchmarks
     for three student models under the evaluation protocol of
-    \S\ref{sec:setup}.
-    Data gives each row's training corpus: SFT, SGL and
-    Segment-Selective SFT are reference results trained on
-    s1K-1.1, whereas P-ALIGN and answer-gain allocation train on
-    the same 966 P-ALIGN-adapted traces.
-    The matched-data comparison is between these two rows;
-    the s1K-1.1 rows give context.
+    \S\ref{sec:setup}, which also gives the training data of each row.
     The best and second-best distinct results among fine-tuning
     methods are highlighted in \textbf{bold} and
     \underline{underline}, respectively.
@@ -414,9 +405,8 @@ We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems
 \paragraph{Compared methods.}
 The baseline rows come from the shared results table of each student and fall into two groups.
 The first, SFT on full long CoT, SGL and Segment-Selective SFT, was trained on s1K-1.1 rather than on the 966 adapted traces; these rows place our results among existing long-CoT distillation methods but are not controlled comparisons, because their training data differ.
-The primary comparison is P-ALIGN, which is uniform SFT on the same 966 traces in its original LlamaFactory-based pipeline; answer-gain allocation keeps these traces unchanged and modifies only the step-level loss weights.
-The two pipelines differ in implementation details (P-ALIGN separates the instruction from the question with a newline and decays the learning rate to 0), so this comparison matches data and evaluation but not every detail of training.
-The ablations in Appendix~\ref{app:ablation} vary only the step weights within our own pipeline, comparing answer gain with predictability-based and randomly permuted scores on the same traces.
+The primary comparison is P-ALIGN, which is uniform SFT on the same 966 traces in its original pipeline; answer-gain allocation keeps these traces unchanged and instead reweights the loss across their steps.
+The ablations in Appendix~\ref{app:ablation} vary only the step weights, comparing answer gain with predictability-based and randomly permuted scores on the same traces.
 On Qwen2.5-7B-Instruct, P-ALIGN is our
 reproduction with LlamaFactory-based
 P-ALIGN training code (LoRA as above,
