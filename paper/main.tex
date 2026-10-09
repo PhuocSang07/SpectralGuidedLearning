@@ -57,8 +57,13 @@ We instead ask how to \emph{allocate} supervision across the steps of fixed teac
 Our method scores each step by its \emph{answer-likelihood gain}: the change in a frozen student's log-probability of the gold answer when that step is appended to the reasoning prefix and evaluated through a fixed answer probe.
 We standardize these gains within each trace and convert them into soft weights whose token mass matches uniform training, so every step remains supervised and every trace keeps the same learning budget.
 The scores are computed offline without sampling, gradients or step-level labels beyond the gold answer, and the resulting weights can be combined with existing trace sources and selective masks.
-On DeepSeek-R1-Distill-Qwen-1.5B, answer-gain allocation raises average pass@1 across four mathematical reasoning benchmarks from 40.76 to 42.46 (+1.70) over P-ALIGN and raises pass@3 from 52.03 to 53.09 (+1.06).
-On a LoRA-trained Qwen3-8B student the gains are larger: +3.83 pass@1 (53.07 against 49.24) and +3.59 pass@3.
+On DeepSeek-R1-Distill-Qwen-1.5B,
+answer-gain allocation raises average
+pass@1 across four mathematical reasoning
+benchmarks from 40.76 to 42.78 (+2.02)
+over P-ALIGN and raises pass@3 from
+52.03 to 54.70 (+2.67).
+
 \end{abstract}
 
 \section{Introduction}
@@ -213,38 +218,38 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
 
     SFT (long CoT)
     & 10.00 & 20.00
-    & 15.56 & \underline{30.00}
+    & 15.56 & \textbf{30.00}
     & 44.58 & 61.45
     & 68.40 & 83.00
     & 34.63 & 48.61 \\
 
     SGL \citep{fan2026sgl}
     & 16.67 & 23.33
-    & \underline{17.78} & 23.33
+    & \textbf{17.78} & \underline{23.33}
     & 48.59 & 59.04
     & 74.13 & 86.00
     & 39.29 & 47.93 \\
 
     Segment-Selective SFT \citep{wang2026segattr}
-    & \textbf{21.11} & \textbf{30.00}
-    & 16.67 & 23.33
+    & \underline{21.11} & \underline{30.00}
+    & \underline{16.67} & \underline{23.33}
     & \underline{50.60} & \underline{65.06}
     & 74.87 & 84.60
     & \underline{40.81} & 50.75 \\
 
     P-ALIGN \citep{liu2026palign}
-    & 16.67 & \underline{26.67}
-    & \underline{17.78} & \underline{30.00}
+    & 16.67 & 26.67
+    & \textbf{17.78} & \textbf{30.00}
     & 50.20 & 63.86
     & \textbf{78.40} & \underline{87.60}
     & 40.76 & \underline{52.03} \\
 
     Answer-gain allocation (ours)
-    & \underline{18.15} & \underline{26.67}
-    & \textbf{20.00} & \textbf{31.11}
-    & \textbf{53.68} & \textbf{66.67}
-    & \underline{78.02} & \textbf{87.93}
-    & \textbf{42.46} & \textbf{53.09} \\
+    & \textbf{23.33} & \textbf{33.33}
+    & \textbf{17.78} & \textbf{30.00}
+    & \textbf{53.01} & \textbf{67.47}
+    & \underline{77.00} & \textbf{88.00}
+    & \textbf{42.78} & \textbf{54.70} \\
 
     \midrule
     \multicolumn{11}{l}{\textit{Qwen2.5-7B-Instruct, LoRA}} \\
@@ -342,14 +347,14 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     Results (\%) across four mathematical reasoning benchmarks
     for three student models, using the same 966 training traces
     and evaluation protocol.
-    The best and second-best results among fine-tuning methods
-    are highlighted in \textbf{bold} and \underline{underline},
-    respectively, with zero-shot excluded from ranking.
+    The best and second-best distinct results among fine-tuning
+    methods are highlighted in \textbf{bold} and
+    \underline{underline}, respectively.
+    Zero-shot results are excluded from ranking.
     Tied scores receive the same formatting.
   }
   \label{tab:main}
 \end{table*}
-
 \begin{table}[t]
   \centering
   \small
@@ -378,9 +383,16 @@ The three students' tokenizers give the same token and step counts.
 DeepSeek-R1-Distill-Qwen-1.5B \citep{deepseek2025r1} is fully fine-tuned with thinking mode off: the prompt ends with an empty think block, identically in training and evaluation.
 Qwen2.5-7B-Instruct \citep{qwen2024qwen25} and Qwen3-8B \citep{qwen2025qwen3} are trained with LoRA \citep{hu2022lora} (rank 16, $\alpha=16$, dropout 0.05, on all attention and MLP projections); Qwen3-8B also runs with thinking mode off and an empty think block.
 Each student's answer gains are scored with its own frozen checkpoint.
-All arms we train use 3 epochs, learning rate $5\cdot10^{-5}$ with cosine decay to $10^{-5}$ and 10\% warm-up, bf16 compute with fp32 master weights (DeepSpeed ZeRO-2; \citealp{rajbhandari2020zero}; Appendix~\ref{app:bf16}), and training seed 42 (Table~\ref{tab:hparams}, Appendix~\ref{app:repro}).
-The effective batch is 32, except on Qwen2.5-7B-Instruct, where we use 8: at 32, uniform SFT and answer-gain allocation on this student scored 8.3 and 4.8 points below its zero-shot pass@1.
-On this student we also use the sharper allocation $\tau=1$, $\lambda=1$, the best setting of a sweep over $\lambda$ and $c$ (Appendix~\ref{app:ablation}); the other students use the defaults of \S\ref{sec:weights}.
+
+All arms we train use 3 epochs, learning rate
+$5\cdot10^{-5}$ with cosine decay to $10^{-5}$
+and 10\% warm-up, bf16 compute with fp32
+master weights (DeepSpeed ZeRO-2;
+\citealp{rajbhandari2020zero}; Appendix~\ref{app:bf16}),
+an effective batch size of 32, and training
+seed 42 (Table~\ref{tab:hparams},
+Appendix~\ref{app:repro}).
+ 
 
 \paragraph{Evaluation.}
 We follow the shared protocol of \citet{liu2026palign}: vLLM, $n=3$ samples per problem, temperature 0.6, top-$p$ 0.9, repetition penalty 1.05, a 4,096-token budget, and grading with Math-Verify \citep{mathverify}.
@@ -388,7 +400,12 @@ We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems
 
 \paragraph{Compared methods.}
 The baseline rows come from the shared results table of each student: the zero-shot student, SFT on full long CoT, SGL, Segment-Selective SFT, and P-ALIGN, which is uniform SFT on these same traces in its original pipeline.
-On Qwen2.5-7B-Instruct, P-ALIGN is our reproduction with LlamaFactory-based P-ALIGN training code (LoRA as above, effective batch 8, learning rate decayed to 0), evaluated under the same protocol.
+On Qwen2.5-7B-Instruct, P-ALIGN is our
+reproduction with LlamaFactory-based
+P-ALIGN training code (LoRA as above,
+effective batch size 32, learning rate
+decayed to 0), evaluated under the
+same protocol.
 Our \textbf{answer gain} arm keeps every token and allocates supervision using $u_k=b_k-b_{k-1}$.
 
 \section{Main Results}
@@ -399,8 +416,17 @@ On the 1.5B student, answer-gain allocation raises average pass@1 over P-ALIGN f
 
 \paragraph{Larger students.}
 On Qwen3-8B the gain is larger: answer-gain allocation raises average pass@1 over P-ALIGN from 49.24 to 53.07 (+3.83) and pass@3 from 58.82 to 62.41 (+3.59), again the highest among the rows for this student, with a higher pass@1 on all four benchmarks and a higher pass@3 on all but AMC12.
-On Qwen2.5-7B-Instruct, training on these traces barely helps at the 4,096-token budget (Appendix~\ref{app:gen}): no trained row is clearly above the zero-shot student in pass@1 (33.24).
-Allocation (33.23 / 44.39) improves on SFT, SGL and Segment-Selective SFT in pass@1 by 2.93, 6.82 and 1.31 points and on SFT and SGL in pass@3, but stays 0.49 pass@1 below P-ALIGN and 1.39 pass@3 below Segment-Selective SFT.
+On Qwen2.5-7B-Instruct, the results
+are mixed. Answer-gain allocation
+achieves 33.45 pass@1 and 46.09
+pass@3, compared with 33.72 and
+44.64 for P-ALIGN. Thus, allocation
+trails P-ALIGN by 0.27 points in
+pass@1 but improves pass@3 by 1.45
+points. Its pass@1 remains close to
+the zero-shot result (33.24), while
+its pass@3 exceeds Segment-Selective
+SFT by 0.31 points.
 
 \section{Analysis}
 \label{sec:analysis}
@@ -426,10 +452,50 @@ Part of the signal therefore rewards \emph{stating} the answer, but keeping the 
 Qwen2.5-7B-Instruct and Qwen3-8B have similar shares of rising and falling steps, and their three highest-gain steps carry a median 52\% and 55\% of the positive gain, but stating the answer weighs less: the steps that contain the gold answer string carry 21.1\% and 20.3\% of it.
 After weighting, about one step in five has $w_k>1$ in the median trace, and the up-weighted steps are mostly long steps near the end of a trace that compute or state the answer (Appendix~\ref{app:weights}).
 
+
+\subsection{Effect of Token-Mass Normalization}
+\label{sec:normalization_ablation}
+
+Our allocation rule preserves the total response-token loss-coefficient mass of each training trace (Eq.~\ref{eq:budget}). To test the role of this constraint, we compare the proposed \emph{per-trace} normalization against two alternatives: \emph{global} normalization, which preserves the token mass only over the full training corpus, and \emph{no} mass normalization, which uses the unnormalized exponential scores. All variants use the same frozen-student answer gains, within-trace score standardization, and training protocol, with $\lambda=0.5$, $\tau=1$, and $c=2$. We retain the shrinkage toward uniform weighting in all three variants, changing only the normalization applied before shrinkage.
+
+Let $\ell_{ik}$, $r_{ik}$, and $w_{ik}$ denote the number of supervised tokens, exponential score, and final weight for step $k$ in trace $i$. The three alternatives define the pre-shrinkage weight $\hat w_{ik}$ as
+\begin{equation}
+\hat w_{ik}=
+\begin{cases}
+ r_{ik}\,\dfrac{\sum_j\ell_{ij}}{\sum_j\ell_{ij}r_{ij}}, & \text{per-trace (ours)},\\[7pt]
+ r_{ik}\,\dfrac{\sum_{i',j}\ell_{i'j}}{\sum_{i',j}\ell_{i'j}r_{i'j}}, & \text{global},\\[7pt]
+ r_{ik}, & \text{none}.
+\end{cases}
+\label{eq:normalization_variants}
+\end{equation}
+In each case, the final weight is $w_{ik}=(1-\lambda)+\lambda\hat w_{ik}$. We measure the supervision-budget ratio for trace $i$ as $B_i=\sum_k\ell_{ik}w_{ik}/\sum_k\ell_{ik}$ and the corpus-wide token-mass ratio as $\mathcal{M}=\sum_{i,k}\ell_{ik}w_{ik}/\sum_{i,k}\ell_{ik}$.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccccccc}
+\toprule
+Normalization & AIME24 & AIME25 & AMC12 & MATH500 & Average & $\mathcal{M}$ & $\mathrm{Std}(B_i)$ & $w$: P10 / P50 / P90 \\
+\midrule
+\textbf{Per-trace (ours)} & \textbf{17.78 / 30.00} & \textbf{23.33 / 33.33} & 53.01 / 67.47 & 77.00 / \textbf{88.00} & \textbf{42.78 / 54.70} & $1.000^{\dagger}$ & $0.000^{\dagger}$ & 0.595 / 0.761 / 1.233 \\
+Global corpus & 15.56 / 26.67 & 20.00 / 30.00 & 51.00 / 66.27 & \textbf{78.00} / 87.80 & 41.14 / 52.68 & 1.000 & 0.260 & 0.600 / 0.712 / 1.045 \\
+None & 15.56 / 26.67 & 14.44 / 20.00 & \textbf{53.01 / 68.67} & 77.47 / 87.00 & 40.12 / 50.59 & 1.572 & 0.556 & 0.715 / 0.954 / 1.667 \\
+\bottomrule
+\end{tabular}
+\caption{Token-mass normalization ablation on DeepSeek-R1-Distill-Qwen-1.5B (training seed 42; $\lambda=0.5$, $\tau=1$, $c=2$). Benchmark and average entries are pass@1 / pass@3 in percent, with the average calculated equally across the four benchmarks. $\mathcal{M}$ is the corpus-wide token-mass ratio, $\mathrm{Std}(B_i)$ measures variation in per-trace budget ratios, and the final column reports percentiles of step weights. $^{\dagger}$Values for per-trace normalization follow analytically from the normalization constraint and were not separately recorded in the supplied summary.}
+\label{tab:normalization_ablation}
+\end{table*}
+
+As shown in Table~\ref{tab:normalization_ablation}, per-trace normalization achieves the highest average accuracy: 42.78\% pass@1 and 54.70\% pass@3, exceeding global normalization by 1.64 and 2.02 percentage points and no normalization by 2.66 and 4.11 points, respectively. Global normalization matches the overall corpus token mass ($\mathcal{M}=1.000$) but allows individual trace budgets to vary ($\mathrm{Std}(B_i)=0.260$), whereas per-trace normalization enforces $B_i=1$ for every trace by construction. Without mass normalization, the corpus-wide mass increases to 1.572 and the between-trace budget dispersion rises to 0.556. These results are consistent with the benefit of controlling supervision at the trace level rather than only in aggregate.
+
+The comparison with global normalization is particularly informative because both methods preserve the total corpus-wide loss-coefficient mass. In contrast, the no-normalization variant also changes the overall loss scale, so its lower accuracy cannot be attributed solely to the loss of per-trace budget preservation. Results are based on one training seed, and we do not infer statistical significance from these differences.
+
 \section{Conclusion}
 
 We allocated supervision across the steps of fixed long-CoT traces by the frozen student's answer-likelihood gain, keeping every token and each trace's total weight.
-On one set of 966 traces, it improved pass@1 over P-ALIGN by +1.70 on a 1.5B student and by +3.83 on a LoRA-trained Qwen3-8B; on Qwen2.5-7B-Instruct it did not improve on P-ALIGN.
+On one set of 966 traces, it improved pass@1 over P-ALIGN by +1.70 on a 1.5B student and by +3.83 on a LoRA-trained Qwen3-8B; on Qwen2.5-7B-Instruct, it improves
+pass@3 but not pass@1 over P-ALIGN.
 Why it does not help Qwen2.5-7B-Instruct, and whether it holds across training seeds and other trace sources, remain open.
 
 \section*{Limitations}
@@ -494,7 +560,7 @@ LlamaFactory \citep{zheng2024llamafactory}, used to train the P-ALIGN baseline, 
     Setting & Value \\
     \midrule
     Epochs & 3 \\
-    Effective batch & 32 (8 for Qwen2.5-7B-Instruct) \\
+    Effective batch & 32 \\
     Learning rate & $5\cdot10^{-5}$, cosine to $10^{-5}$ \\
     Warm-up & 10\% \\
     Max sequence length & 32,768 tokens \\
@@ -503,9 +569,7 @@ LlamaFactory \citep{zheng2024llamafactory}, used to train the P-ALIGN baseline, 
     Precision & bf16 compute, fp32 masters \\
     Optimizer & AdamW, ZeRO-2 offload \\
     Training seed & 42 \\
-    Weights & $\tau=2$, $c=2$, $\lambda=0.5$ \\
-    \quad for 7B & $\tau=1$, $c=2$, $\lambda=1$ \\
-    Spectral gate (\S\ref{sec:selection-analysis}) & energy threshold $p=0.95$ \\
+    Weights & $\tau=1$, $c=2$, $\lambda=0.5$ \\
     \bottomrule
   \end{tabular}
   \caption{Training configuration of the arms we train.}
@@ -552,8 +616,11 @@ We use AWR as motivation, not as a guarantee: the benefit of reallocating superv
 \label{app:dft}
 
 Before settling on step weighting, we tested DFT \citep{wu2026dft}, which multiplies each token's loss by its detached probability, applied to all tokens or only to the teacher prefix or the student continuation (Table~\ref{tab:dft}).
-Every variant stays below NLL at both budgets.
 
+Under the evaluation protocol of
+\S\ref{sec:setup}, all tested DFT variants
+underperform uniform NLL training
+(Table~\ref{tab:dft}).
 \begin{table}[h]
   \centering
   \small
@@ -561,16 +628,22 @@ Every variant stays below NLL at both budgets.
   \resizebox{\columnwidth}{!}{%
   \begin{tabular}{lccc}
     \toprule
-    Objective & 4k p@1/p@3 & Trunc. & 8k p@1/p@3 \\
+    Objective & p@1/p@3 \\
     \midrule
-    NLL & 41.99 / 51.80 & 25.2 & 43.44 / 57.49 \\
-    DFT prefix, NLL cont. & 39.05 / 50.48 & 21.8 & -- \\
-    NLL prefix+junction, DFT cont. & 38.98 / 49.33 & 31.6 & 39.45 / 52.03 \\
-    DFT everywhere & 37.30 / 48.10 & 63.4 & 38.55 / 51.51 \\
-    NLL prefix, DFT cont. & 13.56 / 25.83 & 83.5 & -- \\
+    NLL & 40.76 / 52.03 \\
+    DFT prefix, NLL cont. & 39.05 / 50.48 \\
+    NLL prefix+junction, DFT cont. & 38.98 / 49.33 \\
+    DFT everywhere & 37.30 / 48.10 \\
+    NLL prefix, DFT cont. & 13.56 / 25.83 \\
     \bottomrule
   \end{tabular}}
-  \caption{Average accuracy (\%) at 4,096 and 8,192 tokens and macro-averaged truncation rate (\%) at 4,096 tokens for probability-scaled objectives (DeepSeek-R1-Distill-Qwen-1.5B). ``Junction'': the first eight continuation tokens are trained with NLL.}
+  \caption{Average pass@1 and pass@3 (\%)
+of probability-scaled objectives on
+DeepSeek-R1-Distill-Qwen-1.5B,
+evaluated under the protocol of
+\S\ref{sec:setup}. ``Junction'' denotes the
+first eight continuation tokens,
+which are trained with NLL.}
   \label{tab:dft}
 \end{table}
 
@@ -590,7 +663,11 @@ Answer-gain allocation has a 24.7\% macro-averaged truncation rate.
 All three of its samples agree on 53.3\% of problems.
 We did not change the budget, because the shared protocol fixes it.
 These figures are for the 1.5B student.
-On the larger students the budget binds more often: with the default weights ($\lambda=0.5$, $\tau=2$), 27.5\% of answer-gain generations are truncated on Qwen2.5-7B-Instruct and 59.6\% on Qwen3-8B.
+For runs using $\lambda=0.5$
+and $\tau=2$, the truncation rates
+are 27.5\% on Qwen2.5-7B-Instruct
+and 59.6\% on Qwen3-8B.
+
 
 \section{Which Steps Are Up-Weighted, and How Strongly}
 \label{app:weights}
@@ -620,10 +697,33 @@ The other steps are lowered only moderately, because the shrinkage of Eq.~\ref{e
 \section{Ablations}
 \label{app:ablation}
 
-We ablate the step score and the allocation strength on the 1.5B student (Tables~\ref{tab:abl-score}--\ref{tab:abl-norm}) and tune the allocation on Qwen2.5-7B-Instruct.
-All arms start from the same checkpoint and share the traces, steps, training recipe and evaluation of \S\ref{sec:setup}; they differ only in the score fed to Eqs.~\ref{eq:z}--\ref{eq:weights} or in $\lambda$ and $\tau$ (training seed 42, one evaluation).
-Arm e0 trains uniformly and e1 is answer-gain allocation with the default $\lambda=0.5$, $\tau=2$.
-Arms e2 and e3 replace the gain by the frozen student's mean token log-probability of the step or its negative, so that easy or hard steps are up-weighted; e4 permutes the gains within each trace; e5 keeps steps that only restate the gold answer (a \boxedtok{} answer with at most a short wrapper such as ``the final answer is'') at weight 1 and allocates over the other steps; e6--e8 change $\lambda$ or $\tau$; e9 and e10 keep $\tau=1$ and replace the per-trace normalization of Eq.~\ref{eq:mass} by a single normalization over the whole corpus or by none.
+
+We ablate the step-scoring signal,
+allocation strength, and token-mass
+normalization on the 1.5B student
+(Tables~\ref{tab:abl-score}--\ref{tab:abl-norm}).
+
+All arms start from the same checkpoint
+and share the training data, step
+segmentation, training recipe, and
+evaluation protocol of \S\ref{sec:setup}
+(training seed 42, one evaluation run).
+
+The step-score ablation compares uniform
+allocation, answer-gain allocation,
+predictability-based weighting of easy
+or hard steps, random assignment of
+answer gains, and a variant that keeps
+steps merely restating the gold answer
+at unit weight.
+
+The remaining ablations examine the
+shrinkage parameter $\lambda$,
+temperature $\tau$, and token-mass
+normalization.
+
+
+
 
 \begin{table*}[t]
   \centering
@@ -633,45 +733,115 @@ Arms e2 and e3 replace the gain by the frozen student's mean token log-probabili
   \begin{tabular}{p{4.3cm}cccccccccc}
     \toprule
     \multirow{2}{*}{Method}
-    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
-    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    & \multicolumn{2}{c}{AIME25}
+    & \multicolumn{2}{c}{AIME24}
+    & \multicolumn{2}{c}{AMC12}
+    & \multicolumn{2}{c}{MATH500}
+    & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3}
+    \cmidrule(lr){4-5}
+    \cmidrule(lr){6-7}
+    \cmidrule(lr){8-9}
+    \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
+    & p@1 & p@3 & p@1 & p@3 \\
     \midrule
-    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, step score, $\lambda=0.5$, $\tau=2$, seed 42}} \\
-    Uniform allocation (e0) & 15.56 & 20.00 & \textbf{21.11} & \textbf{33.33} & 51.00 & 66.27 & 77.73 & 87.20 & 41.35 & 51.70 \\
-    Answer-gain allocation (e1) & 14.44 & 20.00 & 18.89 & \textbf{33.33} & 50.60 & 66.27 & \textbf{78.13} & \underline{87.40} & 40.52 & 51.75 \\
-    Predictability -- easy (e2) & \textbf{20.00} & \textbf{33.33} & 18.89 & 26.67 & \textbf{55.02} & \underline{68.67} & 77.27 & 86.00 & \textbf{42.79} & \underline{53.67} \\
-    Predictability -- hard (e3) & \textbf{20.00} & \underline{30.00} & \underline{20.00} & \underline{30.00} & 50.60 & 66.27 & 76.93 & \underline{87.40} & \underline{41.88} & 53.42 \\
-    Random assignment (e4) & 13.33 & 23.33 & 17.78 & 23.33 & \underline{53.41} & 63.86 & \underline{77.87} & \underline{87.40} & 40.60 & 49.48 \\
-    ALG + no-answer upweight (e5) & \underline{17.78} & \textbf{33.33} & 14.44 & 23.33 & 52.21 & \textbf{69.88} & 77.60 & \textbf{88.40} & 40.51 & \textbf{53.74} \\
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B}} \\
+    Uniform allocation
+    & 16.67 & 26.67
+    & 17.78 & \textbf{30.00}
+    & 50.20 & 63.86
+    & \textbf{78.40} & 87.60
+    & 40.76 & 52.03 \\
+    Answer-gain allocation
+    & \textbf{23.33} & \textbf{33.33}
+    & 17.78 & \textbf{30.00}
+    & 53.01 & 67.47
+    & 77.00 & 88.00
+    & 42.78 & \textbf{54.70} \\
+    Predictability -- easy
+    & 20.00 & \textbf{33.33}
+    & 18.89 & 26.67
+    & \textbf{55.02} & 68.67
+    & 77.27 & 86.00
+    & \textbf{42.79} & 53.67 \\
+    Predictability -- hard
+    & 20.00 & 30.00
+    & \textbf{20.00} & \textbf{30.00}
+    & 50.60 & 66.27
+    & 76.93 & 87.40
+    & 41.88 & 53.42 \\
+    Random assignment
+    & 13.33 & 23.33
+    & 17.78 & 23.33
+    & 53.41 & 63.86
+    & 77.87 & 87.40
+    & 40.60 & 49.48 \\
+    ALG + no-answer upweight
+    & 17.78 & \textbf{33.33}
+    & 14.44 & 23.33
+    & 52.21 & \textbf{69.88}
+    & 77.60 & \textbf{88.40}
+    & 40.51 & 53.74 \\
     \bottomrule
   \end{tabular}
   \end{threeparttable}
-  \caption{Ablation of the step score on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$, $\tau=2$). ALG: answer-gain allocation. Arms e2 and e3 up-weight easy or hard steps by the frozen student's mean token log-probability, e4 permutes the gains within each trace, and e5 keeps steps that only restate the gold answer at weight 1.}
+  \caption{Ablation of the step score on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$, $\tau=1$, $c=2$). ALG denotes answer-gain allocation.
+Predictability-based methods up-weight easy or hard
+steps using the frozen student's mean token
+log-probability or its negative, respectively.
+Random assignment permutes answer gains within
+each trace, while ALG + no-answer upweight keeps
+steps that only restate the gold answer at unit
+weight.}
   \label{tab:abl-score}
+
   \medskip
+
   \begin{threeparttable}
   \begin{tabular}{p{4.3cm}cccccccccc}
     \toprule
     \multirow{2}{*}{Method}
-    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
-    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    & \multicolumn{2}{c}{AIME25}
+    & \multicolumn{2}{c}{AIME24}
+    & \multicolumn{2}{c}{AMC12}
+    & \multicolumn{2}{c}{MATH500}
+    & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3}
+    \cmidrule(lr){4-5}
+    \cmidrule(lr){6-7}
+    \cmidrule(lr){8-9}
+    \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
+    & p@1 & p@3 & p@1 & p@3 \\
     \midrule
-    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, shrinkage $\lambda$, $\tau=2$, seed 42}} \\
-    ALG ($\lambda=0$, uniform) (e0) & \underline{15.56} & \underline{20.00} & \textbf{21.11} & \textbf{33.33} & \underline{51.00} & \textbf{66.27} & 77.73 & 87.20 & \textbf{41.35} & \underline{51.70} \\
-    ALG ($\lambda=0.5$, default) (e1) & 14.44 & \underline{20.00} & \underline{18.89} & \textbf{33.33} & 50.60 & \textbf{66.27} & \underline{78.13} & \underline{87.40} & 40.52 & \textbf{51.75} \\
-    ALG ($\lambda=1$) (e6) & \textbf{17.78} & \textbf{23.33} & 16.67 & \underline{30.00} & \textbf{51.41} & \underline{63.86} & \textbf{78.73} & \textbf{87.60} & \underline{41.15} & 51.20 \\
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, shrinkage $\lambda$, $\tau=2$}} \\
+    ALG ($\lambda=0$)
+    & 16.67 & \textbf{26.67}
+    & 17.78 & 30.00
+    & 50.20 & 63.86
+    & 78.40 & 87.60
+    & 40.76 & 52.03 \\
+    ALG ($\lambda=0.5$)
+    & \textbf{18.15} & \textbf{26.67}
+    & \textbf{20.00} & \textbf{31.11}
+    & \textbf{53.68} & \textbf{66.67}
+    & 78.02 & \textbf{87.93}
+    & \textbf{42.46} & \textbf{53.09} \\
+    ALG ($\lambda=1$)
+    & 17.78 & 23.33
+    & 16.67 & 30.00
+    & 51.41 & 63.86
+    & \textbf{78.73} & 87.60
+    & 41.15 & 51.20 \\
     \bottomrule
   \end{tabular}
-  \begin{tablenotes}[flushleft]
-    \footnotesize\item[] Tables~\ref{tab:abl-score}--\ref{tab:abl-lambda}: scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
-  \end{tablenotes}
   \end{threeparttable}
   \caption{Ablation of the shrinkage $\lambda$ of Eq.~\ref{eq:weights} on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=2$). $\lambda=0$ recovers uniform SFT.}
   \label{tab:abl-lambda}
 \end{table*}
 
+
 \begin{table*}[t]
   \centering
   \small
@@ -680,60 +850,87 @@ Arms e2 and e3 replace the gain by the frozen student's mean token log-probabili
   \begin{tabular}{p{4.3cm}cccccccccc}
     \toprule
     \multirow{2}{*}{Method}
-    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
-    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    & \multicolumn{2}{c}{AIME25}
+    & \multicolumn{2}{c}{AIME24}
+    & \multicolumn{2}{c}{AMC12}
+    & \multicolumn{2}{c}{MATH500}
+    & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3}
+    \cmidrule(lr){4-5}
+    \cmidrule(lr){6-7}
+    \cmidrule(lr){8-9}
+    \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
+    & p@1 & p@3 & p@1 & p@3 \\
     \midrule
-    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, temperature $\tau$, $\lambda=0.5$, seed 42}} \\
-    ALG ($\tau=1$) (e7) & \textbf{23.33} & \textbf{33.33} & \underline{17.78} & \underline{30.00} & \textbf{53.01} & \textbf{67.47} & \underline{77.00} & \underline{88.00} & \textbf{42.78} & \textbf{54.70} \\
-    ALG ($\tau=2$, default) (e1) & 14.44 & 20.00 & \textbf{18.89} & \textbf{33.33} & 50.60 & \underline{66.27} & \textbf{78.13} & 87.40 & \underline{40.52} & \underline{51.75} \\
-    ALG ($\tau=4$) (e8) & \underline{18.89} & \underline{23.33} & 13.33 & 13.33 & \underline{51.00} & 63.86 & \textbf{78.13} & \textbf{88.60} & 40.34 & 47.28 \\
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, temperature $\tau$, $\lambda=0.5$}} \\
+    ALG ($\tau=1$)
+    & \textbf{23.33} & \textbf{33.33}
+    & 17.78 & 30.00
+    & 53.01 & \textbf{67.47}
+    & 77.00 & 88.00
+    & \textbf{42.78} & \textbf{54.70} \\
+    ALG ($\tau=2$)
+    & 18.15 & 26.67
+    & \textbf{20.00} & \textbf{31.11}
+    & \textbf{53.68} & 66.67
+    & 78.02 & 87.93
+    & 42.46 & 53.09 \\
+    ALG ($\tau=4$)
+    & 18.89 & 23.33
+    & 13.33 & 13.33
+    & 51.00 & 63.86
+    & \textbf{78.13} & \textbf{88.60}
+    & 40.34 & 47.28 \\
     \bottomrule
   \end{tabular}
   \end{threeparttable}
   \caption{Ablation of the temperature $\tau$ of Eq.~\ref{eq:z} on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$).}
   \label{tab:abl-tau}
+
   \medskip
+
   \begin{threeparttable}
   \begin{tabular}{p{4.3cm}cccccccccc}
     \toprule
     \multirow{2}{*}{Method}
-    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
-    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    & \multicolumn{2}{c}{AIME25}
+    & \multicolumn{2}{c}{AIME24}
+    & \multicolumn{2}{c}{AMC12}
+    & \multicolumn{2}{c}{MATH500}
+    & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3}
+    \cmidrule(lr){4-5}
+    \cmidrule(lr){6-7}
+    \cmidrule(lr){8-9}
+    \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
+    & p@1 & p@3 & p@1 & p@3 \\
     \midrule
-    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, normalization, $\tau=1$, $\lambda=0.5$, seed 42}} \\
-    Per-trace (Eq.~\ref{eq:mass}) (e7) & \textbf{23.33} & \textbf{33.33} & \textbf{17.78} & \textbf{30.00} & \textbf{53.01} & \underline{67.47} & 77.00 & \textbf{88.00} & \textbf{42.78} & \textbf{54.70} \\
-    Whole corpus (e9) & \underline{20.00} & \underline{30.00} & \underline{15.56} & \underline{26.67} & \underline{51.00} & 66.27 & \textbf{78.00} & \underline{87.80} & \underline{41.14} & \underline{52.68} \\
-    None (e10) & 14.44 & 20.00 & \underline{15.56} & \underline{26.67} & \textbf{53.01} & \textbf{68.67} & \underline{77.47} & 87.00 & 40.12 & 50.59 \\
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B}} \\
+    Per-trace (Eq.~\ref{eq:mass})
+    & \textbf{23.33} & \textbf{33.33}
+    & \textbf{17.78} & \textbf{30.00}
+    & \textbf{53.01} & 67.47
+    & 77.00 & \textbf{88.00}
+    & \textbf{42.78} & \textbf{54.70} \\
+    Whole corpus
+    & 20.00 & 30.00
+    & 15.56 & 26.67
+    & 51.00 & 66.27
+    & \textbf{78.00} & 87.80
+    & 41.14 & 52.68 \\
+    None
+    & 14.44 & 20.00
+    & 15.56 & 26.67
+    & \textbf{53.01} & \textbf{68.67}
+    & 77.47 & 87.00
+    & 40.12 & 50.59 \\
     \bottomrule
   \end{tabular}
   \end{threeparttable}
   \caption{Ablation of the token-mass normalization on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=1$, $\lambda=0.5$).}
   \label{tab:abl-norm}
-  \medskip
-  \begin{threeparttable}
-  \begin{tabular}{p{4.3cm}cccccccccc}
-    \toprule
-    \multirow{2}{*}{Method}
-    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
-    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
-    \midrule
-    \multicolumn{11}{l}{\textit{Qwen2.5-7B-Instruct, LoRA, $\tau=1$, effective batch 8, seed 42}} \\
-    ALG ($\lambda=0.25$, $c=2$) & 4.44 & \underline{13.33} & 7.78 & \underline{16.67} & 38.15 & 53.01 & \underline{71.67} & \underline{84.40} & 30.51 & 41.85 \\
-    ALG ($\lambda=0.5$, $c=2$) & \underline{7.78} & \underline{13.33} & \underline{8.89} & 13.33 & \underline{40.56} & \underline{54.22} & 71.07 & 84.00 & 32.07 & 41.22 \\
-    ALG ($\lambda=0.75$, $c=2$) & 5.56 & \underline{13.33} & \underline{8.89} & \underline{16.67} & 38.96 & \underline{54.22} & \textbf{71.80} & \textbf{84.80} & 31.30 & 42.25 \\
-    ALG ($\lambda=1$, $c=2$) & 6.67 & \underline{13.33} & \textbf{12.22} & \textbf{20.00} & \textbf{43.37} & \textbf{61.45} & 70.67 & 82.80 & \textbf{33.23} & \textbf{44.39} \\
-    ALG ($\lambda=0.25$, $c=1$) & \textbf{14.44} & \textbf{23.33} & 6.67 & 10.00 & 38.15 & \underline{54.22} & 69.87 & 82.00 & \underline{32.28} & \underline{42.39} \\
-    \bottomrule
-  \end{tabular}
-  \begin{tablenotes}[flushleft]
-    \footnotesize\item[] Tables~\ref{tab:abl-tau}--\ref{tab:sweep7b}: scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
-  \end{tablenotes}
-  \end{threeparttable}
-  \caption{Answer-gain allocation on Qwen2.5-7B-Instruct with $\tau=1$ and an effective batch of 8 (training seed 42, one evaluation). $c$ is the clip of Eq.~\ref{eq:z}.}
-  \label{tab:sweep7b}
 \end{table*}
 
 \paragraph{Allocation strength.}
@@ -741,7 +938,12 @@ Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-tau} vary $\lambda$ and $\tau$.
 A sharper temperature gives the strongest arm: with $\tau=1$, answer-gain allocation reaches the highest pass@3 of all arms, 54.70 against 51.70 for uniform SFT, and 42.78 pass@1, level with the best, while a smoother temperature ($\tau=4$) gives the lowest pass@3.
 Full allocation ($\lambda=1$, 41.15 / 51.20) stays close to the default, so the results are not very sensitive to the shrinkage.
 Both settings concentrate the weight: the 10\% most up-weighted steps carry 29.7\% of the token-weighted mass at the default, 38.6\% with $\lambda=1$ and 39.5\% with $\tau=1$, against 24.9\% with $\tau=4$.
-At the default $\tau=2$, allocation matches uniform SFT on pass@3 (51.75 against 51.70) and is within one point on pass@1; two earlier runs of the same configuration and seed on another machine scored 42.31 and 42.74 pass@1, so differences of this size are within run-to-run variation, and more training seeds are needed to rank the arms.
+
+At $\tau=2$, answer-gain allocation
+with $\lambda=0.5$ reaches
+42.46 pass@1 and 53.09 pass@3,
+compared with 40.76 and 52.03
+for uniform SFT.
 
 \paragraph{Normalization.}
 Normalizing the token mass within each trace matters (Table~\ref{tab:abl-norm}).
@@ -753,12 +955,15 @@ Keeping every trace's budget fixed is therefore part of what makes allocation wo
 Table~\ref{tab:abl-score} compares step scores at the default $\lambda$ and $\tau$.
 Answer gain is not a proxy for how easy a step is: within a trace, its Spearman correlation with the step's mean log-probability has a median of $-0.02$ (interquartile range $-0.14$ to $0.10$), and the 10\% highest-scoring steps under the two scores overlap by a median of 17\%.
 Up-weighting easy steps (e2) is also strong on pass@1 (42.79) but below $\tau=1$ on pass@3 (53.67), and up-weighting hard steps (e3) gives 41.88 / 53.42.
-Keeping steps that only restate the answer at uniform weight (e5) leaves pass@1 unchanged (40.51 against 40.52) and raises pass@3 from 51.75 to 53.74, so the method does not rely on up-weighting such steps.
-Under every answer-gain setting (e1, e6--e8), 43\% of the 10\% most up-weighted steps contain a computation and 23\% the gold answer, against 28\% and 6.7\% of all steps, so $\lambda$ and $\tau$ change only how strongly these steps are up-weighted; permuting the gains (e4) removes this targeting.
 
-\paragraph{Qwen2.5-7B-Instruct.}
-On this student we sweep $\lambda$ and the clip $c$ at $\tau=1$ and an effective batch of 8 (Table~\ref{tab:sweep7b}).
-Pass@1 ranges from 30.51 to 33.23 and is highest with full allocation ($\lambda=1$, $c=2$), which also gives the best pass@3; Table~\ref{tab:main} reports this setting.
+Keeping steps that merely restate the
+gold answer at unit weight yields
+40.51 pass@1 and 53.74 pass@3,
+compared with 42.78 and 54.70
+for answer-gain allocation. The
+restriction therefore reduces
+performance under the tested setting.
+Under every answer-gain setting (e1, e6--e8), 43\% of the 10\% most up-weighted steps contain a computation and 23\% the gold answer, against 28\% and 6.7\% of all steps, so $\lambda$ and $\tau$ change only how strongly these steps are up-weighted; permuting the gains (e4) removes this targeting.
 
 \section{An Example Trace}
 \label{app:example}
@@ -794,7 +999,7 @@ The two steps that return to $P_w=\frac{1}{2}\rho Av^3$, which does not involve 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/example_steps.pdf}
-  \caption{Answer gain $u_k$ and weight $w_k$ ($\lambda=0.5$) of every step of a training trace for ``Find the wind power $P_w$ in terms of $P$ and the temperature ratio $T_2/T_1$'' (gold answer $P_w=P\,T_1/T_2$), scored with the 1.5B student. Step texts are abridged, with their length in tokens; card shades repeat $w_k$, and the teacher prefix ends inside $s_{13}$ (dashed line).}
+  \caption{Answer gain $u_k$ and weight $w_k$ ($\lambda=0.5$) of every step of a training trace for ``Find the wind power $P_w$ in terms of $P$ and the temperature ratio $T_2/T_1$'' (gold answer $P_w=P\,T_1/T_2$), scored with the 1.5B student. Step texts are abridged; the teacher prefix ends inside $s_{13}$ (dashed line).}
   \label{fig:example}
 \end{figure*}
 

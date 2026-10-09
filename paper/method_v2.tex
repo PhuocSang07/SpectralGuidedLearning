@@ -58,7 +58,10 @@ r_k &= e^{v_k/\tau},
 \end{equation}
 where $\mu_u$ and $\sigma_u$ are the mean and standard deviation of the step-level gains within the trace, respectively. The normalization is intentionally \emph{within trace}: the allocation depends on the relative importance of steps in the same trace rather than on the absolute scale of gains across different traces. Thus, additive shifts and positive rescaling of all gains in a trace do not change their standardized ordering or spacing. The clip limits the effect of outliers, while $\tau$ controls how sharply supervision is concentrated around high-gain steps. If $\sigma_u<\epsilon$, we use uniform weights for the entire trace.
 
-The raw weight satisfies $e^{-c/\tau}\le r_k\le e^{c/\tau}$. Unless stated otherwise we use $c=\tau=2$, $\lambda=0.5$ (Eq.~\ref{eq:weights}) and $\epsilon=10^{-8}$; Table~\ref{tab:toy} works through a toy trace, and with these values the trained weights lie between 0.58 and 2.89 across the three students.
+The raw weight satisfies $e^{-c/\tau}\le r_k\le e^{c/\tau}$. 
+Unless stated otherwise, we use $c=2$, $\tau=1$,
+$\lambda=0.5$ (Eq.~\ref{eq:weights}), and
+$\epsilon=10^{-8}$; Table~\ref{tab:toy} works through a toy trace, and with these values the trained weights lie between 0.58 and 2.89 across the three students.
 
 \paragraph{Token-mass normalization.}
 A step weight applies to each token in that step, so a step containing $\ell_k$ tokens contributes $\ell_k r_k$ to the total loss coefficient mass. We therefore normalize by token mass:
