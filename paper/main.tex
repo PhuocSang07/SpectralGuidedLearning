@@ -35,6 +35,7 @@
 \usepackage{multirow}
 \usepackage{xcolor}
 \usepackage{array}
+\usepackage{threeparttable}
 
 \newcommand{\boxedtok}{\texttt{\textbackslash boxed\{\}}}
 \newcommand{\eop}{\texttt{<End\_of\_Prefix>}}
@@ -614,59 +615,137 @@ The other steps are lowered only moderately, because the shrinkage of Eq.~\ref{e
 \section{Ablations}
 \label{app:ablation}
 
-We ablate the step score and the allocation strength on the 1.5B student (Table~\ref{tab:ablation}) and tune the allocation on Qwen2.5-7B-Instruct.
+We ablate the step score and the allocation strength on the 1.5B student (Tables~\ref{tab:abl-score}--\ref{tab:abl-norm}) and tune the allocation on Qwen2.5-7B-Instruct.
 All arms start from the same checkpoint and share the traces, steps, training recipe and evaluation of \S\ref{sec:setup}; they differ only in the score fed to Eqs.~\ref{eq:z}--\ref{eq:weights} or in $\lambda$ and $\tau$ (training seed 42, one evaluation).
-E0 trains uniformly and E1 is answer-gain allocation with the default $\lambda=0.5$, $\tau=2$.
-E2 and E3 replace the gain by the frozen student's mean token log-probability of the step or its negative, so that easy or hard steps are up-weighted; E4 permutes the gains within each trace; E5 keeps steps that only restate the gold answer (a \boxedtok{} answer with at most a short wrapper such as ``the final answer is'') at weight 1 and allocates over the other steps; E6--E8 change $\lambda$ or $\tau$; E9 and E10 keep $\tau=1$ and replace the per-trace normalization of Eq.~\ref{eq:mass} by a single normalization over the whole corpus or by none.
+Arm e0 trains uniformly and e1 is answer-gain allocation with the default $\lambda=0.5$, $\tau=2$.
+Arms e2 and e3 replace the gain by the frozen student's mean token log-probability of the step or its negative, so that easy or hard steps are up-weighted; e4 permutes the gains within each trace; e5 keeps steps that only restate the gold answer (a \boxedtok{} answer with at most a short wrapper such as ``the final answer is'') at weight 1 and allocates over the other steps; e6--e8 change $\lambda$ or $\tau$; e9 and e10 keep $\tau=1$ and replace the per-trace normalization of Eq.~\ref{eq:mass} by a single normalization over the whole corpus or by none.
 
-\begin{table}[h]
+\begin{table*}[t]
   \centering
   \small
-  \setlength{\tabcolsep}{2.4pt}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{lcccccc}
+  \setlength{\tabcolsep}{4pt}
+  \begin{threeparttable}
+  \begin{tabular}{lcccccccccc}
     \toprule
-    & AIME25 & AIME24 & AMC12 & MATH500 & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){6-7}
-    Arm & p@1 & p@1 & p@1 & p@1 & p@1 & p@3 \\
+    \multirow{2}{*}{Method}
+    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
     \midrule
-    E0 Uniform SFT & 15.56 & 21.11 & 51.00 & 77.73 & 41.35 & 51.70 \\
-    \midrule
-    E1 Answer gain (ours) & 14.44 & 18.89 & 50.60 & 78.13 & 40.52 & 51.75 \\
-    E2 Predictability, easy & 20.00 & 18.89 & 55.02 & 77.27 & \textbf{42.79} & 53.67 \\
-    E3 Predictability, hard & 20.00 & 20.00 & 50.60 & 76.93 & 41.88 & 53.42 \\
-    E4 Random assignment & 13.33 & 17.78 & 53.41 & 77.87 & 40.60 & 49.48 \\
-    E5 No answer upweight & 17.78 & 14.44 & 52.21 & 77.60 & 40.51 & 53.74 \\
-    \midrule
-    E6 $\lambda=1$ & 17.78 & 16.67 & 51.41 & 78.73 & 41.15 & 51.20 \\
-    E7 $\tau=1$ & 23.33 & 17.78 & 53.01 & 77.00 & 42.78 & \textbf{54.70} \\
-    E8 $\tau=4$ & 18.89 & 13.33 & 51.00 & 78.13 & 40.34 & 47.28 \\
-    \midrule
-    E9 $\tau=1$, corpus norm. & -- & -- & -- & -- & 41.14 & 52.68 \\
-    E10 $\tau=1$, no norm. & -- & -- & -- & -- & 40.12 & 50.59 \\
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, step score, $\lambda=0.5$, $\tau=2$, seed 42}} \\
+    Uniform allocation (e0) & 15.56 & 20.00 & \textbf{21.11} & \textbf{33.33} & 51.00 & 66.27 & 77.73 & 87.20 & 41.35 & 51.70 \\
+    Answer-gain allocation (e1) & 14.44 & 20.00 & 18.89 & \textbf{33.33} & 50.60 & 66.27 & \textbf{78.13} & \underline{87.40} & 40.52 & 51.75 \\
+    Predictability -- easy (e2) & \textbf{20.00} & \textbf{33.33} & 18.89 & 26.67 & \textbf{55.02} & \underline{68.67} & 77.27 & 86.00 & \textbf{42.79} & \underline{53.67} \\
+    Predictability -- hard (e3) & \textbf{20.00} & \underline{30.00} & \underline{20.00} & \underline{30.00} & 50.60 & 66.27 & 76.93 & \underline{87.40} & \underline{41.88} & 53.42 \\
+    Random assignment (e4) & 13.33 & 23.33 & 17.78 & 23.33 & \underline{53.41} & 63.86 & \underline{77.87} & \underline{87.40} & 40.60 & 49.48 \\
+    ALG + no-answer upweight (e5) & \underline{17.78} & \textbf{33.33} & 14.44 & 23.33 & 52.21 & \textbf{69.88} & 77.60 & \textbf{88.40} & 40.51 & \textbf{53.74} \\
     \bottomrule
-  \end{tabular}}
-  \caption{Ablations on DeepSeek-R1-Distill-Qwen-1.5B (\%; training seed 42, one evaluation). Best average in bold; -- marks per-benchmark scores we did not record.}
-  \label{tab:ablation}
-\end{table}
+  \end{tabular}
+  \begin{tablenotes}[flushleft]
+    \footnotesize\item[] Scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
+  \end{tablenotes}
+  \end{threeparttable}
+  \caption{Ablation of the step score on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$, $\tau=2$). ALG: answer-gain allocation. Arms e2 and e3 up-weight easy or hard steps by the frozen student's mean token log-probability, e4 permutes the gains within each trace, and e5 keeps steps that only restate the gold answer at weight 1.}
+  \label{tab:abl-score}
+\end{table*}
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{threeparttable}
+  \begin{tabular}{lcccccccccc}
+    \toprule
+    \multirow{2}{*}{Method}
+    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    \midrule
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, shrinkage $\lambda$, $\tau=2$, seed 42}} \\
+    ALG ($\lambda=0$, uniform) (e0) & \underline{15.56} & \underline{20.00} & \textbf{21.11} & \textbf{33.33} & \underline{51.00} & \textbf{66.27} & 77.73 & 87.20 & \textbf{41.35} & \underline{51.70} \\
+    ALG ($\lambda=0.5$, default) (e1) & 14.44 & \underline{20.00} & \underline{18.89} & \textbf{33.33} & 50.60 & \textbf{66.27} & \underline{78.13} & \underline{87.40} & 40.52 & \textbf{51.75} \\
+    ALG ($\lambda=1$) (e6) & \textbf{17.78} & \textbf{23.33} & 16.67 & \underline{30.00} & \textbf{51.41} & \underline{63.86} & \textbf{78.73} & \textbf{87.60} & \underline{41.15} & 51.20 \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}[flushleft]
+    \footnotesize\item[] Scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
+  \end{tablenotes}
+  \end{threeparttable}
+  \caption{Ablation of the shrinkage $\lambda$ of Eq.~\ref{eq:weights} on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=2$). $\lambda=0$ recovers uniform SFT.}
+  \label{tab:abl-lambda}
+\end{table*}
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{threeparttable}
+  \begin{tabular}{lcccccccccc}
+    \toprule
+    \multirow{2}{*}{Method}
+    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    \midrule
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, temperature $\tau$, $\lambda=0.5$, seed 42}} \\
+    ALG ($\tau=1$) (e7) & \textbf{23.33} & \textbf{33.33} & \underline{17.78} & \underline{23.33} & \textbf{53.01} & \textbf{67.47} & \underline{77.00} & \underline{88.00} & \textbf{42.78} & \textbf{54.70} \\
+    ALG ($\tau=2$, default) (e1) & 14.44 & 20.00 & \textbf{18.89} & \textbf{33.33} & 50.60 & \underline{66.27} & \textbf{78.13} & 87.40 & \underline{40.52} & \underline{51.75} \\
+    ALG ($\tau=4$) (e8) & \underline{18.89} & \underline{23.33} & 13.33 & 13.33 & \underline{51.00} & 63.86 & \textbf{78.13} & \textbf{88.60} & 40.34 & 47.28 \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}[flushleft]
+    \footnotesize\item[] Scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
+  \end{tablenotes}
+  \end{threeparttable}
+  \caption{Ablation of the temperature $\tau$ of Eq.~\ref{eq:z} on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$).}
+  \label{tab:abl-tau}
+\end{table*}
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{threeparttable}
+  \begin{tabular}{lcccccccccc}
+    \toprule
+    \multirow{2}{*}{Method}
+    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    \midrule
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, normalization, $\tau=1$, $\lambda=0.5$, seed 42}} \\
+    Per-trace normalization (Eq.~\ref{eq:mass}) (e7) & 23.33 & 33.33 & 17.78 & 23.33 & 53.01 & 67.47 & 77.00 & 88.00 & \textbf{42.78} & \textbf{54.70} \\
+    Corpus normalization (e9) & -- & -- & -- & -- & -- & -- & -- & -- & \underline{41.14} & \underline{52.68} \\
+    No normalization (e10) & -- & -- & -- & -- & -- & -- & -- & -- & 40.12 & 50.59 \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}[flushleft]
+    \footnotesize\item[] Scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
+  \end{tablenotes}
+  \end{threeparttable}
+  \caption{Ablation of the token-mass normalization on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=1$, $\lambda=0.5$). -- marks per-benchmark scores we did not record.}
+  \label{tab:abl-norm}
+\end{table*}
 
 \paragraph{Allocation strength.}
+Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-tau} vary $\lambda$ and $\tau$.
 A sharper temperature gives the strongest arm: with $\tau=1$, answer-gain allocation reaches the highest pass@3 of all arms, 54.70 against 51.70 for uniform SFT, and 42.78 pass@1, level with the best, while a smoother temperature ($\tau=4$) gives the lowest pass@3.
 Full allocation ($\lambda=1$, 41.15 / 51.20) stays close to the default, so the results are not very sensitive to the shrinkage.
 Both settings concentrate the weight: the 10\% most up-weighted steps carry 29.7\% of the token-weighted mass at the default, 38.6\% with $\lambda=1$ and 39.5\% with $\tau=1$, against 24.9\% with $\tau=4$.
 At the default $\tau=2$, allocation matches uniform SFT on pass@3 (51.75 against 51.70) and is within one point on pass@1; two earlier runs of the same configuration and seed on another machine scored 42.31 and 42.74 pass@1, so differences of this size are within run-to-run variation, and more training seeds are needed to rank the arms.
 
 \paragraph{Normalization.}
-Normalizing the token mass within each trace matters.
-At $\tau=1$, a single normalization over the whole corpus (E9) keeps the total weight of the data but lets the budget of each trace drift from uniform (standard deviation 0.26 across traces), and lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68.
-Without normalization (E10), the total weight grows by 57\%, trace budgets vary more (standard deviation 0.56), and the scores drop to 40.12 / 50.59, below uniform SFT.
+Normalizing the token mass within each trace matters (Table~\ref{tab:abl-norm}).
+At $\tau=1$, a single normalization over the whole corpus (e9) keeps the total weight of the data but lets the budget of each trace drift from uniform (standard deviation 0.26 across traces), and lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68.
+Without normalization (e10), the total weight grows by 57\%, trace budgets vary more (standard deviation 0.56), and the scores drop to 40.12 / 50.59, below uniform SFT.
 Keeping every trace's budget fixed is therefore part of what makes allocation work, not only a convenience.
 
 \paragraph{Score.}
+Table~\ref{tab:abl-score} compares step scores at the default $\lambda$ and $\tau$.
 Answer gain is not a proxy for how easy a step is: within a trace, its Spearman correlation with the step's mean log-probability has a median of $-0.02$ (interquartile range $-0.14$ to $0.10$), and the 10\% highest-scoring steps under the two scores overlap by a median of 17\%.
-Up-weighting easy steps (E2) is also strong on pass@1 (42.79) but below $\tau=1$ on pass@3 (53.67), and up-weighting hard steps (E3) gives 41.88 / 53.42.
-Keeping steps that only restate the answer at uniform weight (E5) leaves pass@1 unchanged (40.51 against 40.52) and raises pass@3 from 51.75 to 53.74, so the method does not rely on up-weighting such steps.
-Under every answer-gain setting (E1, E6--E8), 43\% of the 10\% most up-weighted steps contain a computation and 23\% the gold answer, against 28\% and 6.7\% of all steps, so $\lambda$ and $\tau$ change only how strongly these steps are up-weighted; permuting the gains (E4) removes this targeting.
+Up-weighting easy steps (e2) is also strong on pass@1 (42.79) but below $\tau=1$ on pass@3 (53.67), and up-weighting hard steps (e3) gives 41.88 / 53.42.
+Keeping steps that only restate the answer at uniform weight (e5) leaves pass@1 unchanged (40.51 against 40.52) and raises pass@3 from 51.75 to 53.74, so the method does not rely on up-weighting such steps.
+Under every answer-gain setting (e1, e6--e8), 43\% of the 10\% most up-weighted steps contain a computation and 23\% the gold answer, against 28\% and 6.7\% of all steps, so $\lambda$ and $\tau$ change only how strongly these steps are up-weighted; permuting the gains (e4) removes this targeting.
 
 \paragraph{Qwen2.5-7B-Instruct.}
 On this student we sweep $\lambda$ and the clip $c$ at $\tau=1$ and an effective batch of 8 (Table~\ref{tab:sweep7b}).
