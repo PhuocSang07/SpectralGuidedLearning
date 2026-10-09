@@ -1,20 +1,28 @@
-% Entries were checked against the arXiv API on 2026-09-29 unless marked TODO.
+% Venues, titles, authors and pages checked on 2026-10-06 against the publisher record
+% (ACL Anthology / Crossref, PMLR, ICLR and NeurIPS proceedings, Nature) and the arXiv API.
+% Conventions: published papers use the venue's official title; ACL-family entries carry
+% pages and DOI; preprints are article entries with journal = {arXiv preprint arXiv:<id>}.
+% acl_natbib prints `note` but only links `doi`/`url`, so keep notes out of entries.
 
 @inproceedings{fan2026sgl,
   title     = {Uncovering the Gradient Geometry of Long {CoT}: A Spectral-guided Approach to Reasoning Distillation},
-  author    = {Fan, Sinan and others},
+  author    = {Fan, Sinan and Sun, Xiaofeng and Shen, Chen and Huang, Chenxi and Yan, Shaotian and Wang, Bing and Liu, Kaiyuan and Yuan, Xiaosong and Xie, Liang and Wang, Wenxiao and Zhang, Jun and Chen, Hongyang and Ye, Jieping},
   booktitle = {Proceedings of the International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {306},
+  pages     = {28824--28837},
   year      = {2026},
-  note      = {TODO: complete author list and pages}
+  url       = {https://proceedings.mlr.press/v306/fan26e.html}
 }
 
 @inproceedings{yun2026cord,
   title     = {Distilling Long-{CoT} Reasoning through Collaborative Step-wise Multi-Teacher Decoding},
   author    = {Yun, Taewon and Shin, Jisu and Choi, Jeonghwan and Bang, Seunghwan and Song, Hwanjun},
-  booktitle = {Proceedings of the Annual Meeting of the Association for Computational Linguistics (ACL)},
+  booktitle = {Findings of the Association for Computational Linguistics: ACL 2026},
+  pages     = {37452--37468},
   year      = {2026},
-  url       = {https://arxiv.org/abs/2605.02290},
-  note      = {TODO: confirm venue and pages}
+  doi       = {10.18653/v1/2026.findings-acl.1867},
+  url       = {https://arxiv.org/abs/2605.02290}
 }
 
 @inproceedings{wang2026segattr,
@@ -22,7 +30,7 @@
   author    = {Wang, Siyuan and Liu, Yanchen and Ren, Xiang},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2026},
-  url       = {https://arxiv.org/abs/2602.00425}
+  url       = {https://iclr.cc/virtual/2026/poster/10010893}
 }
 
 @inproceedings{wen2026scaffolding,
@@ -30,8 +38,7 @@
   author    = {Wen, Xiangyu and Huang, Junhua and Li, Zeju and Li, Min and Zhong, Jianyuan and Xu, Zhijian and Yuan, Mingxuan and Huang, Yongxiang and Xu, Qiang},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2026},
-  url       = {https://arxiv.org/abs/2509.23619},
-  note      = {TODO: confirm venue}
+  url       = {https://iclr.cc/virtual/2026/poster/10010581}
 }
 
 @inproceedings{li2026stepentropy,
@@ -39,25 +46,28 @@
   author    = {Li, Zeju and Zhong, Jianyuan and Zheng, Ziyang and Wen, Xiangyu and Xu, Zhijian and Cheng, Yingying and Zhang, Fan and Xu, Qiang},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2026},
-  url       = {https://arxiv.org/abs/2508.03346}
+  url       = {https://proceedings.iclr.cc/paper_files/paper/2026/hash/40b2844d3c1451a90e0afb193bd735fc-Abstract-Conference.html}
 }
 
 @inproceedings{liu2026palign,
   title     = {Long-Chain Reasoning Distillation via Adaptive Prefix Alignment},
   author    = {Liu, Zhenghao and Wu, Zhuoyang and Li, Xinze and Yan, Yukun and Wang, Shuo and Chen, Zulong and Gu, Yu and Yu, Ge and Sun, Maosong},
-  booktitle = {Proceedings of the Annual Meeting of the Association for Computational Linguistics (ACL)},
+  booktitle = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {18041--18059},
   year      = {2026},
-  url       = {https://arxiv.org/abs/2601.10064},
-  note      = {TODO: complete author list and pages}
+  doi       = {10.18653/v1/2026.acl-long.822},
+  url       = {https://arxiv.org/abs/2601.10064}
 }
 
 @article{deepseek2025r1,
-  title   = {{DeepSeek-R1}: Incentivizing Reasoning Capability in {LLMs} via Reinforcement Learning},
-  author  = {{DeepSeek-AI}},
+  title   = {{DeepSeek-R1} Incentivizes Reasoning in {LLMs} through Reinforcement Learning},
+  author  = {Guo, Daya and Yang, Dejian and Zhang, Haowei and Song, Junxiao and Wang, Peiyi and Zhu, Qihao and Xu, Runxin and Zhang, Ruoyu and Ma, Shirong and Bi, Xiao and Zhang, Xiaokang and Yu, Xingkai and Wu, Yu and Wu, Z. F. and Gou, Zhibin and Shao, Zhihong and Li, Zhuoshu and Gao, Ziyi and Liu, Aixin and Xue, Bing and Wang, Bingxuan and Wu, Bochao and Feng, Bei and Lu, Chengda and Zhao, Chenggang and Deng, Chengqi and Ruan, Chong and Dai, Damai and Chen, Deli and Ji, Dongjie and Li, Erhang and Lin, Fangyun and Dai, Fucong and Luo, Fuli and Hao, Guangbo and Chen, Guanting and Li, Guowei and Zhang, H. and Xu, Hanwei and Ding, Honghui and Gao, Huazuo and Qu, Hui and Li, Hui and Guo, Jianzhong and Li, Jiashi and Chen, Jingchang and Yuan, Jingyang and Tu, Jinhao and Qiu, Junjie and Li, Junlong and Cai, J. L. and Ni, Jiaqi and Liang, Jian and Chen, Jin and Dong, Kai and Hu, Kai and You, Kaichao and Gao, Kaige and Guan, Kang and Huang, Kexin and Yu, Kuai and Wang, Lean and Zhang, Lecong and Zhao, Liang and Wang, Litong and Zhang, Liyue and Xu, Lei and Xia, Leyi and Zhang, Mingchuan and Zhang, Minghua and Tang, Minghui and Zhou, Mingxu and Li, Meng and Wang, Miaojun and Li, Mingming and Tian, Ning and Huang, Panpan and Zhang, Peng and Wang, Qiancheng and Chen, Qinyu and Du, Qiushi and Ge, Ruiqi and Zhang, Ruisong and Pan, Ruizhe and Wang, Runji and Chen, R. J. and Jin, R. L. and Chen, Ruyi and Lu, Shanghao and Zhou, Shangyan and Chen, Shanhuang and Ye, Shengfeng and Wang, Shiyu and Yu, Shuiping and Zhou, Shunfeng and Pan, Shuting and Li, S. S. and Zhou, Shuang and Wu, Shaoqing and Yun, Tao and Pei, Tian and Sun, Tianyu and Wang, T. and Zeng, Wangding and Liu, Wen and Liang, Wenfeng and Gao, Wenjun and Yu, Wenqin and Zhang, Wentao and Xiao, W. L. and An, Wei and Liu, Xiaodong and Wang, Xiaohan and Chen, Xiaokang and Nie, Xiaotao and Cheng, Xin and Liu, Xin and Xie, Xin and Liu, Xingchao and Yang, Xinyu and Li, Xinyuan and Su, Xuecheng and Lin, Xuheng and Li, X. Q. and Jin, Xiangyue and Shen, Xiaojin and Chen, Xiaosha and Sun, Xiaowen and Wang, Xiaoxiang and Song, Xinnan and Zhou, Xinyi and Wang, Xianzu and Shan, Xinxia and Li, Y. K. and Wang, Y. Q. and Wei, Y. X. and Zhang, Yang and Xu, Yanhong and Li, Yao and Zhao, Yao and Sun, Yaofeng and Wang, Yaohui and Yu, Yi and Zhang, Yichao and Shi, Yifan and Xiong, Yiliang and He, Ying and Piao, Yishi and Wang, Yisong and Tan, Yixuan and Ma, Yiyang and Liu, Yiyuan and Guo, Yongqiang and Ou, Yuan and Wang, Yuduan and Gong, Yue and Zou, Yuheng and He, Yujia and Xiong, Yunfan and Luo, Yuxiang and You, Yuxiang and Liu, Yuxuan and Zhou, Yuyang and Zhu, Y. X. and Huang, Yanping and Li, Yaohui and Zheng, Yi and Zhu, Yuchen and Ma, Yunxian and Tang, Ying and Zha, Yukun and Yan, Yuting and Ren, Z. Z. and Ren, Zehui and Sha, Zhangli and Fu, Zhe and Xu, Zhean and Xie, Zhenda and Zhang, Zhengyan and Hao, Zhewen and Ma, Zhicheng and Yan, Zhigang and Wu, Zhiyu and Gu, Zihui and Zhu, Zijia and Liu, Zijun and Li, Zilin and Xie, Ziwei and Song, Ziyang and Pan, Zizheng and Huang, Zhen and Xu, Zhipeng and Zhang, Zhongyu and Zhang, Zhen},
   journal = {Nature},
   volume  = {645},
+  number  = {8081},
   pages   = {633--638},
   year    = {2025},
+  doi     = {10.1038/s41586-025-09422-z},
   url     = {https://arxiv.org/abs/2501.12948}
 }
 
@@ -69,11 +79,29 @@
   url     = {https://arxiv.org/abs/2412.15115}
 }
 
-@article{muennighoff2025s1,
+@article{qwen2025qwen3,
+  title   = {Qwen3 Technical Report},
+  author  = {Yang, An and Li, Anfeng and Yang, Baosong and Zhang, Beichen and Hui, Binyuan and Zheng, Bo and Yu, Bowen and Gao, Chang and Huang, Chengen and Lv, Chenxu and Zheng, Chujie and Liu, Dayiheng and Zhou, Fan and Huang, Fei and Hu, Feng and Ge, Hao and Wei, Haoran and Lin, Huan and Tang, Jialong and Yang, Jian and Tu, Jianhong and Zhang, Jianwei and Yang, Jianxin and Yang, Jiaxi and Zhou, Jing and Zhou, Jingren and Lin, Junyang and Dang, Kai and Bao, Keqin and Yang, Kexin and Yu, Le and Deng, Lianghao and Li, Mei and Xue, Mingfeng and Li, Mingze and Zhang, Pei and Wang, Peng and Zhu, Qin and Men, Rui and Gao, Ruize and Liu, Shixuan and Luo, Shuang and Li, Tianhao and Tang, Tianyi and Yin, Wenbiao and Ren, Xingzhang and Wang, Xinyu and Zhang, Xinyu and Ren, Xuancheng and Fan, Yang and Su, Yang and Zhang, Yichang and Zhang, Yinger and Wan, Yu and Liu, Yuqiong and Wang, Zekun and Cui, Zeyu and Zhang, Zhenru and Zhou, Zhipeng and Qiu, Zihan},
+  journal = {arXiv preprint arXiv:2505.09388},
+  year    = {2025},
+  url     = {https://arxiv.org/abs/2505.09388}
+}
+
+@inproceedings{hu2022lora,
+  title     = {{LoRA}: Low-Rank Adaptation of Large Language Models},
+  author    = {Hu, Edward J. and Shen, Yelong and Wallis, Phillip and Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and Wang, Lu and Chen, Weizhu},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2022},
+  url       = {https://openreview.net/forum?id=nZeVKeeFYf9}
+}
+
+@inproceedings{muennighoff2025s1,
   title     = {s1: Simple Test-Time Scaling},
   author    = {Muennighoff, Niklas and Yang, Zitong and Shi, Weijia and Li, Xiang Lisa and Fei-Fei, Li and Hajishirzi, Hannaneh and Zettlemoyer, Luke and Liang, Percy and Candès, Emmanuel and Hashimoto, Tatsunori},
-  journal   = {arXiv preprint arXiv:2501.19393},
+  booktitle = {Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  pages     = {20286--20332},
   year      = {2025},
+  doi       = {10.18653/v1/2025.emnlp-main.1025},
   url       = {https://arxiv.org/abs/2501.19393}
 }
 
@@ -86,11 +114,12 @@
 }
 
 @inproceedings{lin2024rho1,
-  title     = {Rho-1: Not All Tokens Are What You Need},
+  title     = {Not All Tokens Are What You Need for Pretraining},
   author    = {Lin, Zhenghao and Gou, Zhibin and Gong, Yeyun and Liu, Xiao and Shen, Yelong and Xu, Ruochen and Lin, Chen and Yang, Yujiu and Jiao, Jian and Duan, Nan and Chen, Weizhu},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  volume    = {37},
   year      = {2024},
-  url       = {https://arxiv.org/abs/2404.07965}
+  url       = {https://neurips.cc/virtual/2024/poster/96931}
 }
 
 @article{ruan2025criticaltoken,
@@ -104,17 +133,19 @@
 @inproceedings{gong2026vcore,
   title     = {{VCORE}: Variance-Controlled Optimization-based Reweighting for Chain-of-Thought Supervision},
   author    = {Gong, Xuan and Wang, Senmiao and Huang, Hanbo and Sun, Ruoyu and Liang, Shiyu},
-  booktitle = {Proceedings of the Annual Meeting of the Association for Computational Linguistics (ACL)},
+  booktitle = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {28161--28180},
   year      = {2026},
+  doi       = {10.18653/v1/2026.acl-long.1298},
   url       = {https://arxiv.org/abs/2510.27462}
 }
 
 @inproceedings{wu2026dft,
   title     = {On the Generalization of {SFT}: A Reinforcement Learning Perspective with Reward Rectification},
-  author    = {Wu, Yongliang and Zhou, Yizhou and {Zhou Ziheng} and Peng, Yingzhe and Ye, Xinyu and Hu, Xinting and Zhu, Wenbo and Qi, Lu and Yang, Ming-Hsuan and Yang, Xu},
+  author    = {Wu, Yongliang and Zhou, Yizhou and Zhou, Ziheng and Peng, Yingzhe and Ye, Xinyu and Hu, Xinting and Zhu, Wenbo and Qi, Lu and Yang, Ming-Hsuan and Yang, Xu},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2026},
-  url       = {https://arxiv.org/abs/2508.05629}
+  url       = {https://proceedings.iclr.cc/paper_files/paper/2026/hash/2e53c02ea028cbf603f4b6b47fef3d97-Abstract-Conference.html}
 }
 
 @inproceedings{li2026beyondll,
@@ -122,7 +153,7 @@
   author    = {Li, Gaotang and Qiu, Ruizhong and Chen, Xiusi and Ji, Heng and Tong, Hanghang},
   booktitle = {Proceedings of the International Conference on Machine Learning (ICML)},
   year      = {2026},
-  url       = {https://arxiv.org/abs/2510.00526}
+  url       = {https://icml.cc/virtual/2026/poster/66554}
 }
 
 @inproceedings{zhu2026asft,
@@ -130,7 +161,7 @@
   author    = {Zhu, He and Su, Junyou and Lai, Peng and Ma, Ren and Zhang, Wenjia and Yang, Linyi and Chen, Guanhua},
   booktitle = {International Conference on Learning Representations (ICLR)},
   year      = {2026},
-  url       = {https://arxiv.org/abs/2509.23753}
+  url       = {https://proceedings.iclr.cc/paper_files/paper/2026/hash/b2f57eb82f9ef6bb080890ba33a81760-Abstract-Conference.html}
 }
 
 @article{wang2026deft,
@@ -142,9 +173,9 @@
 }
 
 @inproceedings{jia2026trimsft,
-  title     = {Which Tokens Should {SFT} Actually Learn? A Token-Trimming Perspective on Mathematical Reasoning},
+  title     = {Which Tokens Should {SFT} Actually Learn? {A} Token-Trimming Perspective on Mathematical Reasoning},
   author    = {Jia, Yaning and Zhang, Chunhui and Xu, Wenxuan and Diao, Xingjian and Wang, Xiaoyuan and Vosoughi, Soroush},
-  booktitle = {Findings of the Association for Computational Linguistics},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2026},
   year      = {2026},
   url       = {https://arxiv.org/abs/2609.09707}
 }
@@ -173,20 +204,24 @@
   url       = {https://arxiv.org/abs/2507.01679}
 }
 
-@article{yan2025luffy,
-  title   = {Learning to Reason under Off-Policy Guidance},
-  author  = {Yan, Jianhao and Li, Yafu and Hu, Zican and Wang, Zhi and Cui, Ganqu and Qu, Xiaoye and Cheng, Yu and Zhang, Yue},
-  journal = {arXiv preprint arXiv:2504.14945},
-  year    = {2025},
-  url     = {https://arxiv.org/abs/2504.14945}
+@inproceedings{yan2025luffy,
+  title     = {Learning to Reason under Off-Policy Guidance},
+  author    = {Yan, Jianhao and Li, Yafu and Hu, Zican and Wang, Zhi and Cui, Ganqu and Qu, Xiaoye and Cheng, Yu and Zhang, Yue},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  volume    = {38},
+  year      = {2025},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2025/hash/a9d5c33e38442450f9781bd7bad3c81e-Abstract-Conference.html}
 }
 
 @inproceedings{ton2025infogain,
   title     = {Understanding Chain-of-Thought in {LLMs} through Information Theory},
   author    = {Ton, Jean-Francois and Taufiq, Muhammad Faaiz and Liu, Yang},
   booktitle = {Proceedings of the International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {267},
+  pages     = {59784--59811},
   year      = {2025},
-  url       = {https://arxiv.org/abs/2411.11984}
+  url       = {https://proceedings.mlr.press/v267/ton25a.html}
 }
 
 @article{wang2026mig,
@@ -206,7 +241,7 @@
 }
 
 @article{li2026dcsd,
-  title   = {Can We Trust the Teacher? Decoupled Credit Direction-Magnitude for Self-Distillation},
+  title   = {Can We Trust the Teacher? {D}ecoupled Credit Direction-Magnitude for Self-Distillation},
   author  = {Li, Yugu and Cao, Zehong and Li, Peizhen and Zhang, Yang and Hu, Siyi and Qiao, Jianglin},
   journal = {arXiv preprint arXiv:2609.34848},
   year    = {2026},
@@ -214,8 +249,8 @@
 }
 
 @article{royer2026mcnig,
-  title   = {Process Supervision for Chain-of-Thought Reasoning via {Monte Carlo} Net Information Gain},
-  author  = {Royer, Corentin and Bhattacharjya, Debarun and Rossiello, Gaetano and Giovannini, Andrea and El-Assady, Mennatallah},
+  title   = {{RAWR}: Reward Assignment Without Rollouts in Verifiable Domains},
+  author  = {Royer, Corentin and Hedstr{\"o}m, Anna and Bhattacharjya, Debarun and Rossiello, Gaetano and Giovannini, Andrea and El-Assady, Mennatallah},
   journal = {arXiv preprint arXiv:2603.17815},
   year    = {2026},
   url     = {https://arxiv.org/abs/2603.17815}
@@ -225,7 +260,9 @@
   title     = {Stepwise Perplexity-Guided Refinement for Efficient Chain-of-Thought Reasoning in Large Language Models},
   author    = {Cui, Yingqian and He, Pengfei and Zeng, Jingying and Liu, Hui and Tang, Xianfeng and Dai, Zhenwei and Han, Yan and Luo, Chen and Huang, Jing and Li, Zhen and Wang, Suhang and Xing, Yue and Tang, Jiliang and He, Qi},
   booktitle = {Findings of the Association for Computational Linguistics: ACL 2025},
+  pages     = {18581--18597},
   year      = {2025},
+  doi       = {10.18653/v1/2025.findings-acl.956},
   url       = {https://aclanthology.org/2025.findings-acl.956/}
 }
 
@@ -241,16 +278,21 @@
   title     = {Keypoint-based Progressive Chain-of-Thought Distillation for {LLMs}},
   author    = {Feng, Kaituo and Li, Changsheng and Zhang, Xiaolu and Zhou, Jun and Yuan, Ye and Wang, Guoren},
   booktitle = {Proceedings of the International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  pages     = {13241--13255},
   year      = {2024},
   url       = {https://arxiv.org/abs/2405.16064}
 }
 
-@article{dai2024edit,
-  title   = {Beyond Imitation: Learning Key Reasoning Steps from Dual Chain-of-Thoughts in Reasoning Distillation},
-  author  = {Dai, Chengwei and Li, Kun and Zhou, Wei and Hu, Songlin},
-  journal = {arXiv preprint arXiv:2405.19737},
-  year    = {2024},
-  url     = {https://arxiv.org/abs/2405.19737}
+@inproceedings{dai2024edit,
+  title     = {Capture the Key in Reasoning to Enhance {CoT} Distillation Generalization},
+  author    = {Dai, Chengwei and Li, Kun and Zhou, Wei and Hu, Songlin},
+  booktitle = {Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {441--465},
+  year      = {2025},
+  doi       = {10.18653/v1/2025.acl-long.21},
+  url       = {https://aclanthology.org/2025.acl-long.21/}
 }
 
 @article{slinko2026srft,
@@ -273,6 +315,9 @@
   title     = {Understanding Dataset Difficulty with $\mathcal{V}$-Usable Information},
   author    = {Ethayarajh, Kawin and Choi, Yejin and Swayamdipta, Swabha},
   booktitle = {Proceedings of the International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {162},
+  pages     = {5988--6008},
   year      = {2022},
   url       = {https://arxiv.org/abs/2110.08420}
 }
@@ -280,15 +325,17 @@
 @inproceedings{kwon2023vllm,
   title     = {Efficient Memory Management for Large Language Model Serving with {PagedAttention}},
   author    = {Kwon, Woosuk and Li, Zhuohan and Zhuang, Siyuan and Sheng, Ying and Zheng, Lianmin and Yu, Cody Hao and Gonzalez, Joseph E. and Zhang, Hao and Stoica, Ion},
-  booktitle = {Proceedings of the ACM Symposium on Operating Systems Principles (SOSP)},
+  booktitle = {Proceedings of the 29th Symposium on Operating Systems Principles (SOSP)},
+  pages     = {611--626},
   year      = {2023},
+  doi       = {10.1145/3600006.3613165},
   url       = {https://arxiv.org/abs/2309.06180}
 }
 
 @inproceedings{hendrycks2021math,
   title     = {Measuring Mathematical Problem Solving With the {MATH} Dataset},
   author    = {Hendrycks, Dan and Burns, Collin and Kadavath, Saurav and Arora, Akul and Basart, Steven and Tang, Eric and Song, Dawn and Steinhardt, Jacob},
-  booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track},
+  booktitle = {Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks},
   year      = {2021},
   url       = {https://arxiv.org/abs/2103.03874}
 }
@@ -305,21 +352,90 @@
   title     = {{ZeRO}: Memory Optimizations toward Training Trillion Parameter Models},
   author    = {Rajbhandari, Samyam and Rasley, Jeff and Ruwase, Olatunji and He, Yuxiong},
   booktitle = {Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis (SC)},
+  pages     = {1--16},
   year      = {2020},
+  doi       = {10.1109/SC41405.2020.00024},
   url       = {https://arxiv.org/abs/1910.02054}
 }
 
 @inproceedings{zheng2024llamafactory,
   title     = {{LlamaFactory}: Unified Efficient Fine-Tuning of 100+ Language Models},
   author    = {Zheng, Yaowei and Zhang, Richong and Zhang, Junhao and Ye, Yanhan and Luo, Zheyan and Feng, Zhangchi and Ma, Yongqiang},
-  booktitle = {Proceedings of the Annual Meeting of the Association for Computational Linguistics: System Demonstrations},
+  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 3: System Demonstrations)},
+  pages     = {400--410},
   year      = {2024},
+  doi       = {10.18653/v1/2024.acl-demos.38},
   url       = {https://arxiv.org/abs/2403.13372}
 }
 
 @misc{mathverify,
-  title        = {Math-Verify: A Robust Mathematical Expression Evaluation System},
+  title        = {{Math-Verify}: A Robust Mathematical Expression Evaluation System},
   author       = {{Hugging Face}},
   year         = {2025},
   howpublished = {\url{https://github.com/huggingface/Math-Verify}}
 }
+
+@article{hinton2015distilling,
+  title   = {Distilling the Knowledge in a Neural Network},
+  author  = {Hinton, Geoffrey and Vinyals, Oriol and Dean, Jeff},
+  journal = {arXiv preprint arXiv:1503.02531},
+  year    = {2015},
+  url     = {https://arxiv.org/abs/1503.02531}
+}
+
+@inproceedings{kim2016sequence,
+  title     = {Sequence-Level Knowledge Distillation},
+  author    = {Kim, Yoon and Rush, Alexander M.},
+  booktitle = {Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing},
+  pages     = {1317--1327},
+  year      = {2016},
+  doi       = {10.18653/v1/D16-1139},
+  url       = {https://aclanthology.org/D16-1139/}
+}
+
+@inproceedings{gu2024minillm,
+  title     = {{MiniLLM}: Knowledge Distillation of Large Language Models},
+  author    = {Gu, Yuxian and Dong, Li and Wei, Furu and Huang, Minlie},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2306.08543}
+}
+
+@inproceedings{agarwal2024gkd,
+  title     = {On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes},
+  author    = {Agarwal, Rishabh and Vieillard, Nino and Zhou, Yongchao and Stanczyk, Piotr and Ramos, Sabela and Geist, Matthieu and Bachem, Olivier},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2306.13649}
+}
+
+
+@inproceedings{wei2022cot,
+  title     = {Chain-of-Thought Prompting Elicits Reasoning in Large Language Models},
+  author    = {Wei, Jason and Wang, Xuezhi and Schuurmans, Dale and Bosma, Maarten and Ichter, Brian and Xia, Fei and Chi, Ed and Le, Quoc V. and Zhou, Denny},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {35},
+  pages     = {24824--24837},
+  year      = {2022}
+}
+
+@inproceedings{ho2023teachers,
+  title     = {Large Language Models Are Reasoning Teachers},
+  author    = {Ho, Namgyu and Schmid, Laura and Yun, Se-Young},
+  booktitle = {Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {14852--14882},
+  year      = {2023},
+  doi       = {10.18653/v1/2023.acl-long.830},
+  url       = {https://aclanthology.org/2023.acl-long.830/}
+}
+
+@inproceedings{magister2023teaching,
+  title     = {Teaching Small Language Models to Reason},
+  author    = {Magister, Lucie Charlotte and Mallinson, Jonathan and Adamek, Jakub and Malmi, Eric and Severyn, Aliaksei},
+  booktitle = {Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers)},
+  pages     = {1773--1781},
+  year      = {2023},
+  doi       = {10.18653/v1/2023.acl-short.151},
+  url       = {https://aclanthology.org/2023.acl-short.151/}
+}
+

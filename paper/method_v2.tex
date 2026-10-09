@@ -1,0 +1,122 @@
+
+Long CoT traces contain reasoning steps that differ in how much they affect a student's ability to recover the final answer. Standard SFT assigns the same loss weight to all response tokens, while selective approaches typically make binary keep-or-drop decisions. We instead formulate reasoning supervision as a \emph{fixed-budget allocation} problem: every reasoning step remains supervised, but steps that are more relevant to recovering the answer receive more of the trace's learning budget.
+
+Our main proposal is a step-level utility, the \emph{answer-likelihood gain}, which measures how much a reasoning step changes the frozen initial student's likelihood of the gold answer. These gains are computed offline and converted into positive, bounded, token-aware weights whose total loss mass matches uniform SFT within every trace. The resulting objective therefore changes \emph{where} supervision is allocated without changing \emph{how much} response-token supervision is provided.
+
+\subsection{Answer-Likelihood Gain}
+\label{sec:gain}
+Consider a training example with prompt $x$, a response segmented into $K$ steps $s_{1:K}=(s_1,\ldots,s_K)$ that together cover every response token, including the final answer, and a verified gold answer $a^*=(a_1,\ldots,a_M)$. Only the end-of-sequence token lies outside the steps. Let $\ell_k=|s_k|$ denote the number of supervised tokens in step $s_k$, measured with the student's tokenizer. The exact step-segmentation rule is described in \S\ref{sec:setup}.
+
+Let $q_0=p_{\theta_0}$ be the student before fine-tuning. We freeze $q_0$ and use it only to score the training traces; the parameters $\theta$ of the fine-tuned student are the only optimized parameters. For each reasoning prefix, we append the same fixed answer probe $\pi$ and evaluate the log-likelihood of the gold answer:
+\begin{equation}
+b_k = \log q_0(a^*\mid x,s_{1:k},\pi),
+\quad
+u_k = b_k-b_{k-1},
+\label{eq:gain}
+\end{equation}
+where $s_{1:0}$ is empty and $b_0=\log q_0(a^*\mid x,\pi)$. Thus, the two terms defining $u_k$ use the same prompt, gold answer, and probe; only step $s_k$ is added to the reasoning prefix.
+
+We call $u_k$ the \emph{answer-likelihood gain} of step $k$. A positive value means that adding the step makes the gold answer more likely under the frozen student, whereas a negative value means that it moves the student's answer likelihood in the opposite direction. We call a step \emph{decisive} when it has a large positive gain relative to the other steps in the same trace. This is an operational notion defined by the frozen student $q_0$ and probe $\pi$: a decisive step need not be logically necessary, causally responsible, or even correct.
+
+The gains provide an exact decomposition of the student's total change in answer likelihood:
+\begin{equation}
+\sum_{k=1}^{K}u_k = b_K-b_0.
+\label{eq:telescoping}
+\end{equation}
+Thus, the score assigns the trace-level change in answer likelihood to individual reasoning steps rather than assigning all steps the same amount of supervision.
+
+\paragraph{Probe.}
+We use the fixed probe 
+\[
+\begin{aligned}
+\pi ={} & \texttt{\textbackslash n\textbackslash nTherefore, } \\
+        & \texttt{the final answer is \textbackslash boxed\{}
+\end{aligned}
+\]
+to ask what answer the student would produce after the reasoning prefix. The gold answer $a^*$ is the verified answer span associated with the trace, including the closing brace when the answer is represented in boxed format. Its log-likelihood is evaluated by teacher forcing, $\log q_0(a^*\mid\cdot) = \sum_{m=1}^{M} \log q_0(a_m\mid\cdot,a_{<m})$, without sampling.
+
+\paragraph{Interpretation.}
+The answer-likelihood gain measures answer recoverability rather than intrinsic reasoning quality. In particular, a step that explicitly reveals or repeats the answer can receive a large gain, whereas a useful derivation can receive a small gain if the frozen student does not immediately convert it into a higher answer likelihood. The score is therefore a model-dependent, probe-dependent utility rather than a measure of causal contribution or logical necessity.
+
+All gains are computed once, before fine-tuning, using teacher-forced evaluation of the frozen initial student. The procedure requires no rollouts, reward model, gradients, or step-level correctness labels beyond the gold answer. Prefixes within a trace share the same preceding context, allowing the scores to be computed efficiently with prefix caching.
+
+\subsection{Budget-Preserving Soft Allocation}
+\label{sec:weights}
+Given step-level utilities $u_1,\ldots,u_K$, we convert them into positive soft weights while preserving the total response-token supervision budget of every trace. The conversion consists of within-trace standardization, bounded exponential tilting, token-mass normalization, and conservative shrinkage.
+
+\paragraph{Relative score and exponential allocation.}
+We first standardize the gains within each trace:
+\begin{equation}
+\begin{aligned}
+z_k &= \frac{u_k-\mu_u}{\sigma_u+\epsilon},
+\\
+v_k &= \operatorname{clip}(z_k,-c,c),
+\\
+r_k &= e^{v_k/\tau},
+\end{aligned}
+\label{eq:z}
+\end{equation}
+where $\mu_u$ and $\sigma_u$ are the mean and standard deviation of the step-level gains within the trace, respectively. The normalization is intentionally \emph{within trace}: the allocation depends on the relative importance of steps in the same trace rather than on the absolute scale of gains across different traces. Thus, additive shifts and positive rescaling of all gains in a trace do not change their standardized ordering or spacing. The clip limits the effect of outliers, while $\tau$ controls how sharply supervision is concentrated around high-gain steps. If $\sigma_u<\epsilon$, we use uniform weights for the entire trace.
+
+The raw weight satisfies $e^{-c/\tau}\le r_k\le e^{c/\tau}$. Unless stated otherwise we use $c=\tau=2$, $\lambda=0.5$ (Eq.~\ref{eq:weights}) and $\epsilon=10^{-8}$; Table~\ref{tab:toy} works through a toy trace, and with these values the trained weights lie between 0.58 and 2.89 across the three students.
+
+\paragraph{Token-mass normalization.}
+A step weight applies to each token in that step, so a step containing $\ell_k$ tokens contributes $\ell_k r_k$ to the total loss coefficient mass. We therefore normalize by token mass:
+\begin{equation}
+\hat w_k = r_k \frac{\sum_j\ell_j} {\sum_j\ell_jr_j}.
+\label{eq:mass}
+\end{equation}
+By construction,
+\begin{equation}
+\sum_k\ell_k\hat w_k = \sum_k\ell_k.
+\label{eq:budget_hat}
+\end{equation}
+Thus, $\hat w_k$ changes only the allocation of the existing response-token supervision budget.
+
+We finally shrink the allocation toward uniform SFT:
+\begin{equation}
+w_k = (1-\lambda)+\lambda\hat w_k,
+\qquad
+\lambda\in[0,1].
+\label{eq:weights}
+\end{equation}
+Hence
+\begin{equation}
+\sum_k\ell_kw_k = \sum_k\ell_k,
+\label{eq:budget}
+\end{equation}
+while $w_k\ge 1-\lambda>0$ for $\lambda<1$. The parameter $\lambda$ therefore controls how strongly the supervision is reallocated away from the uniform baseline: $\lambda=0$ recovers uniform SFT, whereas $\lambda=1$ applies the full normalized allocation.
+
+\paragraph{Allocation view.}
+Let $m_k=\ell_k/\sum_j\ell_j$ and $p_k=m_k\hat w_k$. Then the pre-shrink allocation can be written as $p_k = m_ke^{v_k/\tau}/\sum_jm_je^{v_j/\tau}$. For a fixed utility $v$, this is the solution of a standard KL-regularized allocation problem that trades expected utility against deviation from the uniform token-mass distribution $m$. This provides an interpretation of the exponential form, but does not establish that answer-likelihood gain is the uniquely correct utility. The KL here is over the allocation of learning mass across reasoning steps, rather than the policy--reference KL used in KL-regularized SFT methods.
+
+As $\tau\to\infty$, the allocation approaches uniform. As $\tau\to0$, mass concentrates on the set $S_{\max}=\arg\max_k v_k$, with ties divided according to token mass $m_k$.
+
+\subsection{Weighted SFT Objective}
+\label{sec:objective}
+The resulting weights are applied to the token losses of each step, while the end-of-sequence token retains unit weight:
+\begin{equation}
+\begin{split}
+\mathcal{L} &=
+-\frac{1}{Z}
+\sum_{(x,y)\in\mathcal{B}}
+\Bigg[
+\sum_{k=1}^{K}
+w_k
+\sum_{t\in s_k}
+\log p_\theta(y_t\mid x,y_{<t}) \\
+&+
+\log p_\theta(\mathrm{eos}\mid x,y)
+\Bigg],
+\end{split}
+\label{eq:loss}
+\end{equation}
+where $\mathcal{B}$ is the optimizer batch and $Z = \sum_{(x,y)\in\mathcal{B}} \left( \sum_{k=1}^{K}\ell_k+1 \right)$ is the total number of supervised tokens, including one end-of-sequence token per trace, exactly as in uniform SFT.
+
+The construction has three immediate properties. First, $\lambda=0$ gives $w_k=1$ and therefore recovers standard SFT. Second, Eq.~\ref{eq:budget} guarantees that every trace has the same total response-token loss coefficient mass as uniform SFT. Third, this constraint applies only to loss coefficients, not gradients: because tokens have different gradients, reallocating their weights can change both the magnitude and direction of the optimization update even though the total coefficient mass is unchanged.
+
+The allocation is therefore a soft, fixed-budget alternative to binary step selection: every reasoning step receives non-zero supervision, but the amount of supervision assigned to each step depends on its answer-likelihood gain.
+
+\paragraph{Composing with selection.}
+\label{sec:compose}
+The weights need only a segmented trace, its gold answer and the frozen student, so they apply to curated, multi-teacher or student-adapted traces as they are. With a selective mask, Eq.~\ref{eq:iwc} keeps $M_k$ and computes $w_k$ over the kept steps: selection decides what is learned and allocation how much.

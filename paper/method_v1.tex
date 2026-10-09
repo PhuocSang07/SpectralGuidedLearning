@@ -1,0 +1,144 @@
+The method keeps every step ($M_k=1$) and weights it by a score $u_k$: how much step $k$ contributes to reaching the answer.
+This contribution is not observed directly; our main proposal is to estimate it from the student itself (\S\ref{sec:gain}).
+Its idea is that a step can be easy to predict and still be the one after which the student can read off the answer.
+The rest of the pipeline is generic: any per-step score is turned into weights, $u_k\to z_k\to r_k\to\hat w_k\to w_k$ (\S\ref{sec:weights}), and the weights enter the training loss $\mathcal{L}$ (\S\ref{sec:objective}).
+
+\subsection{Estimating $u_k$: answer-information gain}
+\label{sec:gain}
+
+Let $q_0=p_{\theta_0}$ be the student before fine-tuning.
+It is kept frozen and used only for scoring; only $p_\theta$ is optimized.
+After each prefix of the response we append a fixed answer probe $\pi$ and read how likely $q_0$ finds the gold answer $a^*$:
+\begin{equation}
+  b_k=\log q_0(a^*\mid x,s_{1:k},\pi),\qquad u_k=b_k-b_{k-1}.
+  \label{eq:gain}
+\end{equation}
+$b_k$ is the student's belief in the answer after $k$ steps, and the score $u_k$, which we call the \emph{answer-information gain} of step $k$, is how much the step changes it: the gold answer and the probe are the same in both terms, and only step $k$ is added.
+\emph{Context.} $x$ is the prompt in the training template, and $s_{1:k}$ the first $k$ steps ($s_{1:0}$ is empty, so $b_0$ is the belief before any reasoning).
+\emph{Probe.} $\pi$ is the string ``\texttt{\textbackslash n\textbackslash nTherefore, the final answer is \textbackslash boxed\{}''; it asks what the student would answer if the reasoning stopped there.
+\emph{Answer.} $a^*=(a_1,\dots,a_M)$ are the tokens of the gold answer followed by the closing brace, taken from the last \boxedtok{} of the trace (the released traces are answer-verified), and $\log q_0(a^*\mid\cdot)=\sum_m\log q_0(a_m\mid\cdot,a_{<m})$ is read by teacher forcing, without sampling.
+
+A positive $u_k$ means the step makes the gold answer more likely, a negative one that it moves the student away from it, for example by pursuing a wrong branch.
+The gains of a trace sum to $b_K-b_0$, so they split the student's total change in belief over the steps.
+We call steps with high gain \emph{decisive}.
+The term refers to this measurement under $q_0$ and $\pi$ only: a decisive step need not be correct, necessary or causal for the solution.
+
+\paragraph{Interpretation.}
+$u_k$ is a model-specific answer-likelihood gain, not $\mathcal{V}$-information or PVI \citep{xu2020usable,ethayarajh2022pvi}, which optimize over a predictor family; we use it as a pointwise proxy for what step $k$ makes usable to $q_0$.
+
+\paragraph{Cost.}
+All probes of a trace share its prefix, so with prefix caching in vLLM \citep{kwon2023vllm} the 48,498 probes of the 966 traces ($K+1$ per trace) take about 12 minutes on one H200 GPU with the 1.5B student, and about 56 minutes with Qwen3-8B.
+No rollouts, reward model or extra teacher calls are needed.
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{3.2pt}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lcccccccccc}
+    \toprule
+    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
+    Method & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    \midrule
+    Zero-shot & 10.00 & 20.00 & 15.56 & 33.33 & 49.80 & 63.86 & 72.33 & 81.80 & 36.92 & 49.75 \\
+    SFT (answers only) & 0.00 & 0.00 & 2.22 & 3.33 & 7.63 & 14.46 & 24.20 & 41.80 & 8.51 & 14.90 \\
+    SFT (long CoT) & 10.00 & 20.00 & 15.56 & 30.00 & 44.58 & 61.45 & 68.40 & 83.00 & 34.63 & 48.61 \\
+    SGL \citep{fan2026sgl} & 16.67 & 23.33 & 17.78 & 23.33 & 48.59 & 59.04 & 74.13 & 86.00 & 39.29 & 47.93 \\
+    Segment-Selective SFT \citep{wang2026segattr} & 21.11 & 30.00 & 16.67 & 23.33 & 50.60 & 65.06 & 74.87 & 84.60 & 40.81 & 50.75 \\
+    P-ALIGN \citep{liu2026palign} & 16.67 & 26.67 & 17.78 & 30.00 & 50.20 & 63.86 & 78.40 & 87.60 & 40.76 & 52.03 \\
+    % TODO: confirm whether the concurrent group method belongs in this table.
+    % Concurrent group method & 20.00 & 26.67 & 18.89 & 33.33 & 51.41 & 65.06 & 77.07 & 86.80 & 41.84 & 52.97 \\
+    \midrule
+    Answer-gain allocation (ours) & 18.15 & 26.67 & 20.00 & 31.11 & 53.68 & 66.67 & 78.02 & 87.93 & \textbf{42.46} & \textbf{53.09} \\
+    \bottomrule
+  \end{tabular}}
+  \caption{Main results (\%) for DeepSeek-R1-Distill-Qwen-1.5B. Best average in bold.}
+  \label{tab:main}
+\end{table*}
+
+\subsection{From gains to weights}
+\label{sec:weights}
+
+We define the \emph{learning budget} of a trace as the total weight of its token-level loss terms, $\sum_k\ell_k w_k$; uniform SFT gives $\sum_k\ell_k$.
+Allocation redistributes this budget across steps and keeps its total; the constraint applies to the sum of loss coefficients and does not preserve the gradient.
+The weights are computed once, before training, from the scores $u_1,\dots,u_K$ of a trace, in four steps.
+
+\emph{(i) Standardize within the trace, (ii) clip and exponentiate:}
+\begin{equation}
+  z_k=\frac{u_k-\mu_u}{\sigma_u+\epsilon},\quad r_k=e^{\mathrm{clip}(z_k,-c,c)/\tau},
+  \label{eq:z}
+\end{equation}
+where $\mu_u=\frac1K\sum_j u_j$ and $\sigma_u=\big(\frac1K\sum_j(u_j-\mu_u)^2\big)^{1/2}$ are the mean and standard deviation of the scores in the trace, $\epsilon$ prevents division by zero (if $\sigma_u<\epsilon$, the trace is trained uniformly), and $\mathrm{clip}(z,-c,c)=\min(\max(z,-c),c)$.
+$z_k$ is the \emph{standardized score}: how many standard deviations step $k$ lies above or below the average step of its trace.
+$r_k$ is the \emph{raw weight}: positive, increasing in $z_k$, and equal to 1 for a step at the trace average ($z_k=0$).
+Standardizing removes any shift or positive rescaling of the scores within a trace, so signals in different units and traces of different scales share one set of hyperparameters; the spacing between scores still matters, not only their order.
+The clip $c$ bounds the influence of outliers: $r_k\in[e^{-c/\tau},e^{c/\tau}]$.
+The temperature $\tau$ sets how sharply supervision concentrates: $\tau\to\infty$ gives uniform weights.
+
+\emph{(iii) Normalize by token mass:}
+Let $\ell_j=|s_j|$ be the number of supervised tokens in step $s_j$, measured with the student's tokenizer after the response is segmented into steps.
+Because the raw step weight $r_j$ is applied to each of these $\ell_j$ tokens, step $j$ contributes $\ell_j r_j$ to the trace's total token-level loss weight.
+We therefore normalize by
+\begin{equation}
+  \hat w_k=r_k\,\frac{\sum_j\ell_j}{\sum_j\ell_j r_j},
+  \label{eq:mass}
+\end{equation}
+$\hat w_k$ is the \emph{normalized weight}: $r_k$ rescaled by one factor per trace so that the token-weighted mean of $\hat w$ is 1, equivalently $\sum_j\ell_j\hat w_j=\sum_j\ell_j$.
+
+\emph{(iv) Shrink toward uniform:}
+\begin{equation}
+  w_k=(1-\lambda)+\lambda\,\hat w_k,\qquad \lambda\in[0,1].
+  \label{eq:weights}
+\end{equation}
+$w_k$ is the \emph{final weight} used in the loss: a mixture of the uniform weight 1 and $\hat w_k$, where $\lambda=0$ gives uniform weights and $\lambda=1$ no shrinkage; since $\hat w_k>0$, every step keeps at least $1-\lambda$ of its uniform weight.
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{cccc}
+    \toprule
+    Step & $q_0(a^*)$ before $\to$ after & $u_k$ & $w_k$ \\
+    \midrule
+    1 & $0.02\to0.01$ & $-0.69$ & 0.77 \\
+    2 & $0.01\to0.01$ & $\phantom{+}0.00$ & 0.86 \\
+    3 & $0.01\to0.10$ & $+2.30$ & 1.37 \\
+    \bottomrule
+  \end{tabular}
+  \caption{A toy trace of three equal-length steps ($c=\tau=2$, $\lambda=0.5$). The step that lowers the answer's probability is still supervised, and a step with zero gain gets a weight below 1, because weights are relative to the other steps of the trace; the weights average 1.}
+  \label{tab:toy}
+\end{table}
+
+Table~\ref{tab:toy} works through a toy trace.
+We use $c=2$, $\tau=2$, $\lambda=0.5$ and $\epsilon=10^{-8}$ throughout.
+Then $r_k\in[e^{-1},e]\approx[0.37,2.72]$, two raw weights differ by at most $e^2\approx7.4$, and the final weights satisfy $0.57\lesssim w_k\lesssim4.19$ in the worst case; the answer-gain weights we train with lie between 0.58 and 2.68 for the 1.5B student and between 0.58 and 2.89 for Qwen3-8B.
+
+\subsection{Training objective}
+\label{sec:objective}
+
+Every token of step $k$ receives the weight $w_k$:
+\begin{equation}
+  \begin{split}
+  \mathcal{L}=-\frac{1}{Z}\sum_{(x,y)\in\mathcal{B}}\Big[&\sum_{k=1}^{K} w_k\sum_{t\in s_k}\log p_\theta(y_t\mid x,y_{<t})\\
+  &+\log p_\theta(\texttt{eos}\mid x,y)\Big],
+  \end{split}
+  \label{eq:loss}
+\end{equation}
+where $\mathcal{B}$ is the set of traces in one optimizer step (all gradient-accumulation microbatches) and $Z$ the number of supervised tokens in $\mathcal{B}$, including one end-of-sequence token per trace, exactly as in uniform SFT.
+The steps cover the whole response, prompt tokens are not supervised, and the end-of-sequence token keeps weight 1.
+
+\paragraph{Properties.}
+Both $\hat w$ and the uniform weights satisfy $\sum_k\ell_k w_k=\sum_k\ell_k$, so their mixture does too: every trace keeps its learning budget.
+Allocation is therefore zero-sum within a trace: raising one step lowers the others, while each trace's share of the batch's loss weight is that of uniform SFT.
+The constraint is on loss weights, not on gradients: since tokens have different gradients, the size and direction of the update still change.
+$\lambda=0$ recovers standard SFT (NLL).
+At the other end, $\lambda=1$ and $\tau\to0$ concentrate the response weight on the steps with the largest standardized scores; intermediate values interpolate between this limit and uniform SFT.
+
+\subsection{Composing with other frameworks}
+\label{sec:compose}
+
+Allocation needs only a segmented trace, its gold answer and a frozen copy of the student, not how the trace was produced, so it can be added to each line of work in \S1.
+Curated, multi-teacher or student-adapted traces \citep{muennighoff2025s1,yun2026cord,liu2026palign} are weighted as they are.
+\emph{Selective masks.} With a mask from SGL or Segment-Selective SFT, Eq.~\ref{eq:iwc} keeps $M_k$ and takes $w_k$ from Eqs.~\ref{eq:z}--\ref{eq:weights} computed over the kept steps; selection then decides what is learned and allocation how much.
+\emph{Auxiliary objectives.} In Reasoning Scaffolding \citep{wen2026scaffolding}, the weights apply to the token-prediction term of each step and leave the signal-prediction term unchanged; a token-level factor such as DFT's probability multiplies $w_k$.
