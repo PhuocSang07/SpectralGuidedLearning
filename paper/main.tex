@@ -438,7 +438,6 @@ Our experiments cover mathematical reasoning with three Qwen-based students and 
 Answer gain relies on a checkable final answer, so tasks without verifiable answers would need a different probe or answer signal.
 We fixed the answer probe and explored the weighting hyperparameters in a single-seed sweep (Appendix~\ref{app:ablation}), and we study allocation on its own; combining it with selective masks and other trace sources (\S\ref{sec:compose}) is a natural next step.
 
-
 % \paragraph{Effect size and variance.}
 % On the 1.5B student, answer gain beats P-ALIGN by +1.70 pass@1 and +1.06 pass@3 on average; on Qwen2.5-7B-Instruct and Qwen3-8B it does not beat P-ALIGN.
 % The reported results do not establish statistical significance or evaluation variance, and training-seed variance was not measured for answer gain.
@@ -469,6 +468,12 @@ All experiments ran on a single GPU.
 \bibliography{custom}
 
 \appendix
+% The appendix is float-heavy: let two-column floats share a page and fill float pages,
+% so the ablation tables stay near their section instead of collecting at the end.
+\renewcommand{\dbltopfraction}{0.85}
+\setcounter{dbltopnumber}{3}
+\renewcommand{\dblfloatpagefraction}{0.6}
+\makeatletter\setlength{\@dblfptop}{0pt}\makeatother % float pages start at the top
 
 \section{Full Fine-Tuning Needs fp32 Master Weights}
 \label{app:bf16}
@@ -625,7 +630,7 @@ Arms e2 and e3 replace the gain by the frozen student's mean token log-probabili
   \small
   \setlength{\tabcolsep}{4pt}
   \begin{threeparttable}
-  \begin{tabular}{lcccccccccc}
+  \begin{tabular}{p{4.3cm}cccccccccc}
     \toprule
     \multirow{2}{*}{Method}
     & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
@@ -641,20 +646,12 @@ Arms e2 and e3 replace the gain by the frozen student's mean token log-probabili
     ALG + no-answer upweight (e5) & \underline{17.78} & \textbf{33.33} & 14.44 & 23.33 & 52.21 & \textbf{69.88} & 77.60 & \textbf{88.40} & 40.51 & \textbf{53.74} \\
     \bottomrule
   \end{tabular}
-  \begin{tablenotes}[flushleft]
-    \footnotesize\item[] Scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
-  \end{tablenotes}
   \end{threeparttable}
   \caption{Ablation of the step score on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$, $\tau=2$). ALG: answer-gain allocation. Arms e2 and e3 up-weight easy or hard steps by the frozen student's mean token log-probability, e4 permutes the gains within each trace, and e5 keeps steps that only restate the gold answer at weight 1.}
   \label{tab:abl-score}
-\end{table*}
-
-\begin{table*}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{4pt}
+  \medskip
   \begin{threeparttable}
-  \begin{tabular}{lcccccccccc}
+  \begin{tabular}{p{4.3cm}cccccccccc}
     \toprule
     \multirow{2}{*}{Method}
     & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
@@ -668,7 +665,7 @@ Arms e2 and e3 replace the gain by the frozen student's mean token log-probabili
     \bottomrule
   \end{tabular}
   \begin{tablenotes}[flushleft]
-    \footnotesize\item[] Scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
+    \footnotesize\item[] Tables~\ref{tab:abl-score}--\ref{tab:abl-lambda}: scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
   \end{tablenotes}
   \end{threeparttable}
   \caption{Ablation of the shrinkage $\lambda$ of Eq.~\ref{eq:weights} on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=2$). $\lambda=0$ recovers uniform SFT.}
@@ -680,7 +677,7 @@ Arms e2 and e3 replace the gain by the frozen student's mean token log-probabili
   \small
   \setlength{\tabcolsep}{4pt}
   \begin{threeparttable}
-  \begin{tabular}{lcccccccccc}
+  \begin{tabular}{p{4.3cm}cccccccccc}
     \toprule
     \multirow{2}{*}{Method}
     & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
@@ -693,20 +690,12 @@ Arms e2 and e3 replace the gain by the frozen student's mean token log-probabili
     ALG ($\tau=4$) (e8) & \underline{18.89} & \underline{23.33} & 13.33 & 13.33 & \underline{51.00} & 63.86 & \textbf{78.13} & \textbf{88.60} & 40.34 & 47.28 \\
     \bottomrule
   \end{tabular}
-  \begin{tablenotes}[flushleft]
-    \footnotesize\item[] Scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
-  \end{tablenotes}
   \end{threeparttable}
   \caption{Ablation of the temperature $\tau$ of Eq.~\ref{eq:z} on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$).}
   \label{tab:abl-tau}
-\end{table*}
-
-\begin{table*}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{4pt}
+  \medskip
   \begin{threeparttable}
-  \begin{tabular}{lcccccccccc}
+  \begin{tabular}{p{4.3cm}cccccccccc}
     \toprule
     \multirow{2}{*}{Method}
     & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
@@ -714,17 +703,37 @@ Arms e2 and e3 replace the gain by the frozen student's mean token log-probabili
     & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
     \midrule
     \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, normalization, $\tau=1$, $\lambda=0.5$, seed 42}} \\
-    Per-trace normalization (Eq.~\ref{eq:mass}) (e7) & \textbf{23.33} & \textbf{33.33} & \textbf{17.78} & \textbf{30.00} & \textbf{53.01} & \underline{67.47} & 77.00 & \textbf{88.00} & \textbf{42.78} & \textbf{54.70} \\
-    Corpus normalization (e9) & \underline{20.00} & \underline{30.00} & \underline{15.56} & \underline{26.67} & \underline{51.00} & 66.27 & \textbf{78.00} & \underline{87.80} & \underline{41.14} & \underline{52.68} \\
-    No normalization (e10) & 14.44 & 20.00 & \underline{15.56} & \underline{26.67} & \textbf{53.01} & \textbf{68.67} & \underline{77.47} & 87.00 & 40.12 & 50.59 \\
+    Per-trace (Eq.~\ref{eq:mass}) (e7) & \textbf{23.33} & \textbf{33.33} & \textbf{17.78} & \textbf{30.00} & \textbf{53.01} & \underline{67.47} & 77.00 & \textbf{88.00} & \textbf{42.78} & \textbf{54.70} \\
+    Whole corpus (e9) & \underline{20.00} & \underline{30.00} & \underline{15.56} & \underline{26.67} & \underline{51.00} & 66.27 & \textbf{78.00} & \underline{87.80} & \underline{41.14} & \underline{52.68} \\
+    None (e10) & 14.44 & 20.00 & \underline{15.56} & \underline{26.67} & \textbf{53.01} & \textbf{68.67} & \underline{77.47} & 87.00 & 40.12 & 50.59 \\
     \bottomrule
   \end{tabular}
-  \begin{tablenotes}[flushleft]
-    \footnotesize\item[] Scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
-  \end{tablenotes}
   \end{threeparttable}
   \caption{Ablation of the token-mass normalization on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=1$, $\lambda=0.5$).}
   \label{tab:abl-norm}
+  \medskip
+  \begin{threeparttable}
+  \begin{tabular}{p{4.3cm}cccccccccc}
+    \toprule
+    \multirow{2}{*}{Method}
+    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
+    \midrule
+    \multicolumn{11}{l}{\textit{Qwen2.5-7B-Instruct, LoRA, $\tau=1$, effective batch 8, seed 42}} \\
+    ALG ($\lambda=0.25$, $c=2$) & 4.44 & \underline{13.33} & 7.78 & \underline{16.67} & 38.15 & 53.01 & \underline{71.67} & \underline{84.40} & 30.51 & 41.85 \\
+    ALG ($\lambda=0.5$, $c=2$) & \underline{7.78} & \underline{13.33} & \underline{8.89} & 13.33 & \underline{40.56} & \underline{54.22} & 71.07 & 84.00 & 32.07 & 41.22 \\
+    ALG ($\lambda=0.75$, $c=2$) & 5.56 & \underline{13.33} & \underline{8.89} & \underline{16.67} & 38.96 & \underline{54.22} & \textbf{71.80} & \textbf{84.80} & 31.30 & 42.25 \\
+    ALG ($\lambda=1$, $c=2$) & 6.67 & \underline{13.33} & \textbf{12.22} & \textbf{20.00} & \textbf{43.37} & \textbf{61.45} & 70.67 & 82.80 & \textbf{33.23} & \textbf{44.39} \\
+    ALG ($\lambda=0.25$, $c=1$) & \textbf{14.44} & \textbf{23.33} & 6.67 & 10.00 & 38.15 & \underline{54.22} & 69.87 & 82.00 & \underline{32.28} & \underline{42.39} \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}[flushleft]
+    \footnotesize\item[] Tables~\ref{tab:abl-tau}--\ref{tab:sweep7b}: scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
+  \end{tablenotes}
+  \end{threeparttable}
+  \caption{Answer-gain allocation on Qwen2.5-7B-Instruct with $\tau=1$ and an effective batch of 8 (training seed 42, one evaluation). $c$ is the clip of Eq.~\ref{eq:z}.}
+  \label{tab:sweep7b}
 \end{table*}
 
 \paragraph{Allocation strength.}
@@ -750,34 +759,6 @@ Under every answer-gain setting (e1, e6--e8), 43\% of the 10\% most up-weighted 
 \paragraph{Qwen2.5-7B-Instruct.}
 On this student we sweep $\lambda$ and the clip $c$ at $\tau=1$ and an effective batch of 8 (Table~\ref{tab:sweep7b}).
 Pass@1 ranges from 30.51 to 33.23 and is highest with full allocation ($\lambda=1$, $c=2$), which also gives the best pass@3; Table~\ref{tab:main} reports this setting.
-
-\begin{table*}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{4pt}
-  \begin{threeparttable}
-  \begin{tabular}{lcccccccccc}
-    \toprule
-    \multirow{2}{*}{Method}
-    & \multicolumn{2}{c}{AIME25} & \multicolumn{2}{c}{AIME24} & \multicolumn{2}{c}{AMC12} & \multicolumn{2}{c}{MATH500} & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
-    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 & p@1 & p@3 \\
-    \midrule
-    \multicolumn{11}{l}{\textit{Qwen2.5-7B-Instruct, LoRA, $\tau=1$, effective batch 8, seed 42}} \\
-    ALG ($\lambda=0.25$, $c=2$) & 4.44 & \underline{13.33} & 7.78 & \underline{16.67} & 38.15 & 53.01 & \underline{71.67} & \underline{84.40} & 30.51 & 41.85 \\
-    ALG ($\lambda=0.5$, $c=2$) & \underline{7.78} & \underline{13.33} & \underline{8.89} & 13.33 & \underline{40.56} & \underline{54.22} & 71.07 & 84.00 & 32.07 & 41.22 \\
-    ALG ($\lambda=0.75$, $c=2$) & 5.56 & \underline{13.33} & \underline{8.89} & \underline{16.67} & 38.96 & \underline{54.22} & \textbf{71.80} & \textbf{84.80} & 31.30 & 42.25 \\
-    ALG ($\lambda=1$, $c=2$) & 6.67 & \underline{13.33} & \textbf{12.22} & \textbf{20.00} & \textbf{43.37} & \textbf{61.45} & 70.67 & 82.80 & \textbf{33.23} & \textbf{44.39} \\
-    ALG ($\lambda=0.25$, $c=1$) & \textbf{14.44} & \textbf{23.33} & 6.67 & 10.00 & 38.15 & \underline{54.22} & 69.87 & 82.00 & \underline{32.28} & \underline{42.39} \\
-    \bottomrule
-  \end{tabular}
-  \begin{tablenotes}[flushleft]
-    \footnotesize\item[] Scores are percentages. Average is the unweighted mean over the four benchmarks. Best values are bold; second-best distinct values are underlined.
-  \end{tablenotes}
-  \end{threeparttable}
-  \caption{Answer-gain allocation on Qwen2.5-7B-Instruct with $\tau=1$ and an effective batch of 8 (training seed 42, one evaluation). $c$ is the clip of Eq.~\ref{eq:z}.}
-  \label{tab:sweep7b}
-\end{table*}
 
 \section{An Example Trace}
 \label{app:example}
