@@ -907,7 +907,16 @@ Keeping every trace's budget fixed is therefore part of what makes allocation wo
 
 \paragraph{Score.}
 Table~\ref{tab:abl-score} compares step scores at $\lambda=0.5$.
-Answer gain is not a proxy for how easy a step is: within a trace, its Spearman correlation with the step's mean log-probability has a median of $-0.02$ (interquartile range $-0.14$ to $0.10$), and the 10\% highest-scoring steps under the two scores overlap by a median of 17\%.
+Answer gain is not a proxy for how easy a step is (Figure~\ref{fig:score-analysis}): within a trace, its Spearman correlation with the step's mean log-probability has a median of $-0.02$ (interquartile range $-0.14$ to $0.10$), close to what two independent rankings give, and the 10\% highest-scoring steps under the two scores overlap by a median of 17\%.
+The overlap is small but above chance (a mean of 20\%, against 11\% for independent scores), which fits the steps that restate the answer, both easy to predict and high in gain.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/score_analysis.pdf}
+  \caption{Answer gain against step predictability, the frozen student's mean token log-probability of the step, for each of the 966 training traces (DeepSeek-R1-Distill-Qwen-1.5B). (a) Within-trace Spearman correlation between the two scores; the dashed line marks the median and the shaded band the interquartile range. (b) Share of the $\lceil 0.1K\rceil$ highest-gain steps of a trace that are also among its $\lceil 0.1K\rceil$ most predictable steps. Grey outlines: the same statistics for two independent random rankings of each trace's steps (50 draws per trace).}
+  \label{fig:score-analysis}
+\end{figure*}
+
 Up-weighting easy steps is a strong baseline: at $\tau=2$ it reaches 42.79 / 53.67, above answer-gain allocation at the same $\tau$ (42.46 / 53.09); it is level with answer-gain allocation at $\tau=1$ on pass@1 (42.78) and below it on pass@3 (54.70), but predictability weighting itself was evaluated only at $\tau=2$.
 Up-weighting hard steps gives 41.88 / 53.42.
 Answer gain is therefore a distinct allocation signal that is competitive with predictability weighting, not one shown to be better.
@@ -917,6 +926,13 @@ Under every answer-gain setting of Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-
 
 \section{An Example Trace}
 \label{app:example}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/key_steps.pdf}
+  \caption{The steps of a training trace for ``Find the wind power $P_w$ in terms of $P$ and the temperature ratio $T_2/T_1$'' (gold answer $P_w=P\,T_1/T_2$), scored with the 1.5B student. Each row is one step, abridged; the DeepSeek-R1 prefix ends inside $s_{13}$ at the \eop{} marker, and the rest is the Qwen2.5-7B continuation. Highlighted steps have the largest and the lowest weights $w_k$ ($\lambda=0.5$), and $s_{16}$ states the answer.}
+  \label{fig:example}
+\end{figure*}
 
 \begin{table}[h]
   \centering
@@ -946,11 +962,5 @@ Figure~\ref{fig:example} shows every step of a second trace.
 The largest gain and weight go to $s_{15}$, which derives $\rho_2/\rho_1=T_1/T_2$ and does not contain the gold answer, while $s_{16}$, which states the answer, is up-weighted less.
 The two steps that return to $P_w=\frac{1}{2}\rho Av^3$, which does not involve the temperature ratio, lower the probability of the gold answer and receive the smallest weights.
 
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=\textwidth]{figures/key_steps.pdf}
-  \caption{The steps of a training trace for ``Find the wind power $P_w$ in terms of $P$ and the temperature ratio $T_2/T_1$'' (gold answer $P_w=P\,T_1/T_2$), scored with the 1.5B student. Each row is one step, abridged; the DeepSeek-R1 prefix ends inside $s_{13}$ at the \eop{} marker, and the rest is the Qwen2.5-7B continuation. Highlighted steps have the largest and the lowest weights $w_k$ ($\lambda=0.5$), and $s_{16}$ states the answer.}
-  \label{fig:example}
-\end{figure*}
 
 \end{document}
