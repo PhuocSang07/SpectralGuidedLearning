@@ -597,7 +597,7 @@ DFT scales that token's gradient by its probability, so the student learns to em
 Training the first eight continuation tokens with NLL cuts this to 0.5\%.
 
 \paragraph{Rumination.}
-In a separate diagnostic generation with a longer 8,192-token budget, outside the evaluation protocol, 41\% of the generations of the model trained with DFT on all tokens are still truncated, and 84\% of those end in a repetitive loop.
+With DFT on all tokens, 41\% of generations are still truncated at 8,192 tokens, and 84\% of those end in a repetitive loop.
 The end-of-sequence token is not the cause: at the end of the training targets its median probability is 0.98, so DFT does train it.
 
 \section{Generation Behavior}
