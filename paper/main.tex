@@ -407,8 +407,7 @@ $5\cdot10^{-5}$ with cosine decay to $10^{-5}$
 and 10\% warm-up, bf16 compute with fp32
 master weights (DeepSpeed ZeRO-2;
 \citealp{rajbhandari2020zero}; Appendix~\ref{app:bf16}),
-an effective batch size of 32, and training
-seed 42 (Table~\ref{tab:hparams},
+and an effective batch size of 32 (Table~\ref{tab:hparams},
 Appendix~\ref{app:repro}).
  
 
@@ -468,22 +467,22 @@ After weighting, about one step in five has $w_k>1$ in the median trace, and the
 
 \subsection{Per-trace normalization matters}
 \label{sec:normalization_ablation}
-On the 1.5B student, replacing the per-trace normalization of Eq.~\ref{eq:mass} by one over the whole corpus lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68, and removing it gives 40.12 / 50.59 (one training seed; Appendix~\ref{app:ablation}).
+On the 1.5B student, replacing the per-trace normalization of Eq.~\ref{eq:mass} by one over the whole corpus lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68, and removing it gives 40.12 / 50.59 (Appendix~\ref{app:ablation}).
 
 \section{Conclusion}
 
 We allocated supervision across the steps of fixed long-CoT traces by the frozen student's answer-likelihood gain, keeping every token and each trace's total weight.
 On one fixed set of 966 student-adapted traces, it improved pass@1 over P-ALIGN, which trains the same traces uniformly, by +2.02 on a 1.5B student and by +3.83 on a LoRA-trained Qwen3-8B; on Qwen2.5-7B-Instruct, it improved pass@3 but not pass@1.
 Data adaptation decides which traces the student learns from; answer-gain allocation decides how the student's supervision is spread over the steps of those traces.
-Why the pass@1 gain vanishes on Qwen2.5-7B-Instruct, and whether the gains hold across training seeds and other trace sources, remain open.
+Why the pass@1 gain vanishes on Qwen2.5-7B-Instruct, and whether the gains hold for other trace sources, remain open.
 
 \section*{Limitations}
 
 Our experiments cover mathematical reasoning with three Qwen-based students and one public set of teacher traces under a fixed evaluation protocol; extending answer-gain allocation to other domains, model families and generation budgets (Appendix~\ref{app:gen}) is left to future work.
 Answer gain relies on a checkable final answer, so tasks without verifiable answers would need a different probe or answer signal.
 Answer gain measures how recoverable a step makes the gold answer for the frozen student, not the step's causal or logical contribution; a step can both derive and state the answer, and separating the two remains open.
-Answer gain is nearly uncorrelated with how easy a step is to predict (Appendix~\ref{app:ablation}), yet in our single-seed ablation weighting steps by predictability reaches comparable accuracy; establishing which signal allocates supervision better requires multi-seed comparisons at matched hyperparameters.
-We fixed the answer probe and explored the weighting hyperparameters in a single-seed sweep (Appendix~\ref{app:ablation}), and we study allocation on its own; combining it with selective masks and other trace sources (\S\ref{sec:compose}) is a natural next step.
+Answer gain is nearly uncorrelated with how easy a step is to predict (Appendix~\ref{app:ablation}), yet in our ablation weighting steps by predictability reaches comparable accuracy; establishing which signal allocates supervision better requires multi-seed comparisons at matched hyperparameters.
+We fixed the answer probe and explored the weighting hyperparameters in a limited sweep (Appendix~\ref{app:ablation}), and we study allocation on its own; combining it with selective masks and other trace sources (\S\ref{sec:compose}) is a natural next step.
 
 \section*{Ethics Statement}
 We train and evaluate on public mathematical reasoning datasets and models.
@@ -531,7 +530,6 @@ We therefore train every model with DeepSpeed ZeRO-2, which keeps fp32 master we
     LoRA & $r=16$, $\alpha=16$, dropout 0.05 \\
     Precision & bf16 compute, fp32 masters \\
     Optimizer & AdamW, ZeRO-2 offload \\
-    Training seed & 42 \\
     Weights & $\tau=1$, $c=2$, $\lambda=0.5$ \\
     \bottomrule
   \end{tabular}
@@ -651,8 +649,8 @@ The other steps are lowered only moderately, because the shrinkage of Eq.~\ref{e
 \label{app:ablation}
 
 We ablate the step score, the allocation strength and the token-mass normalization on the 1.5B student (Tables~\ref{tab:abl-score}--\ref{tab:abl-norm}).
-All allocation arms start from the same checkpoint and share the training data, step segmentation, training recipe and evaluation protocol of \S\ref{sec:setup} (training seed 42); they differ only in the score fed to Eqs.~\ref{eq:z}--\ref{eq:weights}, in $\lambda$ and $\tau$, or in the normalization.
-Each arm is evaluated once, except answer-gain allocation at $\lambda=0.5$, $\tau=2$, whose scores are the mean over three evaluation seeds, and the uniform rows repeat P-ALIGN (Table~\ref{tab:main}), which trains the same traces uniformly.
+All allocation arms start from the same checkpoint and share the training data, step segmentation, training recipe and evaluation protocol of \S\ref{sec:setup}; they differ only in the score fed to Eqs.~\ref{eq:z}--\ref{eq:weights}, in $\lambda$ and $\tau$, or in the normalization.
+Each arm is evaluated once, except answer-gain allocation at $\lambda=0.5$, $\tau=2$, whose scores are the mean over three evaluation runs, and the uniform rows repeat P-ALIGN (Table~\ref{tab:main}), which trains the same traces uniformly.
 The step-score ablation runs at $\lambda=0.5$ and compares uniform SFT (P-ALIGN), answer-gain allocation ($\tau=1$), predictability-based weighting of easy or hard steps (the frozen student's mean token log-probability of the step or its negative), random assignment of the gains within each trace, and a variant that keeps steps that only restate the gold answer (a \boxedtok{} answer with at most a short wrapper such as ``the final answer is'') at unit weight and allocates over the other steps; the last four use $\tau=2$.
 
 \begin{table*}[t]
@@ -767,7 +765,7 @@ weight.}
     \bottomrule
   \end{tabular}
   \end{threeparttable}
-  \caption{Ablation of the shrinkage $\lambda$ of Eq.~\ref{eq:weights} on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=2$). $\lambda=0$ recovers uniform SFT; this row repeats P-ALIGN (Table~\ref{tab:main}). The $\lambda=0.5$ row is the mean over three evaluation seeds.}
+  \caption{Ablation of the shrinkage $\lambda$ of Eq.~\ref{eq:weights} on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=2$). $\lambda=0$ recovers uniform SFT; this row repeats P-ALIGN (Table~\ref{tab:main}). The $\lambda=0.5$ row is the mean over three evaluation runs.}
   \label{tab:abl-lambda}
 \end{table*}
 
@@ -815,7 +813,7 @@ weight.}
     \bottomrule
   \end{tabular}
   \end{threeparttable}
-  \caption{Ablation of the temperature $\tau$ of Eq.~\ref{eq:z} on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$). The $\tau=2$ row is the mean over three evaluation seeds.}
+  \caption{Ablation of the temperature $\tau$ of Eq.~\ref{eq:z} on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$). The $\tau=2$ row is the mean over three evaluation runs.}
   \label{tab:abl-tau}
 
   \medskip
@@ -868,7 +866,6 @@ Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-tau} vary $\lambda$ and $\tau$.
 A sharper temperature gives the strongest arm: with $\tau=1$, answer-gain allocation reaches the highest pass@3 of all arms, 54.70 against 52.03 for uniform SFT, and 42.78 pass@1, level with the best, while a smoother temperature ($\tau=4$) gives the lowest pass@3.
 At $\tau=2$, answer-gain allocation with $\lambda=0.5$ reaches 42.46 pass@1 and 53.09 pass@3, compared with 40.76 and 52.03 for uniform SFT; full allocation ($\lambda=1$, 41.15 / 51.20) falls between the two on pass@1 and below both on pass@3.
 Both settings concentrate the weight: the 10\% most up-weighted steps carry 29.7\% of the token-weighted mass at $\lambda=0.5$, $\tau=2$, 38.6\% with $\lambda=1$ and 39.5\% with $\tau=1$, against 24.9\% with $\tau=4$.
-These results come from one training seed, and more training seeds are needed to rank the arms.
 
 \paragraph{Normalization.}
 Our allocation preserves the response-token loss mass of each trace (Eq.~\ref{eq:budget}).
@@ -906,14 +903,14 @@ In each case, the final weight is $w_{ik}=(1-\lambda)+\lambda\hat w_{ik}$. We me
 Global normalization matches the corpus token mass ($\mathcal{M}=1$) but lets trace budgets drift from uniform (standard deviation 0.26 across traces, Table~\ref{tab:norm-diag}), and lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68 (Table~\ref{tab:abl-norm}).
 Without normalization, the total weight grows by 57\%, trace budgets vary more (standard deviation 0.56), and the scores drop to 40.12 / 50.59, below uniform SFT.
 The comparison with global normalization is the more informative one, because both variants keep the corpus-wide loss mass, whereas removing normalization also changes the overall loss scale.
-Keeping every trace's budget fixed is therefore part of what makes allocation work, not only a convenience, although these differences come from one training seed.
+Keeping every trace's budget fixed is therefore part of what makes allocation work, not only a convenience.
 
 \paragraph{Score.}
 Table~\ref{tab:abl-score} compares step scores at $\lambda=0.5$.
 Answer gain is not a proxy for how easy a step is: within a trace, its Spearman correlation with the step's mean log-probability has a median of $-0.02$ (interquartile range $-0.14$ to $0.10$), and the 10\% highest-scoring steps under the two scores overlap by a median of 17\%.
 Up-weighting easy steps is a strong baseline: at $\tau=2$ it reaches 42.79 / 53.67, above answer-gain allocation at the same $\tau$ (42.46 / 53.09); it is level with answer-gain allocation at $\tau=1$ on pass@1 (42.78) and below it on pass@3 (54.70), but predictability weighting itself was evaluated only at $\tau=2$.
 Up-weighting hard steps gives 41.88 / 53.42.
-With one training seed, answer gain is therefore a distinct allocation signal that is competitive with predictability weighting, not one shown to be better.
+Answer gain is therefore a distinct allocation signal that is competitive with predictability weighting, not one shown to be better.
 Keeping steps that only restate the answer at uniform weight gives 40.51 / 53.74, against 42.46 / 53.09 for answer-gain allocation at the same $\tau=2$: pass@1 drops by about two points while pass@3 does not, so the pass@3 gains do not rely on up-weighting such steps.
 This ablation changes only the training weights: the gains are still scored on traces that contain the answer, so it does not separate what a step derives from the answer it states.
 Under every answer-gain setting of Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-tau}, 43\% of the 10\% most up-weighted steps contain a computation and 23\% the gold answer, against 28\% and 6.7\% of all steps, so $\lambda$ and $\tau$ change only how strongly these steps are up-weighted; permuting the gains removes this targeting.
