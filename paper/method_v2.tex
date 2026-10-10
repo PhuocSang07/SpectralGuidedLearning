@@ -61,7 +61,7 @@ where $\mu_u$ and $\sigma_u$ are the mean and standard deviation of the step-lev
 The raw weight satisfies $e^{-c/\tau}\le r_k\le e^{c/\tau}$. 
 Unless stated otherwise, we use $c=2$, $\tau=1$,
 $\lambda=0.5$ (Eq.~\ref{eq:weights}), and
-$\epsilon=10^{-8}$; Table~\ref{tab:toy} works through a toy trace, and with these values the trained weights lie between 0.58 and 2.89 across the three students.
+$\epsilon=10^{-8}$. Table~\ref{tab:toy} works through a toy trace with $\tau=2$, the setting under which the trained weights lie between 0.58 and 2.89 across the three students.
 
 \paragraph{Token-mass normalization.}
 A step weight applies to each token in that step, so a step containing $\ell_k$ tokens contributes $\ell_k r_k$ to the total loss coefficient mass. We therefore normalize by token mass:

@@ -91,7 +91,7 @@ Each step is scored by its \emph{answer-likelihood gain} (\emph{answer gain} for
 A step with high gain, which we call \emph{decisive}, is one that makes the answer accessible to the student, whether or not it is difficult for the student to predict \citep{xu2020usable}.
 We standardize the gains within each trace and turn them into soft weights that preserve the trace's total token weight, so no step is cut, every step keeps at least a fixed share of its uniform weight, and hard selection is a limiting case (Figure~\ref{fig:method}; Appendix~\ref{app:limit}).
 The scores are computed offline, without sampling, gradients or models other than the student, and because the weights act only on the loss they can be added to the trace sources and selective masks above.
-We study allocation after data adaptation, on the 966 traces adapted by P-ALIGN \citep{liu2026palign}, and compare mainly with P-ALIGN, which trains the same traces uniformly: allocation raises pass@1 and pass@3 for DeepSeek-R1-Distill-Qwen-1.5B and the LoRA-trained Qwen3-8B, and pass@3 but not pass@1 for Qwen2.5-7B-Instruct.
+We study allocation after data adaptation, on the 966 traces that P-ALIGN \citep{liu2026palign} adapted to Qwen2.5-7B, and compare mainly with P-ALIGN, which trains the same traces uniformly: allocation raises pass@1 and pass@3 for DeepSeek-R1-Distill-Qwen-1.5B and the LoRA-trained Qwen3-8B, and pass@3 but not pass@1 for Qwen2.5-7B-Instruct.
 
 \begin{figure*}[t]
   \centering
@@ -419,6 +419,7 @@ We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems
 The baseline rows of Table~\ref{tab:main} fall into two groups.
 The first, SFT on full long CoT, SGL and Segment-Selective SFT, was trained on s1K-1.1 rather than on the 966 adapted traces; these rows place our results among existing long-CoT distillation methods but are not controlled comparisons, because their training data differ.
 The primary comparison is P-ALIGN, which is uniform SFT on the same 966 traces in its original pipeline; answer-gain allocation keeps these traces unchanged and instead reweights the loss across their steps.
+For the 1.5B and Qwen3-8B students, it thus trains on traces adapted to another model.
 Appendix~\ref{app:ablation} compares answer gain with other step scores on the same traces.
 On Qwen2.5-7B-Instruct, P-ALIGN is our
 reproduction with LlamaFactory-based
@@ -432,13 +433,13 @@ Our \textbf{answer gain} arm keeps every token and allocates supervision using $
 \label{sec:results}
 
 Table~\ref{tab:main} gives the results for all three students.
-We focus on the comparison with P-ALIGN, which trains the same traces uniformly; the s1K-1.1 rows are reference points (\S\ref{sec:setup}).
+We focus on P-ALIGN; the s1K-1.1 rows are reference points (\S\ref{sec:setup}).
 On the 1.5B student, answer-gain allocation raises average pass@1 over P-ALIGN from 40.76 to 42.78 (+2.02) and pass@3 from 52.03 to 54.70 (+2.67).
 
 \paragraph{Larger students.}
 On Qwen3-8B the gain is larger: answer-gain allocation raises average pass@1 over P-ALIGN from 49.24 to 53.07 (+3.83) and pass@3 from 58.82 to 62.41 (+3.59), with a higher pass@1 on all four benchmarks and a higher pass@3 on all but AMC12.
 On Qwen2.5-7B-Instruct the results are mixed: allocation trails P-ALIGN by 0.27 pass@1 (33.45 against 33.72) but improves pass@3 by 1.45 (46.09 against 44.64), and its pass@1 stays close to the zero-shot student (33.24).
-Redistributing supervision across steps can thus add to data adaptation, even on traces already adapted to a student.
+The two students that gain most train on traces adapted to another model, while Qwen2.5-7B-Instruct is closest to the model that wrote them; allocation may help most when traces do not match the student.
 
 \section{Analysis}
 \label{sec:analysis}
@@ -446,7 +447,7 @@ Redistributing supervision across steps can thus add to data adaptation, even on
 \subsection{Hard selection removes substantial supervision}
 \label{sec:selection-analysis}
 
-These traces have already been adapted to a student, and applying the SGL gate as a second selection stage would remove a large share of their supervision.
+These traces have already been adapted by P-ALIGN, and applying the SGL gate as a second selection stage would remove a large share of their supervision.
 With $p=0.95$ the gate drops only 18\% of the 47,532 steps but 41\% of the 2.92M response tokens, because the long, low-leverage continuation steps fall below the threshold.
 It removes 20\% of the teacher prefix, 49\% of the continuation, and the step that writes the final \boxedtok{} in 362 of 966 traces (37\%).
 Under the spectral strengths of the larger students the same gate removes more of the response: 18\% of the steps, 44\% of the response tokens and the final \boxedtok{} step in 467 traces (48\%) for Qwen2.5-7B-Instruct, and 20\% of the steps, 49\% of the tokens (18\% of the prefix, 60\% of the continuation) and the final \boxedtok{} step in 672 traces (70\%) for Qwen3-8B.
@@ -457,7 +458,7 @@ This characterizes the gate only; SGL's accuracy in Table~\ref{tab:main} comes f
 \label{sec:what-gain}
 
 \paragraph{Decisive steps are sparse.}
-For the 1.5B student, 43\% of the 47,532 steps raise $\log q_0(a^*)$ by more than 0.1 nats, 39\% lower it by more than 0.1, and the rest leave it nearly unchanged; the three highest-gain steps of a trace carry a median 60\% of its positive gain, and the resulting final weights $w_k$ range from 0.58 to 2.68.
+For the 1.5B student (weights at $\tau=2$ here), 43\% of the 47,532 steps raise $\log q_0(a^*)$ by more than 0.1 nats, 39\% lower it by more than 0.1, and the rest leave it nearly unchanged; the three highest-gain steps of a trace carry a median 60\% of its positive gain, and the resulting final weights $w_k$ range from 0.58 to 2.68.
 The step that writes \boxedtok{} has the largest gain in 52\% of traces but carries a median 20\% of the positive gain, and clipping caps its raw weight $r_k$ at $e^{c/\tau}\approx2.7$, against 1 for a step at the trace mean ($z_k=0$).
 More broadly, the 6.7\% of steps that contain the gold answer string carry 28.3\% of all positive gain, and the top-gain step contains it in 66\% of traces.
 Part of the signal therefore rewards \emph{stating} the answer, and keeping the steps that only restate the boxed answer at uniform weight lowers pass@1 but not pass@3 (Appendix~\ref{app:ablation}); Appendix~\ref{app:example} shows two examples.
@@ -472,9 +473,8 @@ On the 1.5B student, replacing the per-trace normalization of Eq.~\ref{eq:mass} 
 \section{Conclusion}
 
 We allocated supervision across the steps of fixed long-CoT traces by the frozen student's answer-likelihood gain, keeping every token and each trace's total weight.
-On one fixed set of 966 student-adapted traces, it improved pass@1 over P-ALIGN, which trains the same traces uniformly, by +2.02 on a 1.5B student and by +3.83 on a LoRA-trained Qwen3-8B; on Qwen2.5-7B-Instruct, it improved pass@3 but not pass@1.
-Data adaptation decides which traces the student learns from; answer-gain allocation decides how the student's supervision is spread over the steps of those traces.
-Why the pass@1 gain vanishes on Qwen2.5-7B-Instruct, and whether the gains hold for other trace sources, remain open.
+On one fixed set of 966 traces adapted by P-ALIGN, it improved pass@1 over P-ALIGN by +2.02 on a 1.5B student and by +3.83 on a LoRA-trained Qwen3-8B; on Qwen2.5-7B-Instruct, it improved pass@3 but not pass@1.
+The pass@1 gain vanishes only on the student closest to the model that wrote the continuations; testing whether allocation helps most on mismatched traces, and on other trace sources, is left for future work.
 
 \section*{Limitations}
 
@@ -482,7 +482,7 @@ Our experiments cover mathematical reasoning with three Qwen-based students and 
 Answer gain relies on a checkable final answer, so tasks without verifiable answers would need a different probe or answer signal.
 Answer gain measures how recoverable a step makes the gold answer for the frozen student, not the step's causal or logical contribution; a step can both derive and state the answer, and separating the two remains open.
 Answer gain is nearly uncorrelated with how easy a step is to predict (Appendix~\ref{app:ablation}), yet in our ablation weighting steps by predictability reaches comparable accuracy; establishing which signal allocates supervision better requires comparisons at matched hyperparameters.
-We fixed the answer probe and explored the weighting hyperparameters in a limited sweep (Appendix~\ref{app:ablation}), and we study allocation on its own; combining it with selective masks and other trace sources (\S\ref{sec:compose}) is a natural next step.
+We fixed the answer probe and explored the weighting hyperparameters in a limited sweep (Appendix~\ref{app:ablation}); the temperature $\tau=1$ of the 1.5B student in Table~\ref{tab:main} is the best setting of this sweep, which is evaluated on the same benchmarks, since we used no held-out validation set, and we study allocation on its own; combining it with selective masks and other trace sources (\S\ref{sec:compose}) is a natural next step.
 
 \section*{Ethics Statement}
 We train and evaluate on public mathematical reasoning datasets and models.
@@ -634,14 +634,14 @@ The other steps are lowered only moderately, because the shrinkage of Eq.~\ref{e
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/high_weight_steps.pdf}
-  \caption{Mean weight $w_k$ by (a) relative position and (b) length of the step, and (c) content of the 10\% most up-weighted steps against all steps (grey), for each student ($\lambda=0.5$).}
+  \caption{Mean weight $w_k$ by (a) relative position and (b) length of the step, and (c) content of the 10\% most up-weighted steps against all steps (grey), for each student ($\lambda=0.5$, $\tau=2$).}
   \label{fig:highweight}
 \end{figure*}
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/weight_map.pdf}
-  \caption{Full weight map ($\lambda=0.5$). (a)--(c) One row per trace, its steps sorted by weight; white is $w_k=1$ and the black line marks where $w_k$ crosses 1. (d) Share of the weight above uniform held by the top-$k$ steps (median and interquartile range). (e) Share of steps with $w_k>1$ per trace.}
+  \caption{Full weight map ($\lambda=0.5$, $\tau=2$). (a)--(c) One row per trace, its steps sorted by weight; white is $w_k=1$ and the black line marks where $w_k$ crosses 1. (d) Share of the weight above uniform held by the top-$k$ steps (median and interquartile range). (e) Share of steps with $w_k>1$ per trace.}
   \label{fig:weightmap}
 \end{figure*}
 
@@ -933,7 +933,7 @@ Under every answer-gain setting of Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-
     16 & \dots{} New estimate: $x_4=1.1508+0.2555=1.4063$ \dots & $-$1.99 & 0.74 \\
     \bottomrule
   \end{tabular}
-  \caption{Five of the 16 steps of a training trace for ``Perform 2 iterations with the M\"uller method for $\log_{10}(x)-x+3=0$, $x_0=1/4$, $x_1=1/2$, $x_2=1$. What is the decimal value of $x_3$?'' (gold answer 1.1508). $u_k$ is answer gain and $w_k$ its weight from Eq.~\ref{eq:weights} ($\lambda=0.5$), using the 1.5B student.}
+  \caption{Five of the 16 steps of a training trace for ``Perform 2 iterations with the M\"uller method for $\log_{10}(x)-x+3=0$, $x_0=1/4$, $x_1=1/2$, $x_2=1$. What is the decimal value of $x_3$?'' (gold answer 1.1508). $u_k$ is answer gain and $w_k$ its weight from Eq.~\ref{eq:weights} ($\lambda=0.5$, $\tau=2$), using the 1.5B student.}
   \label{tab:example}
 \end{table}
 
