@@ -91,7 +91,7 @@ Each step is scored by its \emph{answer-likelihood gain} (\emph{answer gain} for
 A step with high gain, which we call \emph{decisive}, is one that makes the answer accessible to the student, whether or not it is difficult for the student to predict \citep{xu2020usable}.
 We standardize the gains within each trace and turn them into soft weights that preserve the trace's total token weight, so no step is cut, every step keeps at least a fixed share of its uniform weight, and hard selection is a limiting case (Figure~\ref{fig:method}; Appendix~\ref{app:limit}).
 The scores are computed offline, without sampling, gradients or models other than the student, and because the weights act only on the loss they can be added to the trace sources and selective masks above.
-We study allocation after data adaptation, on the 966 traces that P-ALIGN \citep{liu2026palign} adapted to Qwen2.5-7B, and compare mainly with P-ALIGN, which trains the same traces uniformly: allocation raises pass@1 and pass@3 for DeepSeek-R1-Distill-Qwen-1.5B and the LoRA-trained Qwen3-8B, and pass@3 but not pass@1 for Qwen2.5-7B-Instruct.
+On the 966 traces that P-ALIGN \citep{liu2026palign} adapted to Qwen2.5-7B, allocation improves on uniform SFT of the same traces (P-ALIGN) in pass@1 and pass@3 for DeepSeek-R1-Distill-Qwen-1.5B and Qwen3-8B, and in pass@3 only for Qwen2.5-7B-Instruct.
 
 \begin{figure*}[t]
   \centering
@@ -103,7 +103,7 @@ We study allocation after data adaptation, on the 966 traces that P-ALIGN \citep
 Our contributions are:
 \begin{itemize}
   \setlength\itemsep{0pt}
-  \item \textbf{Answer-gain allocation for distillation.} We weight the steps of fixed traces by the frozen student's answer-likelihood gain, with gains standardized within each trace and weights normalized by token mass, so that every token stays supervised and every trace keeps its total weight. The scores need no sampling, gradients or step-level labels, and the weights compose with other trace sources and selective masks (\S\ref{sec:method}).
+  \item \textbf{Answer-gain allocation for distillation.} We weight the steps of fixed traces by the frozen student's answer-likelihood gain, with gains standardized within each trace and weights normalized by token mass, so that every token stays supervised and every trace keeps its total weight. The scores need no sampling, gradients or step-level labels, and by construction the weights can be combined with other trace sources and selective masks (\S\ref{sec:method}; not tested here).
   \item \textbf{An analysis of selection and allocation.} We measure how much supervision a hard spectral gate removes from these traces and which steps answer gain up-weights, for each student (\S\ref{sec:analysis}).
   \item \textbf{Results on fixed adapted traces.} On three students and one evaluation protocol, we compare against uniform SFT of the same 966 traces (P-ALIGN) and against other allocation signals, report selection baselines trained on a different corpus (s1K-1.1) for context only, and state where the method does not help (\S\ref{sec:results}).
 \end{itemize}
@@ -126,7 +126,7 @@ SPIRIT \citep{cui2025spirit} likewise removes or merges steps whose removal bare
 All three edit the training traces, and their supervised stage weights every remaining token equally.
 
 \paragraph{Selecting what enters the loss.}
-SGL \citep{fan2026sgl} scores each step by its spectral strength, its load on a low-rank consensus subspace of the loss gradients, keeps the smallest set of steps whose total strength reaches a preset share of the trace's total, and masks the loss of the rest.
+Spectral-guided learning (SGL; \citealp{fan2026sgl}) scores each step by its spectral strength, its load on a low-rank consensus subspace of the loss gradients, keeps the smallest set of steps whose total strength reaches a preset share of the trace's total, and masks the loss of the rest.
 Segment-Selective SFT \citep{wang2026segattr} keeps the segments that carry most of the integrated-gradient attribution toward the answer (a 0.7 share) but whose attributions are not uniformly signed (consistency below 0.8), plus the first and last segments, with both thresholds set by search.
 Both decisions are binary: a step just below the threshold receives no gradient at all.
 Applied to the adapted traces we study, SGL's gate would mask 41--49\% of response tokens depending on the student, including the step that writes the final answer in 37--70\% of traces (\S\ref{sec:selection-analysis}); this measures what the gate removes, not how SGL performs when trained on these traces.
@@ -216,7 +216,7 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & 72.33 & 81.80
     & 36.92 & 49.75 \\
 
-    SFT (long CoT)
+    SFT (full long CoT)
     & 10.00 & 20.00
     & 15.56 & \textbf{30.00}
     & 44.58 & 61.45
@@ -261,7 +261,7 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & 74.67 & 85.20
     & 33.24 & 43.10 \\
 
-    SFT (long CoT)$^{\dagger}$
+    SFT (full long CoT)$^{\dagger}$
     & \underline{12.2} & \underline{20.0}
     & 8.9 & \underline{20.0}
     & 34.9 & 48.2
@@ -306,7 +306,7 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & 77.00 & 84.80
     & 42.96 & 52.53 \\
 
-    SFT (long CoT)
+    SFT (full long CoT)
     & 20.00 & 23.33
     & 22.22 & 33.33
     & 57.43 & 71.08
@@ -351,7 +351,7 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     methods are highlighted in \textbf{bold} and
     \underline{underline}, respectively.
     Zero-shot results are excluded from ranking.
-    Tied scores receive the same formatting.
+    Tied scores receive the same formatting; p@$k$ denotes pass@$k$.
     $^{\ast}$Evaluated with four samples per problem instead of three.
     $^{\dagger}$Reported to one decimal.
   }
@@ -375,34 +375,20 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
 \end{table}
 
 \paragraph{Data.}
-We study supervision allocation in a post-adaptation setting,
-where the training traces have already been constructed and
-are held fixed. Specifically, we use the 966 public traces
-that \citet{liu2026palign} released for Qwen2.5-7B, built from
-966 of the 1,000 s1K-1.1 problems \citep{muennighoff2025s1}.
-Each response consists of a DeepSeek-R1 prefix, an
-\eop{} marker, and a continuation
-generated by Qwen2.5-7B; our method treats the marker as
-ordinary text and uses no other part of the pipeline that
-produced the traces.
-The prefix holds 27\% of the 2.92M response tokens (3,022 per trace on average).
+We study supervision allocation in a post-adaptation setting, where the training traces have already been constructed and are held fixed: the 966 public traces that \citet{liu2026palign} released for Qwen2.5-7B, built from 966 of the 1,000 s1K-1.1 problems \citep{muennighoff2025s1}.
+Each response consists of a DeepSeek-R1 prefix, an \eop{} marker and a continuation generated by Qwen2.5-7B; our method treats the marker as ordinary text and uses no other part of the pipeline that produced the traces.
+The responses thus differ from the full DeepSeek-R1 traces of s1K-1.1 on which the SFT, SGL and Segment-Selective SFT baselines were trained.
+We do not compare data-construction strategies; we study how to distribute supervision across the steps of traces that are already given.
+The responses total 2.92M tokens (3,022 per trace on average), 27\% of them in the prefix.
 We split responses into steps at sentence boundaries (a sentence-final punctuation mark or closing bracket followed by whitespace and a capital letter), which gives 47,532 steps (median 34 per trace).
 The three students' tokenizers give the same token and step counts.
-
-These traces form the fixed training corpus for our
-allocation experiments. Importantly, they differ from the
-s1K-1.1 training data used by the original SFT, SGL, and
-Segment-Selective SFT baselines. Our goal is not to compare
-alternative data-construction strategies, but to investigate
-how supervision should be distributed across reasoning
-steps once the training traces have been fixed.
 
 \paragraph{Students and training.}
 DeepSeek-R1-Distill-Qwen-1.5B \citep{deepseek2025r1} is fully fine-tuned with thinking mode off: the prompt ends with an empty think block, identically in training and evaluation.
 Qwen2.5-7B-Instruct \citep{qwen2024qwen25} and Qwen3-8B \citep{qwen2025qwen3} are trained with LoRA \citep{hu2022lora} (rank 16, $\alpha=16$, dropout 0.05, on all attention and MLP projections); Qwen3-8B also runs with thinking mode off and an empty think block.
 Each student's answer gains are scored with its own frozen checkpoint.
 
-All arms we train use 3 epochs, learning rate
+Answer-gain allocation and its ablations use 3 epochs, learning rate
 $5\cdot10^{-5}$ with cosine decay to $10^{-5}$
 and 10\% warm-up, bf16 compute with fp32
 master weights (DeepSpeed ZeRO-2;
@@ -412,21 +398,16 @@ Appendix~\ref{app:repro}).
  
 
 \paragraph{Evaluation.}
-We follow the evaluation protocol of \citet{liu2026palign}: vLLM, $n=3$ samples per problem, temperature 0.6, top-$p$ 0.9, repetition penalty 1.05, a 4,096-token budget, and grading with Math-Verify \citep{mathverify}.
-We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems), AIME25 (30), AMC12 (83) and MATH500 (500; \citealp{hendrycks2021math,lightman2024verify}), and their unweighted average.
+We follow the evaluation protocol of \citet{liu2026palign}: vLLM \citep{kwon2023vllm}, $n=3$ samples per problem, temperature 0.6, top-$p$ 0.9, repetition penalty 1.05, a 4,096-token budget, and grading with Math-Verify \citep{mathverify}.
+We report pass@1 (mean over the three samples) and pass@3 on AIME25 (30 problems), AIME24 (30), AMC12 (83) and MATH500 (500; \citealp{hendrycks2021math,lightman2024verify}), and their unweighted average.
 
 \paragraph{Compared methods.}
 The baseline rows of Table~\ref{tab:main} fall into two groups.
-The first, SFT on full long CoT, SGL and Segment-Selective SFT, was trained on s1K-1.1 rather than on the 966 adapted traces; these rows place our results among existing long-CoT distillation methods but are not controlled comparisons, because their training data differ.
+The first, SFT on full long CoT, SGL and Segment-Selective SFT, was trained on s1K-1.1; these rows place our results among existing long-CoT distillation methods but are not controlled comparisons.
 The primary comparison is P-ALIGN, which is uniform SFT on the same 966 traces in its original pipeline; answer-gain allocation keeps these traces unchanged and instead reweights the loss across their steps.
 For the 1.5B and Qwen3-8B students, it thus trains on traces adapted to another model.
 Appendix~\ref{app:ablation} compares answer gain with other step scores on the same traces.
-On Qwen2.5-7B-Instruct, P-ALIGN is our
-reproduction with LlamaFactory-based
-P-ALIGN training code (LoRA as above,
-effective batch size 32, learning rate
-decayed to 0), evaluated under the
-same protocol.
+For all three students, P-ALIGN is our reproduction with P-ALIGN's LlamaFactory-based training code \citep{zheng2024llamafactory} (full fine-tuning for the 1.5B student and LoRA as above for the others, effective batch size 32, learning rate decayed to 0), evaluated under the same protocol.
 Our \textbf{answer gain} arm keeps every token and allocates supervision using $u_k=b_k-b_{k-1}$.
 
 \section{Main Results}
@@ -474,7 +455,7 @@ On the 1.5B student, replacing the per-trace normalization of Eq.~\ref{eq:mass} 
 
 We allocated supervision across the steps of fixed long-CoT traces by the frozen student's answer-likelihood gain, keeping every token and each trace's total weight.
 On one fixed set of 966 traces adapted by P-ALIGN, it improved pass@1 over P-ALIGN by +2.02 on a 1.5B student and by +3.83 on a LoRA-trained Qwen3-8B; on Qwen2.5-7B-Instruct, it improved pass@3 but not pass@1.
-The pass@1 gain vanishes only on the student closest to the model that wrote the continuations; testing whether allocation helps most on mismatched traces, and on other trace sources, is left for future work.
+The pass@1 gain vanishes only on the student closest to the model that wrote the continuations; whether allocation helps most on mismatched traces is left for future work.
 
 \section*{Limitations}
 
@@ -509,7 +490,7 @@ All experiments ran on a single GPU.
 Loading the student in bf16 and running AdamW without an fp32 master copy discards most updates at learning rate $5\cdot10^{-5}$, because an update of that size falls below bf16's relative precision for typical weights.
 When the 1.5B student is fully fine-tuned in this setting, only 13.3\% of its weights differ from the base model after 64 optimizer steps, almost none change between steps 64 and 96, and the training loss does not decrease.
 On the student's layer weights, a bf16 update changes about 34\% of the elements per step at learning rate $5\cdot10^{-5}$ and 4\% at $5\cdot10^{-6}$.
-We therefore train every model with DeepSpeed ZeRO-2, which keeps fp32 master weights; LlamaFactory \citep{zheng2024llamafactory}, used to train the P-ALIGN baseline, likewise upcasts trainable parameters to fp32.
+We therefore train answer-gain allocation and its ablations with DeepSpeed ZeRO-2, which keeps fp32 master weights; LlamaFactory \citep{zheng2024llamafactory}, used to train the P-ALIGN baseline, likewise upcasts trainable parameters to fp32.
 
 \section{Training Details and Reproducibility}
 \label{app:repro}
@@ -533,7 +514,7 @@ We therefore train every model with DeepSpeed ZeRO-2, which keeps fp32 master we
     Weights & $\tau=1$, $c=2$, $\lambda=0.5$ \\
     \bottomrule
   \end{tabular}
-  \caption{Training configuration of the arms we train.}
+  \caption{Training configuration of answer-gain allocation and its ablations.}
   \label{tab:hparams}
 \end{table}
 
@@ -581,8 +562,7 @@ Under the evaluation protocol of \S\ref{sec:setup}, every DFT variant scores bel
   \centering
   \small
   \setlength{\tabcolsep}{3pt}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{lccc}
+  \begin{tabular}{lc}
     \toprule
     Objective & p@1/p@3 \\
     \midrule
@@ -592,7 +572,7 @@ Under the evaluation protocol of \S\ref{sec:setup}, every DFT variant scores bel
     DFT everywhere & 37.30 / 48.10 \\
     NLL prefix, DFT cont. & 13.56 / 25.83 \\
     \bottomrule
-  \end{tabular}}
+  \end{tabular}
   \caption{Average pass@1 and pass@3 (\%)
 of probability-scaled objectives on
 DeepSeek-R1-Distill-Qwen-1.5B,
@@ -842,7 +822,7 @@ weight.}
     & \textbf{53.01} & 67.47
     & 77.00 & \textbf{88.00}
     & \textbf{42.78} & \textbf{54.70} \\
-    Whole corpus
+    Global corpus
     & 20.00 & 30.00
     & 15.56 & 26.67
     & 51.00 & 66.27

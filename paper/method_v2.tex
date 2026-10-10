@@ -122,4 +122,4 @@ The allocation is therefore a soft, fixed-budget alternative to binary step sele
 
 \paragraph{Composing with selection.}
 \label{sec:compose}
-The weights need only a segmented trace, its gold answer and the frozen student, so they apply to curated, multi-teacher or student-adapted traces as they are. With a selective mask, Eq.~\ref{eq:iwc} keeps $M_k$ and computes $w_k$ over the kept steps: selection decides what is learned and allocation how much.
+The weights need only a segmented trace, its gold answer and the frozen student, so they can be computed for curated, multi-teacher or student-adapted traces without changing them. With a selective mask, Eq.~\ref{eq:iwc} keeps $M_k$ and computes $w_k$ over the kept steps: selection decides what is learned and allocation how much.
