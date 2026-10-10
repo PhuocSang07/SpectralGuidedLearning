@@ -58,12 +58,7 @@ We instead ask how to \emph{allocate} supervision across the steps of fixed teac
 Our method scores each step by its \emph{answer-likelihood gain}: the change in a frozen student's log-probability of the gold answer when that step is appended to the reasoning prefix and evaluated through a fixed answer probe.
 We standardize these gains within each trace and convert them into soft weights whose token mass matches uniform SFT, so every step remains supervised and every trace keeps the same learning budget.
 The scores are computed offline without sampling, gradients or step-level labels beyond the gold answer, and the resulting weights can be combined with existing trace sources and selective masks.
-On DeepSeek-R1-Distill-Qwen-1.5B,
-answer-gain allocation raises average
-pass@1 across four mathematical reasoning
-benchmarks from 40.76 to 42.78 (+2.02)
-over P-ALIGN and raises pass@3 from
-52.03 to 54.70 (+2.67).
+Over uniform SFT on the same P-ALIGN-adapted traces, answer-gain allocation raises average pass@1 on four mathematical reasoning benchmarks by 2.02 points for DeepSeek-R1-Distill-Qwen-1.5B and by 3.83 for Qwen3-8B, and raises pass@3 for all three students we test.
 
 \end{abstract}
 
@@ -91,7 +86,7 @@ We propose \emph{answer-gain allocation}, which keeps every step and redistribut
 Each step is scored by its \emph{answer-likelihood gain} (\emph{answer gain} for short): the change in the frozen student's log-probability of the gold answer when the step is appended, read through a fixed answer probe.
 A step with high gain, which we call \emph{decisive}, is one that makes the answer accessible to the student, whether or not it is difficult for the student to predict \citep{xu2020usable}.
 We standardize the gains within each trace and turn them into soft weights that preserve the trace's total token weight, so no step is cut, every step keeps at least a fixed share of its uniform weight, and hard selection is a limiting case (Figure~\ref{fig:method}; Appendix~\ref{app:limit}).
-The scores are computed offline, without sampling, gradients or models other than the student, and because the weights act only on the loss they can be added to the trace sources and selective masks above.
+The signal itself is not new, as answer-likelihood change already serves as step credit in evaluation, RL and self-distillation (\S\ref{sec:related}); our contribution is its use as an offline SFT weight with per-trace token-mass normalization, which our ablations show matters for accuracy.
 We study allocation after data adaptation, on 966 traces released by P-ALIGN \citep{liu2026palign} for Qwen2.5-7B. Our primary baseline is \uniformpalign{}: allocation raises pass@1 and pass@3 for DeepSeek-R1-Distill-Qwen-1.5B and the LoRA-trained Qwen3-8B, and pass@3 but not pass@1 for Qwen2.5-7B-Instruct.
 
 \begin{figure*}[t]
@@ -104,59 +99,16 @@ We study allocation after data adaptation, on 966 traces released by P-ALIGN \ci
 Our contributions are:
 \begin{itemize}
   \setlength\itemsep{0pt}
-  \item \textbf{Answer-gain allocation for distillation.} We weight the steps of fixed traces by the frozen student's answer-likelihood gain, with gains standardized within each trace and weights normalized by token mass, so that every token stays supervised and every trace keeps its total weight. The scores need no sampling, gradients or step-level labels, and the weights compose with other trace sources and selective masks (\S\ref{sec:method}).
+  \item \textbf{Budget-preserving answer-gain allocation for distillation.} We turn a known step-credit signal, the frozen student's answer-likelihood gain, into offline SFT weights for the steps of fixed traces, with gains standardized within each trace and weights normalized by token mass, so that every token stays supervised and every trace keeps its total weight. The weights apply unchanged to other trace sources and can be computed over the steps a selective mask keeps (\S\ref{sec:method}).
   \item \textbf{An analysis of selection and allocation.} We measure how much supervision a hard spectral gate removes from these traces and which steps answer gain up-weights, for each student (\S\ref{sec:analysis}).
-  \item \textbf{Results on fixed adapted traces.} On three students and one evaluation protocol, we compare against \uniformpalign{} and other allocation signals, include selection baselines trained on a different corpus (s1K-1.1) for context, and state where the method does not help (\S\ref{sec:results}).
+  \item \textbf{Results on fixed adapted traces.} On three students, we compare against \uniformpalign{} and other step scores, and report where the method does not help (\S\ref{sec:results}, \S\ref{sec:analysis}).
 \end{itemize}
 
-\section{Related Work}
+\section{Related Work and Background}
 \label{sec:related}
 
-\paragraph{Building better traces.}
-s1 \citep{muennighoff2025s1} and LIMO \citep{ye2025limo} show that about a thousand carefully chosen traces suffice for strong reasoning, but the selection acts on whole traces and every kept token is then trained uniformly.
-CoRD \citep{yun2026cord} assembles traces step by step from three teachers, scoring candidate steps by the likelihood a 32B meta-prover assigns to the gold answer after them and keeping the best ones in a beam search.
-Its score is the \emph{level} of answer likelihood a step reaches under a larger model, not the \emph{change} it causes under the student, and it requires running several teachers and the meta-prover during generation.
-None of these methods tells the student which of the kept steps matter most.
-
-\paragraph{Adapting traces to the student.}
-P-ALIGN \citep{liu2026palign} truncates each teacher trace at the shortest prefix that the student judges sufficient, found by binary search over student self-judgments, and lets the student write the continuation; the stitched trace is then trained with uniform SFT.
-The pipeline needs repeated student generations and judgments per trace, its cut is binary, and the decision of what to keep is made once, at the level of the prefix rather than the step.
-Step-entropy compression \citep{li2026stepentropy} defines the entropy of a step as the sum of its token entropies and shows that it bounds the step's information about the answer, $I(S_k;A\mid \bar S_k)\le H(S_k\mid S_{<k})$ with $\bar S_k$ the other steps; it replaces the 80\% lowest-entropy steps with a \texttt{[SKIP]} token and trains the student on the compressed traces with SFT and then group relative policy optimization (GRPO).
-The bound is only an upper bound: a low-entropy step can still be decisive, and pruning it changes the trace the student learns from.
-SPIRIT \citep{cui2025spirit} likewise removes or merges steps whose removal barely raises perplexity.
-All three edit the training traces, and their supervised stage weights every remaining token equally.
-
-\paragraph{Selecting what enters the loss.}
-SGL \citep{fan2026sgl} scores each step by its spectral strength, its load on a low-rank consensus subspace of the loss gradients, keeps the smallest set of steps whose total strength reaches a preset share of the trace's total, and masks the loss of the rest.
-Segment-Selective SFT \citep{wang2026segattr} keeps the segments that carry most of the integrated-gradient attribution toward the answer (a 0.7 share) but whose attributions are not uniformly signed (consistency below 0.8), plus the first and last segments, with both thresholds set by search.
-Both decisions are binary: a step just below the threshold receives no gradient at all.
-Applied to the adapted traces we study, SGL's gate would mask 41--49\% of response tokens depending on the student, including the step that writes the final answer in 37--70\% of traces (\S\ref{sec:selection-analysis}); this measures what the gate removes, not how SGL performs when trained on these traces.
-What survives the cut is again trained uniformly, so a restatement and the derivation of the answer weigh the same.
-The signals are also costly: SGL needs per-token gradients and an SVD per response, and Segment-Selective SFT integrated gradients with 50 interpolation steps per trace.
-EDIT \citep{dai2024edit} finds key steps by contrasting dual CoTs, KPOD \citep{feng2024kpod} learns token masks from an answer-prediction loss, Rho-1 \citep{lin2024rho1} keeps tokens with high excess loss against a reference model, and critical-token fine-tuning \citep{ruan2025criticaltoken} keeps tokens whose substitution flips correctness; they too decide what is trained and weight it uniformly.
-Reasoning Scaffolding \citep{wen2026scaffolding} instead adds an auxiliary task of predicting each step's discourse signal, labeled by keyword rules and an LLM.
-Allocation is complementary to all of them: it can weight whatever a selector keeps (\S\ref{sec:compose}).
-
-\paragraph{Soft reweighting.}
-Soft objectives keep every token and reweight its loss instead, but mostly per token and by the model's own confidence or gradient utility, rather than per step and by progress toward the answer.
-VCORE \citep{gong2026vcore} reweights tokens by gradient utility, normalizing the weights over the tokens of each response and rescaling the update to match the variance of uniform weighting, whereas our normalization preserves each trace's token mass.
-Dynamic Fine-Tuning (DFT; \citealp{wu2026dft}) scales each token's loss by its detached probability, and ASFT, DEFT and TrimSFT \citep{zhu2026asft,wang2026deft,jia2026trimsft} anchor, generalize or trim this gate; such objectives help only when the model is already strong \citep{li2026beyondll}, and on the stitched traces we study every DFT variant we evaluate stays below uniform SFT with the negative log-likelihood (NLL) loss (Appendix~\ref{app:dft}).
-iw-SFT \citep{qin2025iwsft} reads SFT on curated data as a bound on an RL objective, and Step Rejection Fine-Tuning \citep{slinko2026srft} masks the loss of steps that a critic LLM judges erroneous while keeping them in context.
-Our exponential step weights take the form of advantage-weighted regression (AWR; \citealp{peng2019awr}), with the answer gain in place of an advantage (Appendix~\ref{app:awr}).
-
-\paragraph{Answer-likelihood step credit.}
-The quantity we allocate by is not new; to our knowledge, its use as an offline distillation weight is.
-\citet{ton2025infogain} define step-wise information gain as the drop in cross-entropy of the correct answer after a step, and use it to evaluate CoT.
-Answer likelihood or its change also serves as a process reward for RL \citep{wang2026mig,tao2026trace}, as step credit in on-policy self-distillation \citep{li2026dcsd}, and, computed by teacher forcing over sampled solutions without rollouts, as a label for process reward models \citep{royer2026mcnig}.
-In distillation, CoRD and Segment-Selective SFT use answer likelihood or attribution to select; none allocates learning effort over fixed traces by the change in the student's own belief in the answer.
-
-\paragraph{Usable information.}
-$\mathcal{V}$-information \citep{xu2020usable} is the information a bounded predictor family can extract, and unlike Shannon information it can be created by computation; pointwise $\mathcal{V}$-information (PVI; \citealp{ethayarajh2022pvi}) is its per-example form.
-Answer gain is related in spirit, but it is a likelihood difference under one frozen model and one probe, not an optimum over a predictor family.
-
-\section{Selection and Allocation}
+\paragraph{Selection and allocation.}
 \label{sec:selection}
-
 A training example is a prompt $x$ and a response $y$.
 A segmentation rule (\S\ref{sec:setup}) splits $y$ into \emph{steps} $s_1,\dots,s_K$: contiguous spans of tokens with lengths $\ell_1,\dots,\ell_K$.
 A step is the unit we weight; it may contain several operations or ideas.
@@ -166,25 +118,89 @@ A step-level distillation objective is
   \mathcal{L}=-\frac{1}{Z}\sum_{k=1}^{K} M_k\,w_k\sum_{t\in s_k}\log p_\theta(y_t\mid x,y_{<t}),
   \label{eq:iwc}
 \end{equation}
-where $Z$ counts the tokens with $M_k=1$.
+where $Z$ is the number of supervised tokens (Eq.~\ref{eq:loss} gives its exact form).
 \emph{Selection} sets the mask $M_k\in\{0,1\}$ and decides what is learned.
 \emph{Allocation} sets the weight $w_k>0$ of each kept step and decides how much of the supervision it receives.
 Uniform SFT uses $M_k=w_k=1$.
 Data-side methods select before training, by keeping, deleting or rewriting steps; objective-side methods set $M_k$ in the loss.
-The hard selectors in \S\ref{sec:related} set $M_k$ and keep $w_k=1$ on what they keep; soft reweighting methods such as DFT instead change the loss coefficient, usually per token rather than per step.
+The hard selectors discussed below set $M_k$ and keep $w_k=1$ on what they keep; soft reweighting methods such as DFT \citep{wu2026dft} instead change the loss coefficient, usually per token rather than per step.
 
-\paragraph{Hard selection by a threshold.}
-SGL is a representative objective-side selector, and the one whose gate we apply to our traces (\S\ref{sec:selection-analysis}).
-It scores each step by its \emph{spectral strength}, the average leverage of the step's tokens on the dominant subspace of the response's per-token loss gradients (Appendix~\ref{app:sgl}), and sets $M_k=1$ for the smallest set of strongest steps whose total strength reaches a fraction $p$ of the trace's total; we use $p=0.95$, the energy level at which SGL truncates the gradient spectrum.
-Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, plus a consistency cut); in both, a step just below the threshold receives no gradient.
+\paragraph{Building and adapting traces.}
+s1 and LIMO show that about a thousand carefully chosen traces suffice for strong reasoning \citep{muennighoff2025s1,ye2025limo}, and CoRD assembles traces step by step from three teachers, scoring candidate steps by the answer likelihood that a 32B meta-prover assigns after them \citep{yun2026cord}.
+P-ALIGN \citep{liu2026palign} truncates each teacher trace at the shortest prefix that the student judges sufficient and lets the student write the continuation.
+Step-entropy compression \citep{li2026stepentropy} replaces the 80\% lowest-entropy steps with a \texttt{[SKIP]} token, although a low-entropy step can still be decisive, and SPIRIT \citep{cui2025spirit} removes or merges steps whose removal barely raises perplexity.
+These methods edit the traces and then train every remaining token uniformly, and several need repeated student generations or judgments for each trace.
+
+\paragraph{Selecting what enters the loss.}
+SGL \citep{fan2026sgl} scores each step by its spectral strength, its leverage on a low-rank consensus subspace of the loss gradients, and masks the loss of the steps outside the smallest set that reaches a preset share of the trace's total strength.
+Segment-Selective SFT \citep{wang2026segattr} keeps the segments that carry most of the integrated-gradient attribution toward the answer, subject to a consistency cut.
+Both decisions are binary: a step just below the threshold receives no gradient, and what survives is trained uniformly (\S\ref{sec:selection-analysis}).
+Their signals are also costly: per-token gradients and an SVD per response in SGL, and integrated gradients with 50 interpolation steps per trace in Segment-Selective SFT.
+EDIT \citep{dai2024edit}, Rho-1 \citep{lin2024rho1} and critical-token fine-tuning \citep{ruan2025criticaltoken} likewise choose which tokens are trained and weight them uniformly, KPOD \citep{feng2024kpod} learns per-token weights from an answer-prediction loss, and Reasoning Scaffolding \citep{wen2026scaffolding} adds an auxiliary step-prediction task.
+Allocation is complementary to all of them: it can weight whatever a selector keeps (\S\ref{sec:compose}).
+
+\paragraph{Soft reweighting.}
+Soft objectives keep every token and reweight its loss, but mostly per token and by the model's own confidence or gradient utility, not per step and by progress toward the answer.
+VCORE \citep{gong2026vcore} reweights tokens by gradient utility and rescales the update to match the variance of uniform weighting, whereas our normalization preserves each trace's token mass.
+Dynamic Fine-Tuning (DFT; \citealp{wu2026dft}) scales each token's loss by its detached probability, ASFT \citep{zhu2026asft} anchors it with a KL term, and DEFT and TrimSFT gate each token by the concentration of the predicted distribution or by its logit gap \citep{wang2026deft,jia2026trimsft}; such objectives help only when the model is already strong \citep{li2026beyondll}, and on the stitched traces we study (\S\ref{sec:setup}) every DFT variant stays below uniform SFT (Appendix~\ref{app:dft}).
+Our exponential step weights take the form of advantage-weighted regression (AWR; \citealp{peng2019awr}), with the answer gain in place of an advantage (Appendix~\ref{app:awr}).
+
+\paragraph{Answer-likelihood step credit.}
+\citet{ton2025infogain} define step-wise information gain as the drop in cross-entropy of the correct answer after a step and use it to evaluate CoT.
+Answer likelihood or its change also serves as a process reward for RL \citep{wang2026mig,tao2026trace}, as the sign of step credit in self-distillation \citep{li2026dcsd}, and as a label for process reward models \citep{royer2026mcnig}.
+In distillation, CoRD selects steps by answer likelihood and Segment-Selective SFT by attributing it to segments; none allocates learning effort over fixed traces by the change in the student's own belief in the answer.
+Answer gain is related in spirit to $\mathcal{V}$-information \citep{xu2020usable} and its pointwise form \citep{ethayarajh2022pvi}, but it is a likelihood difference under one frozen model and one probe, not an optimum over a predictor family.
 
 \section{Method}
 \label{sec:method}
 % \input{method_v1}
 \input{method_v2}
 
-\section{Experimental Setup}
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{crrrrrr}
+    \toprule
+    Step & $u_k$ & $z_k$ & $v_k$ & $r_k$ & $\hat w_k$ & $w_k$ \\
+    \midrule
+    1 & $-0.69$ & $-0.96$ & $-0.96$ & 0.38 & 0.23 & 0.61 \\
+    2 & $\phantom{+}0.00$ & $-0.42$ & $-0.42$ & 0.66 & 0.39 & 0.70 \\
+    3 & $+2.30$ & $+1.38$ & $+1.38$ & 3.97 & 2.38 & 1.69 \\
+    \bottomrule
+  \end{tabular}
+  \caption{A toy trace of three equal-length steps ($c=2$, $\tau=1$, $\lambda=0.5$). The step that lowers the answer's probability is still supervised, and a step with zero gain gets a weight below 1, because weights are relative to the other steps of the trace; the weights average 1.}
+  \label{tab:toy}
+\end{table}
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Setup}
 \label{sec:setup}
+
+\paragraph{Data.}
+We use the 966 public traces that \citet{liu2026palign} released for Qwen2.5-7B, built from 966 of the 1,000 s1K-1.1 problems \citep{muennighoff2025s1}.
+Each response consists of a DeepSeek-R1 prefix, an \eop{} marker, and a continuation generated by Qwen2.5-7B, which we call a \emph{stitched} trace; we treat the marker as ordinary text.
+The prefix holds 27\% of the 2.92M response tokens (3,022 per trace on average).
+We split responses into steps at sentence boundaries (a sentence-final punctuation mark or closing bracket followed by whitespace and a capital letter), which gives 47,532 steps (median 34 per trace).
+
+\paragraph{Baselines.}
+The primary baseline is \uniformpalign{}, i.e.\ uniform SFT on the same 966 traces, so the comparison isolates the effect of allocation.
+SFT on the full long CoT, SGL and Segment-Selective SFT are trained on s1K-1.1 as in their original papers; they place our results among existing methods but are not controlled comparisons.
+Answer-gain allocation uses $c=2$, $\tau=1$ and $\lambda=0.5$.
+
+\paragraph{Students and training.}
+DeepSeek-R1-Distill-Qwen-1.5B \citep{deepseek2025r1} is fully fine-tuned with thinking mode off (an empty think block ends the prompt).
+Qwen2.5-7B-Instruct \citep{qwen2024qwen25} and Qwen3-8B \citep{qwen2025qwen3} are trained with LoRA \citep{hu2022lora} (rank 16, $\alpha=16$, dropout 0.05, on all attention and MLP projections); Qwen3-8B also runs with thinking mode off.
+Training uses 3 epochs, learning rate $5\cdot10^{-5}$ with cosine decay to $10^{-5}$ and an effective batch size of 32 (Appendix~\ref{app:repro}).
+
+\paragraph{Evaluation.}
+We follow the evaluation protocol of \citet{liu2026palign}: vLLM, $n=3$ samples per problem, temperature 0.6, top-$p$ 0.9, repetition penalty 1.05, a 4,096-token budget, and grading with Math-Verify \citep{mathverify}.
+We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems), AIME25 (30), AMC12 (83) and MATH500 (500; \citealp{hendrycks2021math,lightman2024verify}), and their unweighted average.
+
+\subsection{Main Results}
+\label{sec:results}
 
 \begin{table*}[t]
   \centering
@@ -263,7 +279,7 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & 33.24 & 43.10 \\
 
     SFT (long CoT)$^{\dagger}$
-    & \underline{12.2} & \underline{20.0}
+    & \textbf{12.2} & \underline{20.0}
     & 8.9 & \underline{20.0}
     & 34.9 & 48.2
     & 65.3 & 80.4
@@ -291,7 +307,7 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
     & \textbf{33.72} & 44.64 \\
 
     Answer-gain allocation (ours)
-    & 11.11 & \textbf{23.33}
+    & \underline{11.11} & \textbf{23.33}
     & \textbf{13.33} & \underline{20.00}
     & \underline{39.36} & \underline{56.63}
     & \underline{70.00} & \textbf{84.40}
@@ -358,124 +374,148 @@ Segment-Selective SFT applies a similar rule to answer attribution (share 0.7, p
   }
   \label{tab:main}
 \end{table*}
-\begin{table}[t]
+
+Table~\ref{tab:main} gives the results.
+
+\paragraph{DeepSeek-R1-Distill-Qwen-1.5B.}
+Answer-gain allocation raises average pass@1 over \uniformpalign{} from 40.76 to 42.78 (+2.02) and pass@3 from 52.03 to 54.70 (+2.67), and has the highest average on both metrics among all rows, ahead of the best s1K-1.1 baseline, Segment-Selective SFT (40.81 / 50.75).
+The gain comes mainly from AIME25 (+6.66 pass@1) and AMC12 (+2.81); MATH500 pass@1 is lower (77.00 against 78.40).
+
+\paragraph{Larger students.}
+On Qwen3-8B the gain is larger: allocation raises average pass@1 over \uniformpalign{} from 49.24 to 53.07 (+3.83) and pass@3 from 58.82 to 62.41 (+3.59), with a higher pass@1 on all four benchmarks and a higher pass@3 on all but AMC12.
+On Qwen2.5-7B-Instruct the results are mixed: allocation trails \uniformpalign{} by 0.27 pass@1 (33.45 against 33.72) but improves pass@3 by 1.45 (46.09 against 44.64), and its pass@1 stays close to the zero-shot student (33.24).
+Across the three students, allocation improves average pass@3 over \uniformpalign{} in every case and average pass@1 in two of three.
+
+\subsection{Ablations and Analysis}
+\label{sec:analysis}
+
+\begin{table*}[!t]
   \centering
   \small
   \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{crrrrrr}
+  \begin{tabular}{p{4.3cm}cccccccccc}
     \toprule
-    Step & $u_k$ & $z_k$ & $v_k$ & $r_k$ & $\hat w_k$ & $w_k$ \\
+    \multirow{2}{*}{Method}
+    & \multicolumn{2}{c}{AIME25}
+    & \multicolumn{2}{c}{AIME24}
+    & \multicolumn{2}{c}{AMC12}
+    & \multicolumn{2}{c}{MATH500}
+    & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3}
+    \cmidrule(lr){4-5}
+    \cmidrule(lr){6-7}
+    \cmidrule(lr){8-9}
+    \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
+    & p@1 & p@3 & p@1 & p@3 \\
     \midrule
-    1 & $-0.69$ & $-0.96$ & $-0.96$ & 0.38 & 0.23 & 0.61 \\
-    2 & $\phantom{+}0.00$ & $-0.42$ & $-0.42$ & 0.66 & 0.39 & 0.70 \\
-    3 & $+2.30$ & $+1.38$ & $+1.38$ & 3.97 & 2.38 & 1.69 \\
+    \multicolumn{11}{l}{\textit{Step score}} \\
+    \uniformpalign{}
+    & 16.67 & 26.67
+    & 17.78 & \textbf{30.00}
+    & 50.20 & 63.86
+    & \textbf{78.40} & 87.60
+    & 40.76 & 52.03 \\
+    Answer-gain allocation ($\tau=1$)
+    & \textbf{23.33} & \textbf{33.33}
+    & 17.78 & \textbf{30.00}
+    & 53.01 & 67.47
+    & 77.00 & 88.00
+    & 42.78 & \textbf{54.70} \\
+    Predictability -- easy
+    & 20.00 & \textbf{33.33}
+    & 18.89 & 26.67
+    & \textbf{55.02} & 68.67
+    & 77.27 & 86.00
+    & \textbf{42.79} & 53.67 \\
+    Predictability -- hard
+    & 20.00 & 30.00
+    & \textbf{20.00} & \textbf{30.00}
+    & 50.60 & 66.27
+    & 76.93 & 87.40
+    & 41.88 & 53.42 \\
+    Random assignment
+    & 13.33 & 23.33
+    & 17.78 & 23.33
+    & 53.41 & 63.86
+    & 77.87 & 87.40
+    & 40.60 & 49.48 \\
+    Answer gain, answer-only at weight 1
+    & 17.78 & \textbf{33.33}
+    & 14.44 & 23.33
+    & 52.21 & \textbf{69.88}
+    & 77.60 & \textbf{88.40}
+    & 40.51 & 53.74 \\
+    \midrule
+    \multicolumn{11}{l}{\textit{Token-mass normalization}} \\
+    Per-trace (ours, Eq.~\ref{eq:mass})
+    & \textbf{23.33} & \textbf{33.33}
+    & \textbf{17.78} & \textbf{30.00}
+    & \textbf{53.01} & 67.47
+    & 77.00 & \textbf{88.00}
+    & \textbf{42.78} & \textbf{54.70} \\
+    Whole corpus
+    & 20.00 & 30.00
+    & 15.56 & 26.67
+    & 51.00 & 66.27
+    & \textbf{78.00} & 87.80
+    & 41.14 & 52.68 \\
+    None
+    & 14.44 & 20.00
+    & 15.56 & 26.67
+    & \textbf{53.01} & \textbf{68.67}
+    & 77.47 & 87.00
+    & 40.12 & 50.59 \\
     \bottomrule
   \end{tabular}
-  \caption{A toy trace of three equal-length steps ($c=2$, $\tau=1$, $\lambda=0.5$). The step that lowers the answer's probability is still supervised, and a step with zero gain gets a weight below 1, because weights are relative to the other steps of the trace; the weights average 1.}
-  \label{tab:toy}
-\end{table}
+  \caption{Ablations on DeepSeek-R1-Distill-Qwen-1.5B ($c=2$, $\lambda=0.5$); the best result within each block is in \textbf{bold}. Answer-gain allocation uses $\tau=1$, and the \uniformpalign{} row repeats Table~\ref{tab:main}. Predictability weights favor easy or hard steps by the frozen student's mean token log-probability; random assignment permutes the gains within each trace; ``answer-only at weight 1'' keeps steps that only restate the gold answer at unit weight. Normalization variants are defined in Appendix~\ref{app:norm}.}
+  \label{tab:abl}
+\end{table*}
 
-\paragraph{Data.}
-We study supervision allocation in a post-adaptation setting,
-where the training traces have already been constructed and
-are held fixed. Specifically, we use the 966 public traces
-that \citet{liu2026palign} released for Qwen2.5-7B, built from
-966 of the 1,000 s1K-1.1 problems \citep{muennighoff2025s1}.
-Each response consists of a DeepSeek-R1 prefix, an
-\eop{} marker, and a continuation
-generated by Qwen2.5-7B; our method treats the marker as
-ordinary text and uses no other part of the pipeline that
-produced the traces.
-The prefix holds 27\% of the 2.92M response tokens (3,022 per trace on average).
-We split responses into steps at sentence boundaries (a sentence-final punctuation mark or closing bracket followed by whitespace and a capital letter), which gives 47,532 steps (median 34 per trace).
-The three students' tokenizers give the same token and step counts.
+Ablations use the 1.5B student and the setup of \S\ref{sec:setup}.
 
-These traces form the fixed training corpus for our
-allocation experiments. Importantly, they differ from the
-s1K-1.1 training data used by the original SFT, SGL, and
-Segment-Selective SFT baselines. Our goal is not to compare
-alternative data-construction strategies, but to investigate
-how supervision should be distributed across reasoning
-steps once the training traces have been fixed.
-
-\paragraph{Students and training.}
-DeepSeek-R1-Distill-Qwen-1.5B \citep{deepseek2025r1} is fully fine-tuned with thinking mode off: the prompt ends with an empty think block, identically in training and evaluation.
-Qwen2.5-7B-Instruct \citep{qwen2024qwen25} and Qwen3-8B \citep{qwen2025qwen3} are trained with LoRA \citep{hu2022lora} (rank 16, $\alpha=16$, dropout 0.05, on all attention and MLP projections); Qwen3-8B also runs with thinking mode off and an empty think block.
-Each student's answer gains are scored with its own frozen checkpoint.
-
-Training uses 3 epochs, learning rate
-$5\cdot10^{-5}$ with cosine decay to $10^{-5}$
-and 10\% warm-up, bf16 compute with fp32
-master weights (DeepSpeed ZeRO-2;
-\citealp{rajbhandari2020zero}; Appendix~\ref{app:bf16}),
-and an effective batch size of 32 (Table~\ref{tab:hparams},
-Appendix~\ref{app:repro}).
- 
-
-\paragraph{Evaluation.}
-We follow the evaluation protocol of \citet{liu2026palign}: vLLM, $n=3$ samples per problem, temperature 0.6, top-$p$ 0.9, repetition penalty 1.05, a 4,096-token budget, and grading with Math-Verify \citep{mathverify}.
-We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems), AIME25 (30), AMC12 (83) and MATH500 (500; \citealp{hendrycks2021math,lightman2024verify}), and their unweighted average.
-
-\paragraph{Compared methods.}
-The baseline rows of Table~\ref{tab:main} fall into two groups.
-SFT on full long CoT, SGL and Segment-Selective SFT are trained on s1K-1.1 rather than on the 966 adapted traces; they place our results among existing long-CoT distillation methods but are not controlled comparisons, because their training data differ.
-The primary comparison is \uniformpalign{}, i.e.\ uniform SFT on the same 966 traces.
-Answer-gain allocation keeps these traces unchanged and only reweights the loss across their steps; Appendix~\ref{app:ablation} compares answer gain with other step scores on the same traces.
-Our \textbf{answer gain} arm keeps every token and allocates supervision using $u_k=b_k-b_{k-1}$.
-
-\section{Main Results}
-\label{sec:results}
-
-Table~\ref{tab:main} gives the results for all three students.
-We focus on the comparison with \uniformpalign{}; the s1K-1.1 rows are reference points (\S\ref{sec:setup}).
-On the 1.5B student, answer-gain allocation raises average pass@1 over \uniformpalign{} from 40.76 to 42.78 (+2.02) and pass@3 from 52.03 to 54.70 (+2.67).
-
-\paragraph{Larger students.}
-On Qwen3-8B the gain is larger: answer-gain allocation raises average pass@1 over \uniformpalign{} from 49.24 to 53.07 (+3.83) and pass@3 from 58.82 to 62.41 (+3.59), with a higher pass@1 on all four benchmarks and a higher pass@3 on all but AMC12.
-On Qwen2.5-7B-Instruct the results are mixed: allocation trails \uniformpalign{} by 0.27 pass@1 (33.45 against 33.72) but improves pass@3 by 1.45 (46.09 against 44.64), and its pass@1 stays close to the zero-shot student (33.24).
-
-\section{Analysis}
-\label{sec:analysis}
-
-\subsection{Hard selection removes substantial supervision}
+\paragraph{Hard selection removes substantial supervision.}
 \label{sec:selection-analysis}
-
-These traces have already been adapted to a student, and applying the SGL gate as a second selection stage would remove a large share of their supervision.
-With $p=0.95$ the gate drops only 18\% of the 47,532 steps but 41\% of the 2.92M response tokens, because the long, low-leverage continuation steps fall below the threshold.
+To see what a hard gate would do to these traces, we apply the selection rule of SGL, a representative objective-side selector.
+It scores each step by its \emph{spectral strength}, the average leverage of the step's tokens on the dominant subspace of the response's per-token loss gradients (Appendix~\ref{app:sgl}), and sets $M_k=1$ for the smallest set of strongest steps whose total strength reaches a fraction $\eta$ of the trace's total; we use $\eta=0.95$, the energy level at which SGL truncates the gradient spectrum.
+We use the gate only as a measurement, not for training.
+With $\eta=0.95$ the gate drops only 18\% of the 47,532 steps but 41\% of the 2.92M response tokens, because the long, low-leverage continuation steps fall below the threshold.
 It removes 20\% of the teacher prefix, 49\% of the continuation, and the step that writes the final \boxedtok{} in 362 of 966 traces (37\%).
-Under the spectral strengths of the larger students the same gate removes more of the response: 18\% of the steps, 44\% of the response tokens and the final \boxedtok{} step in 467 traces (48\%) for Qwen2.5-7B-Instruct, and 20\% of the steps, 49\% of the tokens (18\% of the prefix, 60\% of the continuation) and the final \boxedtok{} step in 672 traces (70\%) for Qwen3-8B.
-Hard gating would thus remove much of the supervision of the adapted traces, often including the final-answer step.
-This characterizes the gate only; SGL's accuracy in Table~\ref{tab:main} comes from training on s1K-1.1.
+Under the spectral strengths of the larger students the gate removes more: 44\% of the response tokens and the final \boxedtok{} step in 467 traces (48\%) for Qwen2.5-7B-Instruct, and 49\% of the tokens (60\% of the continuation) and the final \boxedtok{} step in 672 traces (70\%) for Qwen3-8B.
 
-\subsection{What answer gain rewards}
+\paragraph{What answer gain rewards.}
 \label{sec:what-gain}
-
-\paragraph{Decisive steps are sparse.}
+Decisive steps are sparse.
 For the 1.5B student, 43\% of the 47,532 steps raise $\log q_0(a^*)$ by more than 0.1 nats, 39\% lower it by more than 0.1, and the rest leave it nearly unchanged; the three highest-gain steps of a trace carry a median 60\% of its positive gain.
-The step that writes \boxedtok{} has the largest gain in 52\% of traces but carries a median 20\% of the positive gain.
-More broadly, the 6.7\% of steps that contain the gold answer string carry 28.3\% of all positive gain, and the top-gain step contains it in 66\% of traces.
+The 6.7\% of steps that contain the gold answer string carry 28.3\% of all positive gain, and the top-gain step contains it in 66\% of traces.
 Part of the signal therefore rewards \emph{stating} the answer; Appendix~\ref{app:example} shows two examples.
-Qwen2.5-7B-Instruct and Qwen3-8B have similar shares of rising and falling steps, and their three highest-gain steps carry a median 52\% and 55\% of the positive gain, but stating the answer weighs less: the steps that contain the gold answer string carry 21.1\% and 20.3\% of it.
-After weighting, steps with high answer gain receive greater supervision while every step remains supervised.
+For Qwen2.5-7B-Instruct and Qwen3-8B the three highest-gain steps carry a median 52\% and 55\% of the positive gain, but stating the answer weighs less: the steps that contain the gold answer string carry 21.1\% and 20.3\% of it.
 
+\paragraph{Which step score?}
+Table~\ref{tab:abl} replaces the answer gain by other step scores in the same weight construction.
+Answer gain has the best average pass@3 (54.70) and, together with the easy-step weighting, the best average pass@1 (42.78 and 42.79).
+Random assignment falls below uniform SFT (40.60 / 49.48 against 40.76 / 52.03), so the improvement does not come from the shape of the weights alone.
+Predictability weights stay above uniform but below answer gain on pass@3 (53.67 and 53.42).
+Keeping answer-restating steps at unit weight lowers pass@1 to 40.51 and pass@3 to 53.74, so part of the gain comes from up-weighting the steps that state the answer.
+Differences of about one point should be read with care, since AIME24 and AIME25 have only 30 problems each.
 
-\subsection{Per-trace normalization matters}
+\paragraph{Per-trace normalization matters.}
 \label{sec:normalization_ablation}
-On the 1.5B student, replacing the per-trace normalization of Eq.~\ref{eq:mass} by one over the whole corpus lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68, and removing it gives 40.12 / 50.59 (Appendix~\ref{app:ablation}).
+We replace the per-trace normalization of Eq.~\ref{eq:mass} by \emph{global} normalization, which preserves the token mass only over the whole corpus, or by none (Appendix~\ref{app:norm}; Table~\ref{tab:abl}, bottom).
+Global normalization matches the corpus token mass but lets trace budgets drift from uniform (standard deviation 0.26 of the per-trace budget ratio, Table~\ref{tab:norm-diag}), and lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68.
+Without normalization, the total weight grows by 57\%, trace budgets vary more (standard deviation 0.56), and the scores drop to 40.12 / 50.59, below uniform SFT.
+Because global normalization keeps the corpus-wide loss mass, this comparison is the more informative one, and it shows that fixing every trace's budget is part of what makes allocation work.
 
-\subsection{Trace--student match}
+\paragraph{Trace--student match.}
 \label{sec:match}
-The 966 traces were adapted for Qwen2.5-7B: their continuations were written by Qwen2.5-7B, from the same model family as our Qwen2.5-7B-Instruct student.
-For this student, uniform SFT already trains on text close to its own distribution, and allocation matches it on pass@1 (33.45 against 33.72) while raising pass@3 by 1.45.
-For the 1.5B and Qwen3-8B students, the same traces come from a different model, and allocation raises both pass@1 and pass@3, by up to +3.83 pass@1.
-This pattern suggests that reallocating supervision matters most when the traces are not already matched to the student, which is the common case when a single adapted corpus is reused across students.
+The continuations of the 966 traces were written by Qwen2.5-7B, the family of our Qwen2.5-7B-Instruct student, for which uniform SFT already trains on text close to its own distribution and allocation helps only pass@3.
+For the 1.5B and Qwen3-8B students the traces come from a different model, and allocation raises both metrics, by up to +3.83 pass@1.
+This suggests that reallocating supervision matters most when the traces are not matched to the student, as when one adapted corpus is reused across students.
 
 \section{Conclusion}
 
 We allocated supervision across the steps of fixed long-CoT traces by the frozen student's answer-likelihood gain, keeping every token and each trace's total weight.
-On one fixed set of 966 traces adapted for Qwen2.5-7B, it improved pass@1 over \uniformpalign{} by +2.02 on a 1.5B student and by +3.83 on a LoRA-trained Qwen3-8B; on Qwen2.5-7B-Instruct, it improved pass@3 but not pass@1.
-Data adaptation decides which traces the student learns from; answer-gain allocation decides how the student's supervision is spread over the steps of those traces.
-The gains are largest for students whose traces were adapted for a different model (\S\ref{sec:match}), so allocation is a natural complement when one adapted corpus is reused across several students.
+On 966 traces adapted for Qwen2.5-7B, it improved pass@1 over \uniformpalign{} by +2.02 on a 1.5B student and by +3.83 on Qwen3-8B, and pass@3 but not pass@1 on Qwen2.5-7B-Instruct.
 
 \section*{Limitations}
 
@@ -497,7 +537,7 @@ All experiments ran on a single GPU.
 
 \appendix
 % The appendix is float-heavy: let two-column floats share a page and fill float pages,
-% so the ablation tables stay near their section instead of collecting at the end.
+% so the appendix tables stay near their sections instead of collecting at the end.
 \renewcommand{\dbltopfraction}{0.85}
 \setcounter{dbltopnumber}{3}
 \renewcommand{\dblfloatpagefraction}{0.6}
@@ -509,7 +549,7 @@ All experiments ran on a single GPU.
 Loading the student in bf16 and running AdamW without an fp32 master copy discards most updates at learning rate $5\cdot10^{-5}$, because an update of that size falls below bf16's relative precision for typical weights.
 When the 1.5B student is fully fine-tuned in this setting, only 13.3\% of its weights differ from the base model after 64 optimizer steps, almost none change between steps 64 and 96, and the training loss does not decrease.
 On the student's layer weights, a bf16 update changes about 34\% of the elements per step at learning rate $5\cdot10^{-5}$ and 4\% at $5\cdot10^{-6}$.
-We therefore train every model with DeepSpeed ZeRO-2, which keeps fp32 master weights.
+We therefore train every model with DeepSpeed ZeRO-2 \citep{rajbhandari2020zero}, which keeps fp32 master weights.
 
 \section{Training Details and Reproducibility}
 \label{app:repro}
@@ -538,12 +578,15 @@ We therefore train every model with DeepSpeed ZeRO-2, which keeps fp32 master we
 \end{table}
 
 Code, per-step signals and evaluation outputs will be released.
+Appendix~\ref{app:bf16} explains why full fine-tuning keeps fp32 master weights.
+Appendix~
+ef{app:bf16} explains why full fine-tuning keeps fp32 master weights.
 \paragraph{Loss normalization.}
 The normalizer $Z$ of Eq.~\ref{eq:loss} is computed over the whole optimizer step: the supervised-token count is summed over all gradient-accumulation micro-batches, and the summed weighted loss is divided by this single $Z$ rather than averaged per micro-batch.
 
 \paragraph{Answer scoring.}
 For each trace and each $k=0,\dots,K$, the scoring input is the training prompt and the first $k$ steps (the original token ids, cut at step boundaries), followed by the probe and by the gold answer with its closing brace; the probe and the answer are tokenized separately.
-The gold answer is the raw string inside the last \boxedtok{} of the response, without canonicalization, and its log-probability is the sum of the log-probabilities of its $M$ tokens, computed as prompt log-probabilities with vLLM \citep{kwon2023vllm} in bf16 with prefix caching.
+The gold answer is the raw string inside the last \boxedtok{} of the response, without canonicalization, and its log-probability is the sum of the log-probabilities of its $N$ tokens, computed as prompt log-probabilities with vLLM \citep{kwon2023vllm} in bf16 with prefix caching.
 All probes fit within a 16,384-token context for every student, so the 966 traces give $47{,}532+966=48{,}498$ probes.
 Scoring all probes takes about 12 minutes on one H200 GPU for the 1.5B student, 59 minutes for Qwen2.5-7B-Instruct and 56 minutes for Qwen3-8B.
 This yields one gain per step, and the weights of Eqs.~\ref{eq:z}--\ref{eq:weights} are computed without a selection mask ($M_k=1$ for every step in Eq.~\ref{eq:iwc}).
@@ -561,9 +604,9 @@ where $(U_{1:k^*})_t$ is the row of the first $k^*$ left singular vectors that b
 \section{The Hard-Selection Limit}
 \label{app:limit}
 
-With $\lambda=1$ and $\tau\to0$, the allocation concentrates on $S=\arg\max_k v_k$ (\S\ref{sec:weights}): every other step receives zero weight, and the steps in $S$ share the trace's token mass, each with weight $T/T_S$ (defined below).
-Because $v_k$ is clipped at $c$, $S$ holds every step whose standardized gain reaches $c$, or the steps with the largest $z_k$ if none does, and the support of the weights becomes a hard mask on $S$.
-On the response tokens, the objective equals masked SFT on $S$ with every kept token rescaled by $T/T_S$, where $T=\sum_j\ell_j$ and $T_S=\sum_{j\in S}\ell_j$; the end-of-sequence term keeps weight 1, so the whole loss is not rescaled by a single factor.
+With $\lambda=1$ and $\tau\to0$, the allocation concentrates on $S_{\max}=\arg\max_k v_k$ (\S\ref{sec:weights}): every other step receives zero weight, and the steps in $S_{\max}$ share the trace's token mass, each with weight $L/L_{\max}$ (defined below).
+Because $v_k$ is clipped at $c$, $S_{\max}$ holds every step whose standardized gain reaches $c$, or the steps with the largest $z_k$ if none does, and the support of the weights becomes a hard mask on $S_{\max}$.
+On the response tokens, the objective equals masked SFT on $S_{\max}$ with every kept token rescaled by $L/L_{\max}$, where $L=\sum_j\ell_j$ and $L_{\max}=\sum_{j\in S_{\max}}\ell_j$; the end-of-sequence term keeps weight 1, so the whole loss is not rescaled by a single factor.
 With $\lambda<1$ there is no such limit, because every step keeps weight at least $1-\lambda$.
 
 \section{Relation to Advantage-Weighted Regression}
@@ -582,7 +625,7 @@ Under the evaluation protocol of \S\ref{sec:setup}, every DFT variant scores bel
   \small
   \setlength{\tabcolsep}{3pt}
   \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{lccc}
+  \begin{tabular}{lc}
     \toprule
     Objective & p@1/p@3 \\
     \midrule
@@ -619,136 +662,10 @@ We keep the 4,096-token budget of the evaluation protocol (\S\ref{sec:setup}) fi
 Under this budget, the 1.5B student trained with answer-gain allocation has a 24.7\% truncation rate, macro-averaged over the four benchmarks, and its three samples agree on 53.3\% of problems.
 
 
-\section{Ablations}
-\label{app:ablation}
+\section{Normalization Variants}
+\label{app:norm}
 
-We compare token-mass normalization variants on the 1.5B student. All variants start from the same checkpoint and share the training data, step segmentation, training recipe and evaluation protocol of \S\ref{sec:setup}; they use the fixed defaults $c=2$, $\tau=1$, and $\lambda=0.5$.
-
-\begin{table*}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{4pt}
-  \begin{threeparttable}
-  \begin{tabular}{p{4.3cm}cccccccccc}
-    \toprule
-    \multirow{2}{*}{Method}
-    & \multicolumn{2}{c}{AIME25}
-    & \multicolumn{2}{c}{AIME24}
-    & \multicolumn{2}{c}{AMC12}
-    & \multicolumn{2}{c}{MATH500}
-    & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){2-3}
-    \cmidrule(lr){4-5}
-    \cmidrule(lr){6-7}
-    \cmidrule(lr){8-9}
-    \cmidrule(lr){10-11}
-    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
-    & p@1 & p@3 & p@1 & p@3 \\
-    \midrule
-    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B}} \\
-    \uniformpalign{}
-    & 16.67 & 26.67
-    & 17.78 & \textbf{30.00}
-    & 50.20 & 63.86
-    & \textbf{78.40} & 87.60
-    & 40.76 & 52.03 \\
-    Answer-gain allocation ($\tau=1$)
-    & \textbf{23.33} & \textbf{33.33}
-    & 17.78 & \textbf{30.00}
-    & 53.01 & 67.47
-    & 77.00 & 88.00
-    & 42.78 & \textbf{54.70} \\
-    Predictability -- easy
-    & 20.00 & \textbf{33.33}
-    & 18.89 & 26.67
-    & \textbf{55.02} & 68.67
-    & 77.27 & 86.00
-    & \textbf{42.79} & 53.67 \\
-    Predictability -- hard
-    & 20.00 & 30.00
-    & \textbf{20.00} & \textbf{30.00}
-    & 50.60 & 66.27
-    & 76.93 & 87.40
-    & 41.88 & 53.42 \\
-    Random assignment
-    & 13.33 & 23.33
-    & 17.78 & 23.33
-    & 53.41 & 63.86
-    & 77.87 & 87.40
-    & 40.60 & 49.48 \\
-    ALG, answer-only at weight 1
-    & 17.78 & \textbf{33.33}
-    & 14.44 & 23.33
-    & 52.21 & \textbf{69.88}
-    & 77.60 & \textbf{88.40}
-    & 40.51 & 53.74 \\
-    \bottomrule
-  \end{tabular}
-  \end{threeparttable}
-  \caption{Comparison of step scores on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$, $c=2$). ALG denotes answer-gain allocation, with fixed $\tau=1$; the \uniformpalign{} row repeats (Table~\ref{tab:main}).
-Predictability-based methods up-weight easy or hard
-steps using the frozen student's mean token
-log-probability or its negative, respectively.
-Random assignment permutes answer gains within
-each trace, and ALG, answer-only at weight 1,
-keeps steps that only restate the gold answer at unit
-weight.}
-  \label{tab:abl-score}
-
-\end{table*}
-
-\begin{table*}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{4pt}
-  \begin{threeparttable}
-  \begin{tabular}{p{4.3cm}cccccccccc}
-    \toprule
-    \multirow{2}{*}{Method}
-    & \multicolumn{2}{c}{AIME25}
-    & \multicolumn{2}{c}{AIME24}
-    & \multicolumn{2}{c}{AMC12}
-    & \multicolumn{2}{c}{MATH500}
-    & \multicolumn{2}{c}{Average} \\
-    \cmidrule(lr){2-3}
-    \cmidrule(lr){4-5}
-    \cmidrule(lr){6-7}
-    \cmidrule(lr){8-9}
-    \cmidrule(lr){10-11}
-    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
-    & p@1 & p@3 & p@1 & p@3 \\
-    \midrule
-    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B}} \\
-    Per-trace (Eq.~\ref{eq:mass})
-    & \textbf{23.33} & \textbf{33.33}
-    & \textbf{17.78} & \textbf{30.00}
-    & \textbf{53.01} & 67.47
-    & 77.00 & \textbf{88.00}
-    & \textbf{42.78} & \textbf{54.70} \\
-    Whole corpus
-    & 20.00 & 30.00
-    & 15.56 & 26.67
-    & 51.00 & 66.27
-    & \textbf{78.00} & 87.80
-    & 41.14 & 52.68 \\
-    None
-    & 14.44 & 20.00
-    & 15.56 & 26.67
-    & \textbf{53.01} & \textbf{68.67}
-    & 77.47 & 87.00
-    & 40.12 & 50.59 \\
-    \bottomrule
-  \end{tabular}
-  \end{threeparttable}
-  \caption{Ablation of the token-mass normalization on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=1$, $\lambda=0.5$).}
-  \label{tab:abl-norm}
-\end{table*}
-
-\paragraph{Normalization.}
-Our allocation preserves the response-token loss mass of each trace (Eq.~\ref{eq:budget}).
-To test this constraint, we compare it with \emph{global} normalization, which preserves the token mass only over the whole training corpus, and with \emph{no} mass normalization, which uses the unnormalized exponential scores.
-All three variants use the same answer gains, within-trace standardization and shrinkage ($\tau=1$, $\lambda=0.5$, $c=2$) and change only the normalization applied before shrinkage.
-Let $\ell_{ik}$, $r_{ik}$, and $w_{ik}$ denote the number of supervised tokens, exponential score, and final weight for step $k$ in trace $i$. The three alternatives define the pre-shrinkage weight $\hat w_{ik}$ as
+Let $\ell_{ik}$, $r_{ik}$, and $w_{ik}$ denote the number of supervised tokens, exponential score, and final weight for step $k$ in trace $i$. The three variants define the pre-shrinkage weight $\hat w_{ik}$ as
 \begin{equation}
 \hat w_{ik}=
 \begin{cases}
@@ -776,11 +693,6 @@ In each case, the final weight is $w_{ik}=(1-\lambda)+\lambda\hat w_{ik}$. We me
   \caption{Weights of the normalization variants on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=1$, $\lambda=0.5$): corpus-wide token-mass ratio $\mathcal{M}$, standard deviation of the per-trace budget ratios $B_i$, and percentiles of the step weights $w_k$. The per-trace values of $\mathcal{M}$ and $\mathrm{Std}(B_i)$ hold by construction (Eq.~\ref{eq:budget}).}
   \label{tab:norm-diag}
 \end{table}
-
-Global normalization matches the corpus token mass ($\mathcal{M}=1$) but lets trace budgets drift from uniform (standard deviation 0.26 across traces, Table~\ref{tab:norm-diag}), and lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68 (Table~\ref{tab:abl-norm}).
-Without normalization, the total weight grows by 57\%, trace budgets vary more (standard deviation 0.56), and the scores drop to 40.12 / 50.59, below uniform SFT.
-The comparison with global normalization is the more informative one, because both variants keep the corpus-wide loss mass, whereas removing normalization also changes the overall loss scale.
-Keeping every trace's budget fixed is therefore part of what makes allocation work, not only a convenience.
 
 \section{An Example Trace}
 \label{app:example}
