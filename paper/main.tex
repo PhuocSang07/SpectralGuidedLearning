@@ -707,7 +707,7 @@ The step-score ablation runs at $\lambda=0.5$ and compares uniform SFT (P-ALIGN)
     & 53.41 & 63.86
     & 77.87 & 87.40
     & 40.60 & 49.48 \\
-    ALG, answer-only steps at weight 1
+    ALG, answer-only at weight 1
     & 17.78 & \textbf{33.33}
     & 14.44 & 23.33
     & 52.21 & \textbf{69.88}
@@ -721,7 +721,7 @@ Predictability-based methods up-weight easy or hard
 steps using the frozen student's mean token
 log-probability or its negative, respectively.
 Random assignment permutes answer gains within
-each trace, and ALG with answer-only steps at weight 1
+each trace, and ALG, answer-only at weight 1,
 keeps steps that only restate the gold answer at unit
 weight.}
   \label{tab:abl-score}
