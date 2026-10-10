@@ -481,7 +481,7 @@ Why the pass@1 gain vanishes on Qwen2.5-7B-Instruct, and whether the gains hold 
 Our experiments cover mathematical reasoning with three Qwen-based students and one public set of teacher traces under a fixed evaluation protocol; extending answer-gain allocation to other domains, model families and generation budgets (Appendix~\ref{app:gen}) is left to future work.
 Answer gain relies on a checkable final answer, so tasks without verifiable answers would need a different probe or answer signal.
 Answer gain measures how recoverable a step makes the gold answer for the frozen student, not the step's causal or logical contribution; a step can both derive and state the answer, and separating the two remains open.
-Answer gain is nearly uncorrelated with how easy a step is to predict (Appendix~\ref{app:ablation}), yet in our ablation weighting steps by predictability reaches comparable accuracy; establishing which signal allocates supervision better requires multi-seed comparisons at matched hyperparameters.
+Answer gain is nearly uncorrelated with how easy a step is to predict (Appendix~\ref{app:ablation}), yet in our ablation weighting steps by predictability reaches comparable accuracy; establishing which signal allocates supervision better requires comparisons at matched hyperparameters.
 We fixed the answer probe and explored the weighting hyperparameters in a limited sweep (Appendix~\ref{app:ablation}), and we study allocation on its own; combining it with selective masks and other trace sources (\S\ref{sec:compose}) is a natural next step.
 
 \section*{Ethics Statement}
