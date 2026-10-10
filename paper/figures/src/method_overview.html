@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Method overview, numbered steps</title>
+<style>
+@font-face{font-family:"SS3";font-weight:400;src:url(fonts/source-sans-3-latin-400-normal.woff2)}
+@font-face{font-family:"SS3";font-weight:600;src:url(fonts/source-sans-3-latin-600-normal.woff2)}
+@font-face{font-family:"SS3";font-weight:700;src:url(fonts/source-sans-3-latin-700-normal.woff2)}
+@font-face{font-family:"SS4";font-weight:400;font-style:normal;src:url(fonts/source-serif-4-latin-400-normal.woff2)}
+@font-face{font-family:"SS4";font-weight:400;font-style:italic;src:url(fonts/source-serif-4-latin-400-italic.woff2)}
+@font-face{font-family:"SS4";font-weight:600;font-style:normal;src:url(fonts/source-serif-4-latin-600-normal.woff2)}
+@page{size:1700px 800px;margin:0}
+:root{
+  --ink:#1f2433; --muted:#4a5468;
+  --a:#465069; --a-bg:#eff1f6; --a-line:#c9cfdb;
+  --b:#2c5f9b; --b-bg:#e9f0f9; --b-line:#b9cde6;
+  --c:#ad4b3f; --c-bg:#f9efec; --c-line:#e5c9c2;
+  --navy:#3b4a8a; --cream:#faeec9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1700px;height:800px;background:#fff;font-family:"SS3","Liberation Sans",sans-serif;color:var(--ink)}
+.abs{position:absolute}
+.panel{position:absolute;top:0;height:800px;border-radius:18px;overflow:hidden;border:2px solid}
+.panel .hd{height:50px;color:#fff;font-weight:700;font-size:21px;display:flex;align-items:center;padding-left:22px;gap:10px}
+.hd b{font-weight:700;margin-right:4px}
+#A{left:0;width:392px;background:var(--a-bg);border-color:var(--a-line)} #A .hd{background:var(--a)}
+#B{left:438px;width:732px;background:var(--b-bg);border-color:var(--b-line)} #B .hd{background:var(--b)}
+#C{left:1217px;width:483px;background:var(--c-bg);border-color:var(--c-line)} #C .hd{background:var(--c)}
+.card{position:absolute;background:#fff;border:2px solid #98a3b8;border-radius:14px}
+.num{position:absolute;width:30px;height:30px;border-radius:50%;color:#fff;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center}
+.step{position:absolute;font-weight:700;font-size:20px;white-space:nowrap}
+.sub{position:absolute;font-size:16px;color:var(--muted);white-space:nowrap}
+.m{font-family:"SS4","Liberation Serif","DejaVu Serif",serif;font-style:italic}
+.mr{font-family:"SS4","Liberation Serif","DejaVu Serif",serif}
+.chip{position:absolute;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.chip.x{background:#cfd6e4;width:30px}
+.chip.p{background:var(--cream);border:1px solid #e5d49a;width:30px}
+.chip.a{background:#fff;border:2px solid var(--ink);width:36px;border-radius:9px}
+.chip.s{background:var(--navy);color:#fff;width:36px}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.1;margin:0 3px}
+.frac>span:first-child{border-bottom:1.5px solid var(--ink);padding:0 3px}
+.cell{position:absolute;width:62px;height:34px;border-radius:7px;border:1.5px solid #ccd2de;background:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:400}
+.leg{position:absolute;left:30px;font-size:16px;color:var(--muted);display:flex;align-items:center;gap:10px;white-space:nowrap}
+.leg i{display:inline-block;width:16px;height:16px;border-radius:4px}
+svg{overflow:visible}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <!-- robot head, centred on (0,0), 100 wide -->
+  <g id="head">
+    <rect x="-58" y="-10" width="11" height="26" rx="5.5" fill="var(--acc)" stroke="#30405c" stroke-width="3.5"/>
+    <rect x="47" y="-10" width="11" height="26" rx="5.5" fill="var(--acc)" stroke="#30405c" stroke-width="3.5"/>
+    <rect x="-50" y="-42" width="100" height="86" rx="26" fill="#f6f8fb" stroke="#30405c" stroke-width="3.5"/>
+    <rect x="-39" y="-31" width="78" height="52" rx="18" fill="#e4eaf3"/>
+    <circle cx="-22" cy="-4" r="15" fill="#6fd3e6"/><circle cx="22" cy="-4" r="15" fill="#6fd3e6"/>
+    <circle cx="-17" cy="-9" r="4.5" fill="#fff"/><circle cx="27" cy="-9" r="4.5" fill="#fff"/>
+    <circle cx="-22" cy="-4" r="19" fill="none" stroke="#30405c" stroke-width="3.5"/>
+    <circle cx="22" cy="-4" r="19" fill="none" stroke="#30405c" stroke-width="3.5"/>
+    <path d="M-3 -4h6" stroke="#30405c" stroke-width="3.5"/>
+    <circle cx="-38" cy="22" r="5" fill="#f6b8c0"/><circle cx="38" cy="22" r="5" fill="#f6b8c0"/>
+    <path d="M-12 26q12 11 24 0" fill="none" stroke="#30405c" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+  <g id="torso">
+    <rect x="-36" y="46" width="72" height="58" rx="20" fill="#f6f8fb" stroke="#30405c" stroke-width="3.5"/>
+    <circle cx="0" cy="75" r="8" fill="var(--acc)"/>
+  </g>
+</defs></svg>
+
+<!-- ============ Panel A ============ -->
+<div class="panel" id="A"><div class="hd"><b>A</b> Fixed teacher trace</div></div>
+
+<div class="card" style="left:22px;top:132px;width:112px;height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+  <svg width="38" height="38" viewBox="-19 -19 38 38"><circle r="15" fill="#ffe36b" stroke="#465069" stroke-width="2.5"/><text y="7" text-anchor="middle" font-size="22" font-weight="700" fill="#465069" font-family="SS3">?</text></svg>
+  <div style="font-size:19px">Question <span class="m">x</span></div>
+</div>
+<svg class="abs" style="left:134px;top:176px" width="34" height="14"><path d="M0 7H24" stroke="#5b6478" stroke-width="3"/><path d="M22 1l10 6-10 6z" fill="#5b6478"/></svg>
+
+<!-- teacher scene: robot with mortarboard, book and chalkboard -->
+<svg class="abs" id="teacher" style="left:162px;top:76px" width="224" height="200" viewBox="0 0 224 200">
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- chalkboard -->
+    <rect x="86" y="10" width="132" height="100" rx="7" fill="#7a5638" stroke="#4d3724" stroke-width="3"/>
+    <rect x="93" y="17" width="118" height="86" rx="3" fill="#2f5d4f"/>
+    <path d="M100 98h104" stroke="#b9cbc3" stroke-width="2.5" opacity=".7"/>
+    <g fill="none" stroke="#e9f2ee" stroke-width="2.5">
+      <circle cx="112" cy="39" r="7.5" fill="#e45b4f" stroke="none"/>
+      <path d="M112 31q2-6 7-6" />
+      <path d="M109 62h6l8 22q1 4-3 4h-16q-4 0-3-4z" />
+    </g>
+    <text x="134" y="68" font-size="32" font-style="italic" fill="#f2f6f3" font-family="SS4">ABC</text>
+    <path d="M110 118v70M196 118v70" stroke="#4d3724" stroke-width="5"/>
+  </g>
+  <!-- robot -->
+  <g transform="translate(60 96) scale(.84)" style="--acc:#8793a8">
+    <use href="#torso"/>
+    <!-- arm to board -->
+    <path d="M32 62Q58 52 66 24" fill="none" stroke="#30405c" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="68" cy="20" r="7" fill="#f6f8fb" stroke="#30405c" stroke-width="3.5"/>
+    <path d="M70 14L96 -6" stroke="#d6b36a" stroke-width="4" stroke-linecap="round"/>
+    <!-- book -->
+    <path d="M-34 66Q-50 80 -44 96" fill="none" stroke="#30405c" stroke-width="3.5" stroke-linecap="round"/>
+    <rect x="-58" y="76" width="34" height="38" rx="4" fill="#c8453d" stroke="#30405c" stroke-width="3"/>
+    <rect x="-52" y="82" width="22" height="26" rx="2" fill="#fff" opacity=".9"/>
+    <use href="#head"/>
+    <!-- mortarboard -->
+    <path d="M-62 -42L0 -66L62 -42L0 -26Z" fill="#30405c"/>
+    <rect x="-34" y="-46" width="68" height="14" rx="5" fill="#3b4c6d"/>
+    <path d="M52 -45V-14" stroke="#e6b422" stroke-width="3.5"/><circle cx="52" cy="-11" r="5" fill="#e6b422"/>
+  </g>
+</svg>
+<div class="abs" style="left:150px;top:272px;width:130px;text-align:center;font-weight:700;font-size:21px">Teacher LRM</div>
+<svg class="abs" style="left:205px;top:300px" width="20" height="40"><path d="M10 0V30" stroke="#5b6478" stroke-width="3"/><path d="M3 26l7 12 7-12z" fill="#5b6478"/></svg>
+
+<div class="num" style="left:25px;top:344px;background:var(--a)">1</div>
+<div class="step" style="left:67px;top:340px">Split into steps</div>
+<div class="sub" style="left:67px;top:366px">at sentence boundaries</div>
+
+<div class="card" style="left:25px;top:396px;width:342px;height:196px;border-color:#c4cbd8;background:#f8f9fc;border-width:1.5px">
+  <div class="m" style="position:absolute;left:16px;top:10px;font-size:19px">y = (s<sub>1</sub>, s<sub>2</sub>, s<sub>3</sub>)</div>
+  <div class="abs" style="left:11px;top:40px;width:318px;height:44px;border-radius:9px;background:#f6dcd7;display:flex;align-items:center;padding-left:10px;gap:10px;font-size:17px"><span class="chip s" style="position:static;width:34px;height:28px"><span class="m">s<sub>1</sub></span></span>explores a wrong branch</div>
+  <div class="abs" style="left:11px;top:90px;width:318px;height:44px;border-radius:9px;background:#e1e5ee;display:flex;align-items:center;padding-left:10px;gap:10px;font-size:17px"><span class="chip s" style="position:static;width:34px;height:28px"><span class="m">s<sub>2</sub></span></span>restates the problem</div>
+  <div class="abs" style="left:11px;top:140px;width:318px;height:44px;border-radius:9px;background:#fbdcc7;display:flex;align-items:center;padding-left:10px;gap:10px;font-size:17px"><span class="chip s" style="position:static;width:34px;height:28px"><span class="m">s<sub>3</sub></span></span>derives the answer</div>
+</div>
+
+<div class="card" style="left:25px;top:608px;width:342px;height:58px;display:flex;align-items:center;gap:12px;padding-left:16px;font-size:17px">
+  <svg width="26" height="26" viewBox="-13 -13 26 26"><circle r="11" fill="none" stroke="#2f8a5a" stroke-width="2.5"/><path d="M-5 0l4 4 7-8" fill="none" stroke="#2f8a5a" stroke-width="2.5" stroke-linecap="round"/></svg>
+  <span>Gold answer <span class="m">a</span><sup class="m">*</sup> (last \boxed{})</span>
+</div>
+<div class="leg" style="top:688px"><i style="background:#eab8ae"></i>answer less likely after the step</div>
+<div class="leg" style="top:716px"><i style="background:#d3d9e5"></i>no change</div>
+<div class="leg" style="top:744px"><i style="background:#f4b08c"></i>answer more likely after the step</div>
+<div class="abs" style="left:25px;top:772px;width:342px;text-align:center;font-size:16px;color:var(--muted)">fixed: no step is cut or rewritten</div>
+
+<!-- red dashed arrows between panels -->
+<svg class="abs" style="left:393px;top:352px" width="46" height="14"><path d="M2 7H30" stroke="#d24a3c" stroke-width="3" stroke-dasharray="6 5"/><path d="M28 0l12 7-12 7z" fill="#d24a3c"/></svg>
+<svg class="abs" style="left:1172px;top:352px" width="46" height="14"><path d="M2 7H30" stroke="#d24a3c" stroke-width="3" stroke-dasharray="6 5"/><path d="M28 0l12 7-12 7z" fill="#d24a3c"/></svg>
+
+<!-- ============ Panel B ============ -->
+<div class="panel" id="B"><div class="hd"><b>B</b> Offline answer-gain scoring</div></div>
+
+<div class="num" style="left:462px;top:86px;background:var(--b)">2</div>
+<div class="step" style="left:506px;top:82px">Build one probe per prefix</div>
+
+<div id="probes"></div>
+
+<div class="abs" style="left:800px;top:126px;width:352px;height:72px;border-radius:12px;background:#fdf3c8;border:1.5px solid #e6d17a;padding:11px 14px;font-family:'Liberation Mono',monospace;font-size:13.8px;line-height:1.5">probe <span class="m" style="font-family:'SS4','Liberation Serif',serif">π</span> =<br>Therefore, the final answer is \boxed{</div>
+<div class="abs" style="left:800px;top:210px;width:352px;height:68px;border-radius:12px;background:#fff;border:1.5px solid #b9cde6;padding:9px 16px;font-size:17px;line-height:1.35"><span class="m">a</span><sup class="m">*</sup> = gold answer + “}”, read by teacher forcing, without sampling</div>
+
+<div class="num" style="left:462px;top:330px;background:var(--b)">3</div>
+<div class="step" style="left:506px;top:326px">Score with the frozen student</div>
+
+<div class="card" style="left:462px;top:378px;width:246px;height:244px;border-color:var(--b);border-radius:18px"></div>
+<!-- frozen student at a desk -->
+<svg class="abs" id="frozen" style="left:468px;top:386px" width="234" height="170" viewBox="0 0 260 190"></svg>
+<div class="abs" style="left:462px;top:560px;width:246px;text-align:center;font-weight:700;font-size:19px">frozen <span class="m" style="font-weight:400">q</span><sub class="m" style="font-weight:400">0</sub></div>
+<div class="abs" style="left:462px;top:586px;width:246px;text-align:center;font-size:16px;color:var(--muted)">before fine-tuning</div>
+
+<div class="abs mr" style="left:730px;top:392px;width:150px;font-size:20px"><i>q</i><sub><i>0</i></sub>(<i>a</i><sup>*</sup> | ·)</div>
+<div class="abs m" style="left:872px;top:392px;font-size:20px">b<sub>k</sub></div>
+<div class="abs" style="left:742px;top:436px;font-size:17px;line-height:46px;white-space:nowrap">0.02<br>0.01<br>0.01<br><b style="color:#c0392b">0.10</b></div>
+<div class="abs" style="left:866px;top:436px;font-size:17px;line-height:46px;white-space:nowrap">−3.91<br>−4.61<br>−4.61<br><b style="color:#c0392b">−2.30</b></div>
+
+<!-- step 4 chart box -->
+<div class="card" style="left:930px;top:322px;width:218px;height:0;border:none"></div>
+<div class="card" style="left:928px;top:326px;width:224px;height:0;border:none"></div>
+
+<div class="abs" style="left:462px;top:640px;width:430px;font-size:15.5px;color:var(--muted);line-height:1.3">one forward pass per probe; the shared prefix is cached</div>
+
+<div class="abs mr" style="left:560px;top:708px;font-size:23px"><i>b</i><sub><i>k</i></sub> = log <i>q</i><sub>0</sub>(<i>a</i><sup>*</sup> | <i>x</i>, <i>s</i><sub>1:<i>k</i></sub>, <i>π</i>)</div>
+<div class="abs mr" style="left:930px;top:708px;font-size:23px"><i>u</i><sub><i>k</i></sub> = <i>b</i><sub><i>k</i></sub> − <i>b</i><sub><i>k</i>−1</sub></div>
+<div class="abs" style="left:438px;width:732px;top:762px;text-align:center;font-size:16px;color:var(--muted)">offline, once per trace: no sampling, no gradients, no step labels beyond the gold answer</div>
+
+<!-- ============ Panel C ============ -->
+<div class="panel" id="C"><div class="hd"><b>C</b> Soft step allocation</div></div>
+
+<div class="num" style="left:1242px;top:86px;background:var(--c)">5</div>
+<div class="step" style="left:1286px;top:82px">Turn gains into weights</div>
+<div class="sub m" style="left:1286px;top:110px;font-size:18px">c = τ = 2,&nbsp; λ = 0.5</div>
+
+<div class="abs m" style="left:1432px;top:148px;width:62px;text-align:center;font-size:17px">s<sub>1</sub></div>
+<div class="abs m" style="left:1508px;top:148px;width:62px;text-align:center;font-size:17px">s<sub>2</sub></div>
+<div class="abs m" style="left:1584px;top:148px;width:62px;text-align:center;font-size:17px">s<sub>3</sub></div>
+<div id="wtab"></div>
+
+<div class="abs mr" style="left:1308px;top:428px;font-size:20px"><i>z</i><sub><i>k</i></sub> = <span class="frac"><span><i>u</i><sub><i>k</i></sub> − <i>μ</i><sub><i>u</i></sub></span><span><i>σ</i><sub><i>u</i></sub></span></span></div>
+<div class="abs mr" style="left:1500px;top:440px;font-size:20px"><i>w</i><sub><i>k</i></sub> = (1 − <i>λ</i>) + <i>λ</i> <i>ŵ</i><sub><i>k</i></sub></div>
+
+<div class="num" style="left:1242px;top:512px;background:var(--c)">6</div>
+<div class="step" style="left:1286px;top:508px">Train with weighted SFT</div>
+<div class="sub" style="left:1286px;top:536px">every token of <span class="m">s<sub>k</sub></span> is trained with weight <span class="m">w<sub>k</sub></span></div>
+<div class="abs" style="left:1242px;top:574px;width:424px;height:38px;display:flex;border-radius:4px;overflow:hidden;font-size:17px;font-family:'SS4',serif;font-style:italic">
+  <div style="width:22%;background:#f9d6c8;display:flex;align-items:center;justify-content:center">s<sub>1</sub></div>
+  <div style="width:26%;background:#f2a98c;display:flex;align-items:center;justify-content:center">s<sub>2</sub></div>
+  <div style="width:52%;background:#cf4e3f;color:#fff;display:flex;align-items:center;justify-content:center">s<sub>3</sub></div>
+</div>
+<div class="abs" style="left:1242px;top:618px;width:424px;border-top:1.5px solid #6a4a44;text-align:center;padding-top:6px;font-size:17px;color:#6a4a44">same total <span class="mr" style="color:var(--ink);font-size:19px">Σ<sub><i>k</i></sub> <i>ℓ</i><sub><i>k</i></sub><i>w</i><sub><i>k</i></sub> = Σ<sub><i>k</i></sub> <i>ℓ</i><sub><i>k</i></sub></span> and <span class="mr" style="color:var(--ink);font-size:19px"><i>w</i><sub><i>k</i></sub> ≥ 1 − <i>λ</i></span></div>
+
+<div class="card" style="left:1242px;top:672px;width:424px;height:112px;border-color:var(--c);border-radius:16px"></div>
+<svg class="abs" id="student" style="left:1248px;top:660px" width="172" height="126" viewBox="0 0 260 190"></svg>
+<div class="abs" style="left:1428px;top:690px;font-size:20px;white-space:nowrap"><b>Student</b> <span class="m" style="font-size:21px">p<sub>θ</sub></span></div>
+<div class="abs mr" style="left:1428px;top:722px;font-size:21px;white-space:nowrap">ℒ = <span class="frac"><span>1</span><span><i>Z</i></span></span> Σ<sub><i>k</i></sub> <i>w</i><sub><i>k</i></sub> NLL(<i>s</i><sub><i>k</i></sub>)</div>
+
+<!-- step 4: gain chart -->
+<div class="card" style="left:928px;top:326px;width:224px;height:0;border:none"></div>
+<div class="card" style="left:918px;top:320px;width:234px;height:300px;border-color:var(--b);border-radius:16px"></div>
+<div class="num" style="left:932px;top:332px;background:var(--b)">4</div>
+<div class="step" style="left:972px;top:331px;font-size:17.5px">Gain = change in belief</div>
+<svg class="abs" id="chart" style="left:918px;top:366px" width="234" height="250" viewBox="0 0 234 250"></svg>
+
+<script>
+// ---------- probe rows ----------
+(function(){
+  const rows=[["x","p","a"],["x","s1","p","a"],["x","s1","s2","p","a"],["x","s1","s2","s3","p","a"]];
+  const host=document.getElementById("probes");
+  rows.forEach((r,k)=>{
+    const y=126+k*50;
+    const lab=document.createElement("div");
+    lab.className="abs mr";lab.style.cssText=`left:466px;top:${y+2}px;font-size:21px`;
+    lab.innerHTML=`<i>k</i> = ${k}`;host.appendChild(lab);
+    let x=544;
+    r.forEach(t=>{
+      const c=document.createElement("div");
+      const cls=t==="x"?"x":t==="p"?"p":t==="a"?"a":"s";
+      c.className="chip "+cls;
+      const w=cls==="s"||cls==="a"?36:30;
+      c.style.left=x+"px";c.style.top=y+"px";
+      c.innerHTML=t==="x"?'<span class="m">x</span>':t==="p"?'<span class="m">π</span>':t==="a"?'<span class="m">a<sup style="font-size:11px">*</sup></span>':`<span class="m">s<sub style="font-size:11px">${t[1]}</sub></span>`;
+      host.appendChild(c);x+=w+6;
+    });
+  });
+})();
+
+// ---------- weight table ----------
+(function(){
+  const host=document.getElementById("wtab");
+  const rows=[
+    ["gain <i>u<sub>k</sub></i>",["−0.69","0.00","+2.30"],"gain",150],
+    ["(i) standardize <i>z<sub>k</sub></i>",["−0.96","−0.42","+1.38"],"z",204],
+    ["(ii) clip, exp <i>r<sub>k</sub></i>",["0.62","0.81","1.99"],"",258],
+    ["(iii) token mass <i>ŵ<sub>k</sub></i>",["0.54","0.71","1.75"],"",312],
+    ["(iv) toward uniform <i>w<sub>k</sub></i>",["0.77","0.86","1.37"],"w",366]];
+  const xs=[1432,1508,1584];
+  rows.forEach(([lab,vals,kind,y])=>{
+    const l=document.createElement("div");l.className="abs";l.style.cssText=`left:1242px;top:${y+176-150-0}px;font-size:17px;white-space:nowrap`;
+    l.style.top=(y+8-6)+"px";l.innerHTML=lab;host.appendChild(l);
+    vals.forEach((v,i)=>{
+      const c=document.createElement("div");c.className="cell";c.style.left=xs[i]+"px";c.style.top=(y-4)+"px";
+      c.textContent=v;
+      if(kind==="gain"||kind==="z"){
+        if(i===0){c.style.background="#dfe6f0";c.style.borderColor="#c5cfdf"}
+        if(i===2){c.style.fontWeight="700";c.style.background=kind==="gain"?"#c9402f":"#f6c7b8";c.style.color=kind==="gain"?"#fff":"#7a2418";c.style.borderColor=kind==="gain"?"#c9402f":"#eaa994"}
+      }
+      if(kind==="w"){c.style.fontWeight="700";c.style.background=["#fbd3bf","#f6b79e","#d5513f"][i];c.style.color=i===2?"#fff":"#6e2a1c";c.style.borderColor=["#f1b9a2","#ea9c80","#d5513f"][i]}
+      host.appendChild(c);
+    });
+  });
+})();
+
+// ---------- gain chart ----------
+(function(){
+  const s=document.getElementById("chart");
+  const xs=[26,86,146,206], ys=[110,150,150,12];
+  const f=(t)=>t;
+  s.innerHTML=`
+   <path d="M${xs[0]} ${ys[0]}L${xs[1]} ${ys[1]}L${xs[2]} ${ys[2]}" fill="none" stroke="#6b7488" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+   <path d="M${xs[2]} ${ys[2]}L${xs[3]} ${ys[3]}" fill="none" stroke="#c9402f" stroke-width="4" stroke-linecap="round"/>
+   <path d="M${xs[3]} ${ys[3]}V${ys[2]}" fill="none" stroke="#c9402f" stroke-width="2" stroke-dasharray="4 4"/>
+   ${xs.map((x,i)=>`<circle cx="${x}" cy="${ys[i]}" r="6" fill="#1f2433"/>`).join("")}
+   <text x="52" y="106" font-size="15" fill="#4a5468" text-anchor="middle" transform="rotate(14 52 106)">−0.69</text>
+   <text x="116" y="140" font-size="15" fill="#4a5468" text-anchor="middle">0.00</text>
+   <rect x="102" y="-6" width="100" height="32" rx="7" fill="#c9402f"/>
+   <text x="152" y="16" font-size="17" font-weight="700" fill="#fff" text-anchor="middle" font-family="SS4" font-style="italic">u<tspan font-size="12" dy="3">3</tspan><tspan dy="-3" font-style="normal"> = +2.30</tspan></text>
+   <path d="M10 184H224" stroke="#9aa5b8" stroke-width="1.5"/>
+   <g font-size="16" fill="#4a5468" text-anchor="middle">
+     <text x="26" y="214">before</text>
+     <text x="86" y="214" font-family="SS4">+<tspan font-style="italic">s</tspan><tspan font-size="11" dy="3" font-style="italic">1</tspan></text>
+     <text x="146" y="214" font-family="SS4">+<tspan font-style="italic">s</tspan><tspan font-size="11" dy="3" font-style="italic">2</tspan></text>
+     <text x="206" y="214" font-family="SS4">+<tspan font-style="italic">s</tspan><tspan font-size="11" dy="3" font-style="italic">3</tspan></text>
+   </g>`;
+})();
+
+// ---------- student scenes ----------
+function deskScene(opts){
+  const acc=opts.acc;
+  const bubbleL=`<g><circle cx="40" cy="32" r="25" fill="#fff" stroke="#30405c" stroke-width="3"/><text x="40" y="43" text-anchor="middle" font-size="32" font-weight="700" fill="#30405c" font-family="SS3">?</text>
+     <circle cx="66" cy="62" r="6" fill="#fff" stroke="#30405c" stroke-width="2.5"/><circle cx="82" cy="76" r="4" fill="#fff" stroke="#30405c" stroke-width="2.5"/></g>`;
+  const flake=(cx,cy,r)=>[0,60,120].map(a=>{const t=a*Math.PI/180;return `<path d="M${cx-r*Math.cos(t)} ${cy-r*Math.sin(t)}L${cx+r*Math.cos(t)} ${cy+r*Math.sin(t)}" stroke="${acc}" stroke-width="3.5" stroke-linecap="round"/>`}).join("");
+  const bubbleR=`<g><circle cx="220" cy="32" r="25" fill="#fff" stroke="#30405c" stroke-width="3"/>
+     ${opts.frozen?flake(220,32,15):`<path d="M220 18a10 10 0 0 0-6 18v6h12v-6a10 10 0 0 0-6-18z" fill="#ffd54a" stroke="#30405c" stroke-width="2.5"/><path d="M215 46h10" stroke="#30405c" stroke-width="2.5"/>`}
+     <circle cx="194" cy="62" r="6" fill="#fff" stroke="#30405c" stroke-width="2.5"/><circle cx="178" cy="76" r="4" fill="#fff" stroke="#30405c" stroke-width="2.5"/></g>`;
+  const lock=opts.frozen?`<g transform="translate(112 118)"><rect x="-8" y="-2" width="16" height="13" rx="3" fill="${acc}"/><path d="M-5 -2v-4a5 5 0 0 1 10 0v4" fill="none" stroke="${acc}" stroke-width="2.5"/></g>`:`<g transform="translate(130 112)"><circle r="6" fill="${acc}"/></g>`;
+  return `<g stroke-linecap="round" stroke-linejoin="round" style="--acc:${acc}">
+    ${bubbleL}${bubbleR}
+    <!-- desk -->
+    <rect x="4" y="150" width="252" height="14" rx="4" fill="#b98557" stroke="#6b4b33" stroke-width="3"/>
+    <path d="M20 164v22M240 164v22" stroke="#6b4b33" stroke-width="7"/>
+    <!-- books -->
+    <rect x="12" y="132" width="56" height="18" rx="3" fill="#5c8a72" stroke="#30405c" stroke-width="2.5"/>
+    <rect x="16" y="116" width="52" height="16" rx="3" fill="#e3735c" stroke="#30405c" stroke-width="2.5"/>
+    <rect x="12" y="102" width="56" height="14" rx="3" fill="#5a73b8" stroke="#30405c" stroke-width="2.5"/>
+    <!-- plant -->
+    <path d="M214 150l4-20h24l4 20z" fill="#d98458" stroke="#30405c" stroke-width="2.5"/>
+    <path d="M230 130c-18-6-22-24-14-30 10 4 16 14 14 30zM230 130c16-8 20-26 12-32-10 6-14 16-12 32z" fill="#62b56a" stroke="#30405c" stroke-width="2.5"/>
+    <!-- robot behind laptop -->
+    <g transform="translate(130 72) scale(.82)"><use href="#head"/>
+      <path d="M0 -42v-14" stroke="#30405c" stroke-width="3.5"/><circle cx="0" cy="-60" r="6" fill="${opts.frozen?"#9ec9f0":"#ffd54a"}" stroke="#30405c" stroke-width="3"/></g>
+    <!-- laptop -->
+    <rect x="86" y="96" width="88" height="54" rx="7" fill="#f4f6fb" stroke="#30405c" stroke-width="3.5"/>
+    ${lock}
+    <path d="M78 150h104" stroke="#30405c" stroke-width="4"/>
+  </g>`;
+}
+document.getElementById("frozen").innerHTML=deskScene({acc:"#2c5f9b",frozen:true});
+document.getElementById("student").innerHTML=deskScene({acc:"#ad4b3f",frozen:false});
+</script>
+</body>
+</html>
