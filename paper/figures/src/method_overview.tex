@@ -1,0 +1,201 @@
+% Method overview figure. Layout, text and numbers follow the original figure
+% (1107 x 447 pt; coordinates are in pt with the origin at the top left).
+% Icons: Microsoft Fluent Emoji 3D (MIT licence), see icons/.
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage[scaled=0.92]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{sansmath}
+\usepackage{graphicx}
+\usetikzlibrary{arrows.meta,calc}
+
+\definecolor{cA}{HTML}{44506A}   \definecolor{cAl}{HTML}{F1F3F6}  \definecolor{cAs}{HTML}{C9CFD8}
+\definecolor{cB}{HTML}{2B5F97}   \definecolor{cBl}{HTML}{EAF1F9}  \definecolor{cBs}{HTML}{B3C8E0}
+\definecolor{cC}{HTML}{A8483A}   \definecolor{cCl}{HTML}{FAF1EC}  \definecolor{cCs}{HTML}{E2C4B8}
+\definecolor{ink}{HTML}{1F2430}  \definecolor{mute}{HTML}{5B6577} \definecolor{navy}{HTML}{3E4C8A}
+\definecolor{red}{HTML}{C9503E}
+\definecolor{lessp}{HTML}{E9B8B0}\definecolor{nochg}{HTML}{CFD5DE}\definecolor{morep}{HTML}{F0A98A}
+\definecolor{chipx}{HTML}{CDD5E1}\definecolor{chipp}{HTML}{FBEFC9}
+
+\definecolor{hC9503E}{HTML}{C9503E}
+\definecolor{hE3E7EE}{HTML}{E3E7EE}
+\definecolor{hE6CF86}{HTML}{E6CF86}
+\definecolor{hEEF0F3}{HTML}{EEF0F3}
+\definecolor{hF1F2F5}{HTML}{F1F2F5}
+\definecolor{hF4A582}{HTML}{F4A582}
+\definecolor{hF6C6B3}{HTML}{F6C6B3}
+\definecolor{hF8E6E3}{HTML}{F8E6E3}
+\definecolor{hFBD9C4}{HTML}{FBD9C4}
+\definecolor{hFBE7DC}{HTML}{FBE7DC}
+\definecolor{hFFFAEA}{HTML}{FFFAEA}
+\newcommand{\icon}[4]{\node at (#2,#3) {\includegraphics[width=#4pt]{icons/#1.png}};}
+% \T{anchor}{x,y}{font size}{text}
+\definecolor{tileQ}{HTML}{DCEEFB}\definecolor{tileT}{HTML}{E6E9F0}\definecolor{tileG}{HTML}{DFF3E6}\definecolor{tileI}{HTML}{E3F1FC}\definecolor{tileS}{HTML}{FFEBDD}\definecolor{iceb}{HTML}{4FA3D9}\definecolor{fireb}{HTML}{E8742C}
+% rounded tile behind an icon: centre x, centre y, width, height, fill, draw, dash
+\newcommand{\tile}[7]{\draw[rounded corners=6pt, fill=#5, draw=#6, line width=.9pt, #7] (#1-#3/2,#2-#4/2) rectangle (#1+#3/2,#2+#4/2);}
+% soft halo behind an icon: centre x, centre y, radius, colour
+\newcommand{\halo}[4]{\fill[#4] (#1,#2) circle (#3);}
+% round badge: centre x, centre y, radius, draw colour
+\newcommand{\pin}[4]{\filldraw[fill=white, draw=#4, line width=.9pt] (#1,#2) circle (#3);}
+\newcommand{\T}[4]{\node[anchor=#1, text=ink, font=\fontsize{#3}{#3}\selectfont, inner sep=0pt] at (#2) {#4};}
+\newcommand{\badge}[3]{\fill[#1] (#2) circle (10);\node[text=white, font=\fontsize{11}{11}\selectfont\bfseries, inner sep=0pt] at (#2) {#3};}
+% \rbox{corner1}{corner2}{fill}{stroke}{line width}{radius}
+\newcommand{\rbox}[6]{\draw[rounded corners=#6pt, fill=#3, draw=#4, line width=#5pt] (#1) rectangle (#2);}
+
+\begin{document}
+\begin{tikzpicture}[x=1pt,y=-1pt]
+\sansmath
+\fill[white] (0,0) rectangle (1107,447);
+
+% ------------------------------------------------------------ panels
+\foreach \pl/\pr/\pbg/\pst/\phd/\ptt in {2/256/cAl/cAs/cA/{A\hspace{.55em}Fixed teacher trace},
+                                287/766/cBl/cBs/cB/{B\hspace{.55em}Offline answer-gain scoring},
+                                797/1105/cCl/cCs/cC/{C\hspace{.55em}Soft step allocation}}{
+  \draw[rounded corners=7pt, fill=\pbg, draw=\pst, line width=.8pt] (\pl,2) rectangle (\pr,445);
+  \begin{scope}
+    \clip[rounded corners=7pt] (\pl,2) rectangle (\pr,445);
+    \fill[\phd] (\pl-2,2) rectangle (\pr+2,38);
+  \end{scope}
+  \node[anchor=west, text=white, font=\fontsize{14.2}{14}\selectfont\bfseries, inner sep=0pt] at (\pl+14,20) {\ptt};
+}
+% flow between panels
+\draw[red, dash pattern=on 4pt off 3pt, line width=1.4pt] (259,201)--(276,201);
+\fill[red] (278,197)--(286,201)--(278,205)--cycle;
+\draw[red, dash pattern=on 4pt off 3pt, line width=1.4pt] (769,201)--(786,201);
+\fill[red] (788,197)--(796,201)--(788,205)--cycle;
+
+% ============================================================ A
+
+\icon{q}{33}{73}{30}
+\T{west}{52,73}{12}{Question $x$}
+
+\icon{teacher}{197}{75}{48}\icon{cap}{196}{52}{26}\icon{scroll}{219}{90}{20}
+\T{center}{197,106}{11.2}{\bfseries Teacher LRM}
+
+\draw[-{Stealth[length=5pt]}, line width=1pt, draw=cA!70] (114,73)--(166,73);
+\draw[-{Stealth[length=5pt]}, line width=1pt, draw=cA!70] (197,113)--(197,142);
+
+\badge{cA}{26,115}{1}
+\T{west}{42,115}{12}{\bfseries Split into steps}
+\T{west}{42,129}{10.5}{\color{mute}at sentence boundaries}
+\rbox{17,143}{241,289}{white}{cAs}{.8}{7}
+\T{west}{27,157}{11.2}{$y=(s_1,s_2,s_3)$}
+\foreach \yt/\fl/\i/\txt in {171/hF8E6E3/1/explores a wrong branch, 208/hEEF0F3/2/restates the problem, 246/hFBE7DC/3/derives the answer}{
+  \fill[rounded corners=5pt, fill=\fl] (24,\yt) rectangle (234,\yt+31);
+  \fill[rounded corners=3pt, fill=navy] (30,\yt+5) rectangle (52,\yt+27);
+  \node[text=white, font=\fontsize{10.5}{10}\selectfont, inner sep=0pt] at (41,\yt+16) {$s_\i$};
+  \T{west}{60,\yt+15}{11.2}{\txt}
+}
+\rbox{17,298}{241,344}{white}{cA!50}{.8}{8}
+\icon{gold}{36}{321}{22}
+\T{west}{60,321}{11.2}{Gold answer $a^{*}$ (last \texttt{\textbackslash boxed\{\}})}
+\foreach \y/\cl/\t in {356/lessp/{answer less likely after the step}, 374/nochg/{no change}, 392/morep/{answer more likely after the step}}{
+  \fill[rounded corners=3pt, fill=\cl] (19,\y) rectangle (30,\y+11);
+  \T{west}{36,\y+5.5}{10.5}{\color{mute}\t}
+}
+\T{center}{129,423}{11.2}{\color{mute}fixed: no step is cut or rewritten}
+
+% ============================================================ B
+\badge{cB}{311,62}{2}
+\T{west}{327,62}{12}{\bfseries Build one probe per prefix}
+\foreach \k/\yt in {0/82,1/106,2/130,3/154}{
+  \T{west}{303,\yt+10}{11.2}{$k=\k$}
+  \fill[rounded corners=3pt, fill=chipx] (337,\yt) rectangle (356,\yt+20);
+  \node[font=\fontsize{11}{11}\selectfont, inner sep=0pt] at (346.5,\yt+10) {$x$};
+}
+\foreach \k/\yt in {1/106,2/130,3/154}{
+  \foreach \j in {1,...,\k}{
+    \pgfmathsetmacro{\xa}{358+26*(\j-1)}
+    \fill[rounded corners=3pt, fill=navy] (\xa,\yt) rectangle (\xa+24,\yt+20);
+    \node[text=white, font=\fontsize{11}{11}\selectfont, inner sep=0pt] at (\xa+12,\yt+10) {$s_\j$};
+  }
+}
+\foreach \yt/\xp/\xa in {82/358/378, 106/384/405, 130/410/431, 154/436/457}{
+  \fill[rounded corners=3pt, fill=chipp] (\xp,\yt) rectangle (\xp+18,\yt+20);
+  \node[font=\fontsize{11}{11}\selectfont, inner sep=0pt] at (\xp+9,\yt+10) {$\pi$};
+  \draw[rounded corners=3pt, fill=white, draw=ink, line width=.8pt] (\xa,\yt+1) rectangle (\xa+22,\yt+20);
+  \node[font=\fontsize{11}{11}\selectfont, inner sep=0pt] at (\xa+11,\yt+10.5) {$a^{*}$};
+}
+\rbox{497,80}{751,127}{hFFFAEA}{hE6CF86}{.8}{7}
+\T{west}{506,96}{11.2}{probe $\pi=$}
+\T{west}{506,112}{9.8}{\ttfamily Therefore, the final answer is \textbackslash boxed\{}
+\rbox{497,135}{751,174}{white}{cBs}{.8}{7}
+\T{west}{506,147}{11.2}{$a^{*}$ = gold answer + ``\}'', read by teacher forcing,}
+\T{west}{506,162}{11.2}{without sampling}
+
+\badge{cB}{311,200}{3}
+\T{west}{327,200}{12}{\bfseries Score with the frozen student}
+
+\icon{student}{352}{247}{62}
+\icon{snow}{385}{270}{26}
+\T{center}{352,293}{12}{\bfseries frozen $q_0$}
+\T{center}{352,307}{10.5}{\color{mute}before fine-tuning}
+\T{center}{452,226}{11.2}{$q_0(a^{*}\!\mid\cdot)$}
+\T{center}{501,226}{11.2}{$b_k$}
+\foreach \y/\q/\b/\cl in {250.5/0.02/{$-3.91$}/ink, 270/0.01/{$-4.61$}/ink, 289.5/0.01/{$-4.61$}/ink, 306.5/0.10/{$-2.30$}/red}{
+  \T{center}{453,\y}{11.2}{\color{\cl}\q}
+  \T{center}{501,\y}{11.2}{\color{\cl}\b}
+}
+\T{west}{302,331}{10.5}{\color{mute}one forward pass per probe; the shared prefix is}
+\T{west}{302,344}{10.5}{\color{mute}cached}
+
+\rbox{536,191}{751,367}{white}{cBs}{.8}{7}
+\badge{cB}{556,206}{4}
+\T{west}{572,209}{12}{\bfseries Gain $=$ change in belief}
+\draw[ink!25, line width=.8pt] (550,329)--(738,329);
+\coordinate (g0) at (560,291.5);\coordinate (g1) at (616,312);\coordinate (g2) at (672,312);\coordinate (g3) at (728,243.5);
+\draw[gray!70, line width=1.9pt] (g0)--(g1)--(g2);
+\draw[red, line width=2.6pt] (g2)--(g3);
+\foreach \p in {g0,g1,g2,g3}{\fill[ink] (\p) circle (3.6);}
+\fill[red, rounded corners=3pt] (604,250) rectangle (674,270);
+\node[text=white, font=\fontsize{11}{11}\selectfont\bfseries, inner sep=0pt] at (639,260) {$u_3=+2.30$};
+\T{center}{588,276}{10.5}{\color{mute}$-0.69$}
+\T{center}{644,299}{10.5}{\color{mute}$0.00$}
+\T{center}{560,343}{10.5}{\color{mute}before}
+\T{center}{616,343}{10.5}{$+s_1$}
+\T{center}{672,343}{10.5}{$+s_2$}
+\T{center}{728,343}{10.5}{$+s_3$}
+
+\T{center}{414,394}{12}{$b_k=\log q_0(a^{*}\mid x,s_{1:k},\pi)$}
+\T{center}{643,394}{12}{$u_k=b_k-b_{k-1}$}
+\T{center}{526,424}{10.5}{\color{mute}offline, once per trace: no sampling, no gradients, no step labels beyond the gold answer}
+
+% ============================================================ C
+\badge{cC}{821,62}{5}
+\T{west}{837,62}{12}{\bfseries Turn gains into weights}
+\T{west}{837,77}{11.2}{\color{mute}$c=\tau=2,\ \lambda=0.5$}
+\foreach \x/\s in {960/1,1006.5/2,1053/3}{\T{center}{\x,103}{11.2}{\color{mute}$s_\s$}}
+\foreach \y/\lab in {118.5/{gain $u_k$}, 145.5/{(i) standardize $z_k$}, 172.5/{(ii) clip, exp $r_k$}, 199.5/{(iii) token mass $\hat w_k$}, 226.5/{(iv) toward uniform $w_k$}}{
+  \T{west}{812,\y}{11.2}{\lab}
+}
+\foreach \y/\a/\b/\cl/\fa/\fb/\fc/\ta/\tb/\tc/\bf in {
+  118.5/{$-0.69$}/{$0.00$}/{$+2.30$}/hE3E7EE/hF1F2F5/hC9503E/ink/ink/white/\normalfont,
+  145.5/{$-0.96$}/{$-0.42$}/{$+1.38$}/hE3E7EE/hF1F2F5/hF6C6B3/ink/ink/ink/\normalfont,
+  172.5/{0.62}/{0.81}/{1.99}/white/white/white/ink/ink/ink/\normalfont,
+  199.5/{0.54}/{0.71}/{1.75}/white/white/white/ink/ink/ink/\normalfont,
+  226.5/{0.77}/{0.86}/{1.37}/hFBD9C4/hF4A582/hC9503E/ink/ink/white/\bfseries}{
+  \foreach \x/\v/\fl/\tcol in {960/\a/\fa/\ta, 1006.5/\b/\fb/\tb, 1053/\cl/\fc/\tc}{
+    \draw[rounded corners=4pt, fill=\fl, draw=cCs, line width=.6pt] (\x-21,\y-10.5) rectangle (\x+21,\y+10.5);
+    \node[text=\tcol, font=\fontsize{11}{11}\selectfont\bf, inner sep=0pt] at (\x,\y) {\v};
+  }
+}
+\T{center}{857,261}{12}{$z_k=\dfrac{u_k-\mu_u}{\sigma_u}$}
+\T{center}{1010,262}{12}{$w_k=(1-\lambda)+\lambda\,\hat w_k$}
+
+\badge{cC}{821,306}{6}
+\T{west}{837,307}{12}{\bfseries Train with weighted SFT}
+\T{west}{812,326}{10.5}{\color{mute}every token of $s_k$ is trained with weight $w_k$}
+\fill[hFBD9C4] (812,336) rectangle (884,360);
+\fill[hF4A582] (884,336) rectangle (963,360);
+\fill[red] (963,336) rectangle (1090,360);
+\node[font=\fontsize{11}{11}\selectfont, inner sep=0pt] at (848,348) {$s_1$};
+\node[font=\fontsize{11}{11}\selectfont, inner sep=0pt] at (923.5,348) {$s_2$};
+\node[font=\fontsize{11}{11}\selectfont, inner sep=0pt, text=white] at (1026.5,348) {$s_3$};
+\draw[ink!40, line width=.7pt] (812,363)--(812,367)--(1090,367)--(1090,363);
+\T{center}{951,377}{10.5}{\color{mute}same total $\sum_k \ell_k w_k=\sum_k \ell_k$ \ and \ $w_k\ge 1-\lambda$}
+
+\icon{student}{834}{412}{42}\icon{train}{852}{426}{22}
+\T{west}{868,413}{11.2}{\bfseries Student $p_\theta$\normalfont: $\mathcal{L}=\dfrac{1}{Z}\sum_k w_k\,\mathrm{NLL}(s_k)$}
+\end{tikzpicture}
+\end{document}

@@ -285,17 +285,17 @@ We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems
     & 65.3 & 80.4
     & 30.3 & 42.1 \\
 
-    SGL \citep{fan2026sgl}$^{\ast}$
-    & 2.50 & 7.50
-    & 6.67 & 11.67
-    & 30.72 & 46.39
-    & 65.75 & 81.60
-    & 26.41 & 36.79 \\
+    SGL \citep{fan2026sgl}
+    & 8.89 & \underline{20.00}
+    & 8.89 & 16.67
+    & \textbf{44.58} & \underline{60.24}
+    & \textbf{75.13} & \textbf{85.40}
+    & \textbf{34.37} & 45.58 \\
 
     Segment-Selective SFT \citep{wang2026segattr}
     & 6.67 & 13.33
     & \underline{12.22} & \textbf{23.33}
-    & \textbf{42.57} & \textbf{65.06}
+    & \underline{42.57} & \textbf{65.06}
     & 66.20 & 81.40
     & 31.92 & \underline{45.78} \\
 
@@ -303,15 +303,15 @@ We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems
     & \textbf{12.22} & \textbf{23.33}
     & \underline{12.22} & \underline{20.00}
     & 38.55 & 51.81
-    & \textbf{71.87} & \underline{83.40}
-    & \textbf{33.72} & 44.64 \\
+    & \underline{71.87} & 83.40
+    & \underline{33.72} & 44.64 \\
 
     Answer-gain allocation (ours)
     & \underline{11.11} & \textbf{23.33}
     & \textbf{13.33} & \underline{20.00}
-    & \underline{39.36} & \underline{56.63}
-    & \underline{70.00} & \textbf{84.40}
-    & \underline{33.45} & \textbf{46.09} \\
+    & 39.36 & 56.63
+    & 70.00 & \underline{84.40}
+    & 33.45 & \textbf{46.09} \\
 
     \midrule
     \multicolumn{11}{l}{\textit{Qwen3-8B, LoRA}} \\
@@ -369,7 +369,6 @@ We report pass@1 (mean over the three samples) and pass@3 on AIME24 (30 problems
     \underline{underline}, respectively.
     Zero-shot results are excluded from ranking.
     Tied scores receive the same formatting.
-    $^{\ast}$Evaluated with four samples per problem instead of three.
     $^{\dagger}$Shown to one decimal.
   }
   \label{tab:main}
@@ -384,6 +383,7 @@ The gain comes mainly from AIME25 (+6.66 pass@1) and AMC12 (+2.81); MATH500 pass
 \paragraph{Larger students.}
 On Qwen3-8B the gain is larger: allocation raises average pass@1 over \uniformpalign{} from 49.24 to 53.07 (+3.83) and pass@3 from 58.82 to 62.41 (+3.59), with a higher pass@1 on all four benchmarks and a higher pass@3 on all but AMC12.
 On Qwen2.5-7B-Instruct the results are mixed: allocation trails \uniformpalign{} by 0.27 pass@1 (33.45 against 33.72) but improves pass@3 by 1.45 (46.09 against 44.64), and its pass@1 stays close to the zero-shot student (33.24).
+On this student SGL, trained on s1K-1.1, has the highest average pass@1 (34.37), while allocation keeps the highest average pass@3 (46.09 against 45.58).
 Across the three students, allocation improves average pass@3 over \uniformpalign{} in every case and average pass@1 in two of three.
 
 \subsection{Ablations and Analysis}
@@ -472,6 +472,96 @@ Across the three students, allocation improves average pass@3 over \uniformpalig
   \label{tab:abl}
 \end{table*}
 
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{p{4.3cm}cccccccccc}
+    \toprule
+    \multirow{2}{*}{Method}
+    & \multicolumn{2}{c}{AIME25}
+    & \multicolumn{2}{c}{AIME24}
+    & \multicolumn{2}{c}{AMC12}
+    & \multicolumn{2}{c}{MATH500}
+    & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3}
+    \cmidrule(lr){4-5}
+    \cmidrule(lr){6-7}
+    \cmidrule(lr){8-9}
+    \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
+    & p@1 & p@3 & p@1 & p@3 \\
+    \midrule
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, shrinkage $\lambda$, $\tau=2$}} \\
+    Uniform, $\lambda=0$ (P-ALIGN)
+    & 16.67 & \textbf{26.67}
+    & 17.78 & 30.00
+    & 50.20 & 63.86
+    & 78.40 & 87.60
+    & 40.76 & 52.03 \\
+    ALG ($\lambda=0.5$)
+    & \textbf{18.15} & \textbf{26.67}
+    & \textbf{20.00} & \textbf{31.11}
+    & \textbf{53.68} & \textbf{66.67}
+    & 78.02 & \textbf{87.93}
+    & \textbf{42.46} & \textbf{53.09} \\
+    ALG ($\lambda=1$)
+    & 17.78 & 23.33
+    & 16.67 & 30.00
+    & 51.41 & 63.86
+    & \textbf{78.73} & 87.60
+    & 41.15 & 51.20 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Ablation of the shrinkage $\lambda$ of Eq.~\ref{eq:weights} on DeepSeek-R1-Distill-Qwen-1.5B ($\tau=2$). $\lambda=0$ recovers uniform SFT; this row repeats P-ALIGN (Table~\ref{tab:main}). The $\lambda=0.5$ row is the mean over three evaluation runs.}
+  \label{tab:abl-lambda}
+\end{table*}
+
+\begin{table*}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{p{4.3cm}cccccccccc}
+    \toprule
+    \multirow{2}{*}{Method}
+    & \multicolumn{2}{c}{AIME25}
+    & \multicolumn{2}{c}{AIME24}
+    & \multicolumn{2}{c}{AMC12}
+    & \multicolumn{2}{c}{MATH500}
+    & \multicolumn{2}{c}{Average} \\
+    \cmidrule(lr){2-3}
+    \cmidrule(lr){4-5}
+    \cmidrule(lr){6-7}
+    \cmidrule(lr){8-9}
+    \cmidrule(lr){10-11}
+    & p@1 & p@3 & p@1 & p@3 & p@1 & p@3
+    & p@1 & p@3 & p@1 & p@3 \\
+    \midrule
+    \multicolumn{11}{l}{\textit{DeepSeek-R1-Distill-Qwen-1.5B, temperature $\tau$, $\lambda=0.5$}} \\
+    ALG ($\tau=1$)
+    & \textbf{23.33} & \textbf{33.33}
+    & 17.78 & 30.00
+    & 53.01 & \textbf{67.47}
+    & 77.00 & 88.00
+    & \textbf{42.78} & \textbf{54.70} \\
+    ALG ($\tau=2$)
+    & 18.15 & 26.67
+    & \textbf{20.00} & \textbf{31.11}
+    & \textbf{53.68} & 66.67
+    & 78.02 & 87.93
+    & 42.46 & 53.09 \\
+    ALG ($\tau=4$)
+    & 18.89 & 23.33
+    & 13.33 & 13.33
+    & 51.00 & 63.86
+    & \textbf{78.13} & \textbf{88.60}
+    & 40.34 & 47.28 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Ablation of the temperature $\tau$ of Eq.~\ref{eq:z} on DeepSeek-R1-Distill-Qwen-1.5B ($\lambda=0.5$). The $\tau=2$ row is the mean over three evaluation runs.}
+  \label{tab:abl-tau}
+\end{table*}
+
 Ablations use the 1.5B student and the setup of \S\ref{sec:setup}.
 
 \paragraph{Hard selection removes substantial supervision.}
@@ -505,6 +595,12 @@ We replace the per-trace normalization of Eq.~\ref{eq:mass} by \emph{global} nor
 Global normalization matches the corpus token mass but lets trace budgets drift from uniform (standard deviation 0.26 of the per-trace budget ratio, Table~\ref{tab:norm-diag}), and lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68.
 Without normalization, the total weight grows by 57\%, trace budgets vary more (standard deviation 0.56), and the scores drop to 40.12 / 50.59, below uniform SFT.
 Because global normalization keeps the corpus-wide loss mass, this comparison is the more informative one, and it shows that fixing every trace's budget is part of what makes allocation work.
+
+\paragraph{Allocation strength.}
+Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-tau} vary $\lambda$ and $\tau$.
+A sharper temperature gives the strongest arm: with $\tau=1$, answer-gain allocation reaches the highest pass@3 of all arms, 54.70 against 52.03 for uniform SFT, and 42.78 pass@1, level with the best, while a smoother temperature ($\tau=4$) gives the lowest pass@3.
+At $\tau=2$, answer-gain allocation with $\lambda=0.5$ reaches 42.46 pass@1 and 53.09 pass@3, compared with 40.76 and 52.03 for uniform SFT; full allocation ($\lambda=1$, 41.15 / 51.20) falls between the two on pass@1 and below both on pass@3.
+Both settings concentrate the weight: the 10\% most up-weighted steps carry 29.7\% of the token-weighted mass at $\lambda=0.5$, $\tau=2$, 38.6\% with $\lambda=1$ and 39.5\% with $\tau=1$, against 24.9\% with $\tau=4$.
 
 \paragraph{Trace--student match.}
 \label{sec:match}
