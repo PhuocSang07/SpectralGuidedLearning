@@ -952,7 +952,7 @@ The two steps that return to $P_w=\frac{1}{2}\rho Av^3$, which does not involve 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/key_steps.pdf}
-  \caption{Key steps of a training trace for ``Find the wind power $P_w$ in terms of $P$ and the temperature ratio $T_2/T_1$'' (gold answer $P_w=P\,T_1/T_2$), scored with the 1.5B student. Top: the 16 steps in order, with grey labels summarizing the other steps; the DeepSeek-R1 prefix ends inside $s_{13}$ (dashed line). Bottom: abridged text of the steps with the largest and the lowest weights $w_k$ ($\lambda=0.5$) and of the step that states the answer.}
+  \caption{Key steps of a training trace for ``Find the wind power $P_w$ in terms of $P$ and the temperature ratio $T_2/T_1$'' (gold answer $P_w=P\,T_1/T_2$), scored with the 1.5B student. The 16 steps are shown in order as a flow, with the DeepSeek-R1 prefix on top and the Qwen2.5-7B continuation below, which starts inside $s_{13}$ after the \eop{} marker. Grey boxes summarize the other steps; colored boxes give abridged text of the steps with the largest and the lowest weights $w_k$ ($\lambda=0.5$) and of the step that states the answer.}
   \label{fig:example}
 \end{figure*}
 
