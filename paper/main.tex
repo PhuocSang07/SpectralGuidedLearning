@@ -85,10 +85,9 @@ How \emph{much} each step of a trace should be learned, rather than \emph{whethe
 We propose \emph{answer-gain allocation} (ALG), which keeps every step and redistributes supervision across the steps of fixed traces.
 Each step is scored by its \emph{answer-likelihood gain} (\emph{answer gain} for short): the change in the frozen student's log-probability of the gold answer when the step is appended, read through a fixed answer probe.
 A step with high gain, which we call \emph{decisive}, is one that makes the answer accessible to the student, whether or not it is difficult for the student to predict.
-We standardize the gains within each trace and turn them into soft weights that preserve the trace's total token weight (Figure~\ref{fig:method}), so no step is cut and, with our default shrinkage, every step keeps at least half of its uniform weight. Uniform SFT and hard selection of the highest-gain steps are the two limits of this family (Appendix~\ref{app:limit}).
-The signal itself is not new, as answer-likelihood change already serves as step credit in evaluation, RL and self-distillation (\S\ref{sec:related}).
-Our contribution is to use it as an offline SFT weight, normalized by token mass within each trace, and ablations on the 1.5B student show that both the signal and the normalization affect accuracy (\S\ref{sec:analysis}).
-We study allocation after data adaptation, on 966 traces released by P-ALIGN \citep{liu2026palign} for Qwen2.5-7B. Against our primary baseline, uniform SFT on these traces (\uniformpalign{}), allocation raises pass@1 and pass@3 for DeepSeek-R1-Distill-Qwen-1.5B and Qwen3-8B, and pass@3 but not pass@1 for Qwen2.5-7B-Instruct.
+We standardize the gains within each trace and turn them into soft weights that preserve the trace's total token weight, so no step is cut and every step keeps a share of its uniform weight; uniform SFT and hard selection of the highest-gain steps are the two limits of this weighting.
+The gains are computed once, offline, by teacher forcing the frozen student, without sampling, gradients or step labels.
+The signal itself is not new, as answer-likelihood change already serves as step credit in evaluation, RL and self-distillation; our contribution is to use it as an offline SFT weight, normalized by token mass within each trace.
 
 \begin{figure*}[t]
   \centering
@@ -101,8 +100,7 @@ Our contributions are:
 \begin{itemize}
   \setlength\itemsep{0pt}
   \item \textbf{Budget-preserving answer-gain allocation for distillation.} We turn a known step-credit signal, the frozen student's answer-likelihood gain, into offline SFT weights for the steps of fixed traces, with gains standardized within each trace and weights normalized by token mass, so that every token stays supervised and every trace keeps its total weight. The weights apply unchanged to other trace sources and can be computed over the steps a selective mask keeps (\S\ref{sec:method}).
-  \item \textbf{An analysis of selection and allocation.} We measure how much supervision a hard spectral gate removes from these traces and which steps answer gain up-weights, for each student (\S\ref{sec:analysis}).
-  \item \textbf{Results on fixed adapted traces.} We compare against \uniformpalign{} on three students and against other step scores and normalizations on the 1.5B student, and report where the method does not help (\S\ref{sec:results}, \S\ref{sec:analysis}).
+  \item \textbf{Results and analysis on fixed adapted traces.} We compare against \uniformpalign{} on three students and against other step scores and normalizations on the 1.5B student, measure how much supervision a hard spectral gate removes and which steps answer gain up-weights, and report where the method does not help (\S\ref{sec:results}, \S\ref{sec:analysis}).
 \end{itemize}
 
 \section{Related Work and Background}
@@ -130,6 +128,7 @@ s1 and LIMO show that about a thousand carefully chosen traces suffice for stron
 P-ALIGN \citep{liu2026palign} truncates each teacher trace at the shortest prefix that the student judges sufficient and lets the student write the continuation.
 Step-entropy compression \citep{li2026stepentropy} replaces the 80\% lowest-entropy steps with a \texttt{[SKIP]} token, although a low-entropy step can still be decisive, and SPIRIT \citep{cui2025spirit} removes or merges steps whose removal barely raises perplexity.
 These methods edit the traces and then train every remaining token uniformly, and several need repeated student generations or judgments for each trace.
+Small students may learn less from long CoT than from shorter chains \citep{li2025smallstruggle}, can degrade before they improve when long-CoT data is limited \citep{luo2025valley}, and can be trained on traces whose redundant steps are pruned without losing accuracy \citep{wang2025efficientlong}; P-ALIGN's adaptation addresses this capacity gap, and allocation acts on the traces it produces.
 
 \paragraph{Selecting what enters the loss.}
 SGL \citep{fan2026sgl} scores each step by its spectral strength, its leverage on a low-rank consensus subspace of the loss gradients, and masks the loss of the steps outside the smallest set that reaches a preset share of the trace's total strength.
@@ -193,6 +192,7 @@ SFT on the full long CoT, SGL and Segment-Selective SFT are trained on s1K-1.1, 
 DeepSeek-R1-Distill-Qwen-1.5B \citep{deepseek2025r1} is fully fine-tuned with thinking mode off (an empty think block ends the prompt).
 Qwen2.5-7B-Instruct \citep{qwen2024qwen25} and Qwen3-8B \citep{qwen2025qwen3} are trained with LoRA \citep{hu2022lora} (rank 16, $\alpha=16$, dropout 0.05, on all attention and MLP projections); Qwen3-8B also runs with thinking mode off.
 Training uses 3 epochs, learning rate $5\cdot10^{-5}$ with cosine decay to $10^{-5}$ and an effective batch size of 32 (Appendix~\ref{app:repro}).
+We set $\tau$ and $\lambda$ from sweeps on the 1.5B student (\S\ref{sec:analysis}) and use the same values for all three students, without per-student tuning.
 
 \paragraph{Evaluation.}
 We follow the evaluation protocol of \citet{liu2026palign}: vLLM, $n=3$ samples per problem, temperature 0.6, top-$p$ 0.9, repetition penalty 1.05, a 4,096-token budget, and an answer counted as correct if Math-Verify \citep{mathverify} or the OAT grader of P-ALIGN's evaluation code accepts it.
@@ -380,7 +380,8 @@ The gain comes mainly from AIME25 (+6.66 pass@1) and AMC12 (+2.81); MATH500 pass
 
 \paragraph{Larger students.}
 On Qwen3-8B the gain is larger: allocation raises average pass@1 over \uniformpalign{} from 49.24 to 53.07 (+3.83) and pass@3 from 58.82 to 62.41 (+3.59), with a higher pass@1 on all four benchmarks and a higher pass@3 on all but AMC12.
-On Qwen2.5-7B-Instruct the results are mixed: allocation trails \uniformpalign{} by 0.27 pass@1 (33.45 against 33.72) but improves pass@3 by 1.45 (46.09 against 44.64), and its pass@1 stays close to the zero-shot student (33.24).
+On Qwen2.5-7B-Instruct the results are mixed: allocation trails \uniformpalign{} by 0.27 pass@1 (33.45 against 33.72) but improves pass@3 by 1.45 (46.09 against 44.64).
+On this student even uniform SFT leaves pass@1 near the zero-shot level (33.24), a pattern also reported when students are fine-tuned on limited long-CoT data \citep{luo2025valley}, so these traces leave little for allocation to redistribute.
 SGL, trained on s1K-1.1, has the highest average pass@1 on this student (34.37), while allocation keeps the highest average pass@3 (46.09, against 45.78 for Segment-Selective SFT and 45.58 for SGL).
 Across the three students, allocation improves average pass@3 over \uniformpalign{} in every case and average pass@1 in two of three.
 
@@ -566,15 +567,15 @@ Unless stated otherwise, ablations use the 1.5B student and the setup of \S\ref{
 \label{sec:selection-analysis}
 To see what a hard gate would do to these traces, we apply the selection rule of SGL (\S\ref{sec:related}; Appendix~\ref{app:sgl}) as a measurement only: it sets $M_k=1$ for the smallest set of steps with the highest spectral strength whose total strength reaches a fraction $\eta$ of the trace's total, and we use $\eta=0.95$, the energy level at which SGL truncates the gradient spectrum.
 With $\eta=0.95$ the gate drops only 18\% of the 47,532 steps but 41\% of the 2.92M response tokens, because the long, low-leverage continuation steps fall below the threshold.
-It removes 20\% of the teacher prefix, 49\% of the continuation, and the step that writes the final \boxedtok{} in 362 of 966 traces (37\%).
-Under the spectral strengths of the larger students the gate removes more: 44\% of the response tokens and the final \boxedtok{} step in 467 traces (48\%) for Qwen2.5-7B-Instruct, and 49\% of the tokens (60\% of the continuation) and the final \boxedtok{} step in 672 traces (70\%) for Qwen3-8B.
+It removes 20\% of the teacher prefix, 49\% of the continuation, and the step that writes the final \boxedtok{} in 37\% of the traces.
+Under the spectral strengths of Qwen2.5-7B-Instruct and Qwen3-8B the gate removes more: 44\% and 49\% of the response tokens, and the final \boxedtok{} step in 48\% and 70\% of the traces.
 
 \paragraph{What answer gain rewards.}
 \label{sec:what-gain}
 Positive gain is concentrated in a few steps.
 For the 1.5B student, the three highest-gain steps of a trace carry a median 60\% of its positive gain, although 43\% of the 47,532 steps raise $\log q_0(a^*)$ by more than 0.1 nats, 39\% lower it by more than 0.1, and the rest leave it nearly unchanged.
 The 6.7\% of steps that contain the gold answer string carry 28.3\% of all positive gain, and the top-gain step contains it in 66\% of traces.
-Part of the signal therefore rewards \emph{stating} the answer; Appendix~\ref{app:example} shows two examples.
+Part of the signal therefore rewards \emph{stating} the answer; Appendix~\ref{app:example} shows an example.
 For Qwen2.5-7B-Instruct and Qwen3-8B the three highest-gain steps carry a median 52\% and 55\% of the positive gain, but stating the answer weighs less: the steps that contain the gold answer string carry 21.1\% and 20.3\% of it.
 
 \paragraph{Which step score?}
@@ -582,7 +583,7 @@ Table~\ref{tab:abl} keeps the weight construction and replaces the answer gain b
 The clearest contrast is with random assignment, which permutes the gains within each trace and falls below uniform SFT (40.60 / 49.48 against 40.76 / 52.03), so the improvement depends on which steps are up-weighted, not on the shape of the weights alone.
 Weighting difficult steps, the alternative our title contrasts with, is lower than answer gain on both metrics (41.88 / 53.42 against 42.78 / 54.70), while weighting easy steps comes close on pass@1 (42.68) but not on pass@3 (53.67).
 Differences of about one point should be read with care, since AIME24 and AIME25 have only 30 problems each.
-Keeping the steps that only restate the answer at unit weight removes the pass@1 gain (40.51) but keeps most of the pass@3 gain (53.74), so much of the pass@1 improvement comes from up-weighting these answer-restating steps.
+Keeping the steps that only restate the answer at unit weight, so that only the other steps are reallocated, keeps most of the pass@3 gain (53.74) but not the pass@1 gain (40.51); much of the pass@1 improvement therefore comes from up-weighting these answer-restating steps.
 The highest-gain step is not always such a step: in the trace of Figure~\ref{fig:example} (Appendix~\ref{app:example}), the largest weight goes to a derivation that does not contain the answer.
 
 \paragraph{Per-trace normalization matters.}
@@ -590,10 +591,11 @@ The highest-gain step is not always such a step: in the trace of Figure~\ref{fig
 We replace the per-trace normalization of Eq.~\ref{eq:mass} by \emph{global} normalization, which preserves the token mass only over the whole corpus, or by none (Appendix~\ref{app:norm}; Table~\ref{tab:abl}, bottom).
 Global normalization lets trace budgets drift from uniform (standard deviation 0.26 of the per-trace budget ratio, Table~\ref{tab:norm-diag}) and lowers pass@1 / pass@3 from 42.78 / 54.70 to 41.14 / 52.68; since it keeps the corpus-wide loss mass, this is the controlled comparison, and it suggests that fixing every trace's budget is part of what makes allocation work.
 Without normalization, the total weight grows by 57\%, trace budgets vary more (standard deviation 0.56), and the scores drop below uniform SFT (40.12 / 50.59).
+Per-trace normalization keeps the relative weight of traces as in uniform SFT, so allocation changes only how each trace's budget is spread; deciding which traces deserve more budget is a separate data-selection choice \citep{muennighoff2025s1,ye2025limo}.
 
 \paragraph{Allocation strength.}
 Tables~\ref{tab:abl-lambda} and~\ref{tab:abl-tau} vary $\lambda$ at $\tau=2$ and $\tau$ at $\lambda=0.5$.
-A sharper temperature gives the strongest setting: with $\tau=1$, answer-gain allocation reaches the highest pass@3 of all settings, 54.70 against 52.03 for uniform SFT, and the highest pass@1, 42.78, while a smoother temperature ($\tau=4$) gives the lowest pass@3.
+A sharper temperature gives the strongest setting: with $\tau=1$, answer-gain allocation reaches the highest pass@3 of all settings, 54.70 against 52.03 for uniform SFT, and the highest pass@1, 42.78, while a smoother temperature ($\tau=4$) falls below uniform SFT on both metrics (40.34 / 47.28).
 At $\tau=2$, answer-gain allocation with $\lambda=0.5$ reaches 42.31 pass@1 and 52.03 pass@3, compared with 40.76 and 52.03 for uniform SFT; full allocation ($\lambda=1$, 41.15 / 51.20) falls between the two on pass@1 and below both on pass@3.
 A smaller $\tau$ and a larger $\lambda$ concentrate the weight: the 10\% most up-weighted steps carry 29.7\% of the token-weighted mass at $\lambda=0.5$, $\tau=2$, 38.6\% with $\lambda=1$ and 39.5\% with $\tau=1$, against 24.9\% with $\tau=4$.
 
@@ -613,10 +615,10 @@ The ablations indicate that both the answer-gain signal and the per-trace budget
 
 \section*{Limitations}
 
-We evaluate on mathematical reasoning, where final answers can be checked automatically; extending answer gain to tasks without verifiable answers would require a different answer signal.
-Our experiments use three Qwen-based students and one public corpus of adapted traces under the evaluation protocol of \citet{liu2026palign}; other domains, model families and generation budgets (Appendix~\ref{app:gen}) are left to future work.
-Answer gain is defined with respect to the frozen student and a fixed probe, and is meant as a measure of answer recoverability rather than of a step's logical role (\S\ref{sec:gain}).
-We study allocation on its own with fixed defaults ($c=2$, $\tau=1$, $\lambda=0.5$); combining it with selective masks and other trace sources (\S\ref{sec:compose}) is a natural next step.
+Due to limited computational resources, we evaluate only on mathematical reasoning, with students of up to 8B parameters from the Qwen family and one public corpus of adapted traces under a single generation budget (Appendix~\ref{app:gen}); other tasks, model families and trace sources are left to future work.
+Our study is also limited to English, and whether allocation transfers to other languages remains to be tested.
+As in other trace-based distillation, allocation reweights the teacher's steps but does not correct or shorten them, so the student still inherits errors in the traces, and the capacity gap between teacher and student is addressed only through the trace adaptation we build on \citep{liu2026palign}.
+Finally, answer gain is computed once with the frozen student and a fixed probe, and we apply it only within supervised fine-tuning; other probes, updating the gains during training, and combining allocation with preference-based or reinforcement-learning objectives are natural extensions.
 
 \section*{Ethics Statement}
 We train and evaluate on public mathematical reasoning datasets and models.
@@ -789,31 +791,7 @@ In each case, the final weight is $w_{ik}=(1-\lambda)+\lambda\hat w_{ik}$. We me
 \section{An Example Trace}
 \label{app:example}
 
-\begin{table}[h]
-  \centering
-  \footnotesize
-  \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{r>{\raggedright\arraybackslash}p{0.62\columnwidth}r}
-    \toprule
-    $k$ & Step (abridged) & $u_k$ \\
-    \midrule
-    1 & Okay, let me try to work through this problem step by step. & +1.87 \\
-    8 & since our initial points are all real, I guess we'll stay in the real numbers here. & $-$0.30 \\
-    14 & both have the same magnitude, we pick one arbitrarily (say, the one with the plus sign). & $-$0.20 \\
-    15 & real part is: $y\approx 0.1508$. So, the new estimate is $x_3=x_2+y=1.1508$ \dots{} (762 tokens) & +13.85 \\
-    16 & \dots{} New estimate: $x_4=1.1508+0.2555=1.4063$ \dots & $-$1.99 \\
-    \bottomrule
-  \end{tabular}
-  \caption{Five of the 16 steps of a training trace for ``Perform 2 iterations with the M\"uller method for $\log_{10}(x)-x+3=0$, $x_0=1/4$, $x_1=1/2$, $x_2=1$. What is the decimal value of $x_3$?'' (gold answer 1.1508). $u_k$ is the answer gain under the 1.5B student; weights are monotone in $u_k$ within a trace.}
-  \label{tab:example}
-\end{table}
-
-Table~\ref{tab:example} shows five steps of one trace.
-Answer gain puts weight on the long step that computes $x_3$, and down-weights the next step, which continues past the requested value and lowers the probability of the gold answer.
-The up-weighted step also writes the value 1.1508 itself, so this example cannot separate the effect of the computation from that of stating the answer.
-Because the weights preserve token mass, up-weighting this 762-token step lowers the weights of most other steps below 1.
-
-Figure~\ref{fig:example} shows every step of a second trace.
+Figure~\ref{fig:example} shows every step of one training trace.
 The largest gain and weight go to $s_{15}$, which derives $\rho_2/\rho_1=T_1/T_2$ and does not contain the gold answer, while $s_{16}$, which states the answer, is up-weighted less.
 The two steps that return to $P_w=\frac{1}{2}\rho Av^3$, which does not involve the temperature ratio, lower the probability of the gold answer and receive the smallest weights.
 

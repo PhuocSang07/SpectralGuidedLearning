@@ -1,9 +1,9 @@
 
-We formulate supervision as a \emph{fixed-budget allocation} problem: every step remains supervised, but steps that help the student recover the answer receive more of the trace's learning budget. The objective changes \emph{where} supervision goes, not \emph{how much} there is.
+We formulate supervision as a \emph{fixed-budget allocation} problem: every step remains supervised, but steps that help the student recover the answer receive more of the trace's learning budget. The objective changes \emph{where} supervision goes, not \emph{how much} there is (Figure~\ref{fig:method}).
 
 \subsection{Answer-Likelihood Gain}
 \label{sec:gain}
-Consider a training example $(x,y)$ with steps $s_{1:K}$ (\S\ref{sec:selection}) that together cover every response token, including the final answer, and a verified gold answer $a^*=(a_1,\ldots,a_N)$. Only the end-of-sequence token lies outside the steps.
+Consider a training example $(x,y)$ with steps $s_{1:K}$ (\S\ref{sec:selection}) that together cover every response token, including the final answer, and a gold answer $a^*=(a_1,\ldots,a_N)$. Only the end-of-sequence token lies outside the steps.
 
 Let $q_0=p_{\theta_0}$ be the student before fine-tuning, frozen and used only to score the traces. For each reasoning prefix, we append the same fixed answer probe $\pi$ and evaluate the log-likelihood of the gold answer:
 \begin{equation}
@@ -26,7 +26,7 @@ We use the fixed probe
         & \texttt{the final answer is \textbackslash boxed\{}
 \end{aligned}
 \]
-to ask what answer the student would produce after the reasoning prefix. The gold answer $a^*$ is the verified answer span associated with the trace, including the closing brace when the answer is represented in boxed format. Its log-likelihood is evaluated by teacher forcing, $\log q_0(a^*\mid\cdot) = \sum_{n=1}^{N} \log q_0(a_n\mid\cdot,a_{<n})$, without sampling.
+to ask what answer the student would produce after the reasoning prefix. The gold answer $a^*$ is the answer span in the trace's final \boxedtok{}, including the closing brace. Its log-likelihood is evaluated by teacher forcing, $\log q_0(a^*\mid\cdot) = \sum_{n=1}^{N} \log q_0(a_n\mid\cdot,a_{<n})$, without sampling.
 
 \paragraph{Interpretation.}
 The gain measures answer recoverability, not reasoning quality: a step that repeats the answer can receive a large gain, and a useful derivation a small one if the frozen student does not immediately turn it into a higher answer likelihood.
@@ -81,7 +81,7 @@ Table~\ref{tab:toy} works through a toy trace.
 \paragraph{Allocation view.}
 Let $m_k=\ell_k/\sum_j\ell_j$ and $p_k=m_k\hat w_k$. Then the pre-shrinkage allocation can be written as $p_k = m_ke^{v_k/\tau}/\sum_jm_je^{v_j/\tau}$. For a fixed utility $v$, this is the solution of $\max_p\sum_kp_kv_k-\tau\,\mathrm{KL}(p\,\|\,m)$ over distributions $p$ on the $K$ steps, which trades expected utility against deviation from the token-mass distribution $m$; the KL is over learning mass across steps, not the policy--reference KL of KL-regularized SFT.
 
-As $\tau\to\infty$, $p_k\to m_k$, so $\hat w_k\to1$ and the weights reduce to uniform SFT. As $\tau\to0$, mass concentrates on the set $S_{\max}=\arg\max_k v_k$, with ties divided according to token mass $m_k$.
+As $\tau\to\infty$, $p_k\to m_k$, so $\hat w_k\to1$ and the weights reduce to uniform SFT. As $\tau\to0$, mass concentrates on the set $S_{\max}=\arg\max_k v_k$, with ties divided according to token mass $m_k$; with $\lambda=1$ this gives hard selection (Appendix~\ref{app:limit}).
 
 \subsection{Weighted SFT Objective}
 \label{sec:objective}
