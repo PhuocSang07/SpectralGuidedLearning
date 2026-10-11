@@ -71,7 +71,7 @@
 \T{west}{52,73}{12}{Question $x$}
 
 \icon{teacher}{197}{75}{48}\icon{cap}{196}{52}{26}\icon{scroll}{219}{90}{20}
-\T{center}{197,106}{11.2}{\bfseries Teacher LRM}
+\T{center}{197,106}{11.2}{\bfseries Teacher}
 
 \draw[-{Stealth[length=5pt]}, line width=1pt, draw=cA!70] (114,73)--(166,73);
 \draw[-{Stealth[length=5pt]}, line width=1pt, draw=cA!70] (197,113)--(197,142);
@@ -164,7 +164,7 @@
 % ============================================================ C
 \badge{cC}{821,62}{5}
 \T{west}{837,62}{12}{\bfseries Turn gains into weights}
-\T{west}{837,77}{11.2}{\color{mute}$c=\tau=2,\ \lambda=0.5$}
+\T{west}{837,77}{11.2}{\color{mute}$c=2,\ \tau=1,\ \lambda=0.5$}
 \foreach \x/\s in {960/1,1006.5/2,1053/3}{\T{center}{\x,103}{11.2}{\color{mute}$s_\s$}}
 \foreach \y/\lab in {118.5/{gain $u_k$}, 145.5/{(i) standardize $z_k$}, 172.5/{(ii) clip, exp $r_k$}, 199.5/{(iii) token mass $\hat w_k$}, 226.5/{(iv) toward uniform $w_k$}}{
   \T{west}{812,\y}{11.2}{\lab}
@@ -172,9 +172,9 @@
 \foreach \y/\a/\b/\cl/\fa/\fb/\fc/\ta/\tb/\tc/\bf in {
   118.5/{$-0.69$}/{$0.00$}/{$+2.30$}/hE3E7EE/hF1F2F5/hC9503E/ink/ink/white/\normalfont,
   145.5/{$-0.96$}/{$-0.42$}/{$+1.38$}/hE3E7EE/hF1F2F5/hF6C6B3/ink/ink/ink/\normalfont,
-  172.5/{0.62}/{0.81}/{1.99}/white/white/white/ink/ink/ink/\normalfont,
-  199.5/{0.54}/{0.71}/{1.75}/white/white/white/ink/ink/ink/\normalfont,
-  226.5/{0.77}/{0.86}/{1.37}/hFBD9C4/hF4A582/hC9503E/ink/ink/white/\bfseries}{
+  172.5/{0.38}/{0.66}/{3.97}/white/white/white/ink/ink/ink/\normalfont,
+  199.5/{0.23}/{0.39}/{2.38}/white/white/white/ink/ink/ink/\normalfont,
+  226.5/{0.61}/{0.70}/{1.69}/hFBD9C4/hF4A582/hC9503E/ink/ink/white/\bfseries}{
   \foreach \x/\v/\fl/\tcol in {960/\a/\fa/\ta, 1006.5/\b/\fb/\tb, 1053/\cl/\fc/\tc}{
     \draw[rounded corners=4pt, fill=\fl, draw=cCs, line width=.6pt] (\x-21,\y-10.5) rectangle (\x+21,\y+10.5);
     \node[text=\tcol, font=\fontsize{11}{11}\selectfont\bf, inner sep=0pt] at (\x,\y) {\v};

@@ -89,7 +89,7 @@ icon("q", 33, 73, 30)
 text("west", 52, 73, 12, f"Question {m('x')}")
 icon("teacher", 197, 75, 48); icon("cap", 196, 52, 26); icon("scroll", 219, 90, 20)
 
-text("center", 197, 106, 11.2, "Teacher LRM", bold=True, w=100)
+text("center", 197, 106, 11.2, "Teacher", bold=True, w=100)
 
 line([(114, 73), (166, 73)], "#7C8597", 1, arrow=True)
 line([(197, 113), (197, 142)], "#7C8597", 1, arrow=True)
@@ -177,15 +177,15 @@ text("center", 526, 424, 10.5,
 # ------------------------------------------------------------------ C
 badge("#A8483A", 821, 62, "5")
 text("west", 837, 62, 12, "Turn gains into weights", bold=True)
-text("west", 837, 77, 11.2, m(r"c=\tau=2,\ \lambda=0.5"), MUTE)
+text("west", 837, 77, 11.2, m(r"c=2,\ \tau=1,\ \lambda=0.5"), MUTE)
 for x, s in [(960, 1), (1006.5, 2), (1053, 3)]:
     text("center", x, 103, 11.2, m(f"s_{s}"), MUTE, w=30)
 rows = [
     (118.5, r"gain \(u_k\)", ["-0.69", "0.00", "+2.30"], ["#E3E7EE", "#F1F2F5", RED], [INK, INK, "#FFFFFF"], False),
     (145.5, r"(i) standardize \(z_k\)", ["-0.96", "-0.42", "+1.38"], ["#E3E7EE", "#F1F2F5", "#F6C6B3"], [INK] * 3, False),
-    (172.5, r"(ii) clip, exp \(r_k\)", ["0.62", "0.81", "1.99"], ["#FFFFFF"] * 3, [INK] * 3, False),
-    (199.5, r"(iii) token mass \(\hat w_k\)", ["0.54", "0.71", "1.75"], ["#FFFFFF"] * 3, [INK] * 3, False),
-    (226.5, r"(iv) toward uniform \(w_k\)", ["0.77", "0.86", "1.37"], ["#FBD9C4", "#F4A582", RED], [INK, INK, "#FFFFFF"], True),
+    (172.5, r"(ii) clip, exp \(r_k\)", ["0.38", "0.66", "3.97"], ["#FFFFFF"] * 3, [INK] * 3, False),
+    (199.5, r"(iii) token mass \(\hat w_k\)", ["0.23", "0.39", "2.38"], ["#FFFFFF"] * 3, [INK] * 3, False),
+    (226.5, r"(iv) toward uniform \(w_k\)", ["0.61", "0.70", "1.69"], ["#FBD9C4", "#F4A582", RED], [INK, INK, "#FFFFFF"], True),
 ]
 for y, lab, vals, fills, cols, bold in rows:
     text("west", 812, y, 11.2, lab)
