@@ -89,7 +89,7 @@ Each step is scored by its \emph{answer-likelihood gain} (\emph{answer gain} for
 A step with high gain, which we call \emph{decisive}, is one that makes the answer accessible to the student, whether or not it is difficult for the student to predict.
 We standardize the gains within each trace and turn them into soft weights that preserve the trace's total token weight, so no step is cut and every step keeps a share of its uniform weight; uniform SFT and hard selection of the highest-gain steps are the two limits of this weighting.
 The gains are computed once, offline, by teacher forcing the frozen student, without sampling, gradients or step labels.
-The signal itself is not new, as answer-likelihood change already serves as step credit in evaluation, RL and self-distillation; our contribution is to use it as an offline SFT weight, normalized by token mass within each trace.
+The signal itself is not new, as answer-likelihood change already serves as step credit in evaluation; our contribution is to use it as an offline SFT weight, normalized by token mass within each trace.
 
 \begin{figure*}[t]
   \centering
@@ -101,8 +101,8 @@ The signal itself is not new, as answer-likelihood change already serves as step
 Our contributions are:
 \begin{itemize}
   \setlength\itemsep{0pt}
-  \item \textbf{Budget-preserving answer-gain allocation for distillation.} We turn a known step-credit signal, the frozen student's answer-likelihood gain, into offline SFT weights for the steps of fixed traces, with gains standardized within each trace and weights normalized by token mass, so that every token stays supervised and every trace keeps its total weight. The weights apply unchanged to other trace sources and can be computed over the steps a selective mask keeps (\S\ref{sec:method}).
-  \item \textbf{Results and analysis on fixed adapted traces.} We compare against \uniformpalign{} on three students and against other step scores and normalizations on the 1.5B student, measure how much supervision a hard spectral gate removes and which steps answer gain up-weights, and report where the method does not help (\S\ref{sec:results}, \S\ref{sec:analysis}).
+  \item \textbf{Budget-preserving answer-gain allocation for distillation.} We turn a known step-credit signal, the frozen student's answer-likelihood gain, into offline SFT weights for the steps of fixed traces, with gains standardized within each trace and weights normalized by token mass, so that every token stays supervised and every trace keeps its total weight. The weights apply unchanged to other trace sources and can be computed over the steps a selective mask keeps.
+  \item \textbf{Results and analysis on fixed adapted traces.} We compare against \uniformpalign{} on three students and against other step scores and normalizations on the 1.5B student, measure how much supervision a hard spectral gate removes and which steps answer gain up-weights, and report where the method does not help.
 \end{itemize}
 
 \section{Related Work and Background}
@@ -134,25 +134,24 @@ All of these edit the data and then train every remaining token uniformly; alloc
 \paragraph{Selecting what enters the loss.}
 SGL \citep{fan2026sgl} scores steps by their leverage on a low-rank subspace of the loss gradients, and Segment-Selective SFT \citep{wang2026segattr} by integrated-gradient attribution toward the answer.
 Both mask the loss outside the kept steps, so a step just below the threshold receives no gradient and what survives is trained uniformly (\S\ref{sec:selection-analysis}), and both need gradients for every response.
-At the token level, Rho-1, critical-token fine-tuning, EDIT and KPOD select or weight the tokens that matter for the answer \citep{lin2024rho1,ruan2025criticaltoken,dai2024edit,feng2024kpod}, and Reasoning Scaffolding adds an auxiliary step-labeling task \citep{wen2026scaffolding}.
+At the token level, Rho-1, EDIT and KPOD select or weight the tokens that matter for the answer \citep{lin2024rho1,dai2024edit,feng2024kpod}, and Reasoning Scaffolding adds an auxiliary step-labeling task \citep{wen2026scaffolding}.
 Allocation is orthogonal to these choices: it could weight whatever a selector keeps (\S\ref{sec:compose}).
 
 \paragraph{Soft reweighting.}
 Closest to our setting, VCORE \citep{gong2026vcore} reallocates supervision across the tokens of a CoT by gradient utility and rescales the update to match the variance of uniform weighting; our weights are instead set per step by answer gain and preserve each trace's token mass.
-Other soft objectives reweight tokens by the model's own confidence: DFT \citep{wu2026dft} scales each token's loss by its probability, ASFT \citep{zhu2026asft} adds a KL anchor to it, and TrimSFT \citep{jia2026trimsft} gates tokens by their logit gap.
+Other soft objectives reweight tokens by the model's own confidence: DFT \citep{wu2026dft} scales each token's loss by its probability and ASFT \citep{zhu2026asft} adds a KL anchor to it.
 Such objectives help mainly when the model is already strong \citep{li2026beyondll}, and on our stitched traces every DFT variant stays below uniform SFT (Appendix~\ref{app:dft}).
-Our exponential step weights take the form of advantage-weighted regression (AWR; \citealp{peng2019awr}), with the answer gain in place of an advantage (Appendix~\ref{app:awr}).
 
 \paragraph{Answer-likelihood step credit.}
 \citet{ton2025infogain} define step-wise information gain as the drop in cross-entropy of the correct answer after a step and use it to evaluate CoT.
-Answer likelihood or its change also serves as a process reward for RL \citep{wang2026mig,tao2026trace}, as the sign of step credit in self-distillation \citep{li2026dcsd}, and as a label for process reward models \citep{royer2026mcnig}.
 In distillation, CoRD selects steps by answer likelihood and Segment-Selective SFT by attributing it to segments; none allocates learning effort over fixed traces by the change in the student's own belief in the answer.
 Answer gain is related in spirit to $\mathcal{V}$-information \citep{xu2020usable} and its pointwise form \citep{ethayarajh2022pvi}, but it is a likelihood difference under one frozen model and one probe, not an optimum over a predictor family.
 
 \section{Method}
 \label{sec:method}
 % \input{method_v1}
-\input{method_v2}
+% \input{method_v2}
+\input{method_v3}
 
 \section{Experiments}
 \label{sec:experiments}
@@ -187,7 +186,6 @@ We report pass@1 (mean over the three samples) and pass@3 on AIME25 (30 problems
   \centering
   \small
   \setlength{\tabcolsep}{3.2pt}
-  \resizebox{\textwidth}{!}{%
   \begin{tabular}{lcccccccccc}
     \toprule
     & \multicolumn{2}{c}{AIME25}
@@ -340,7 +338,7 @@ We report pass@1 (mean over the three samples) and pass@3 on AIME25 (30 problems
     & \textbf{53.07} & \textbf{62.41} \\
 
     \bottomrule
-  \end{tabular}}
+  \end{tabular}
   \caption{
     Results (\%) across four mathematical reasoning benchmarks
     for three student models under the evaluation protocol of
@@ -610,10 +608,10 @@ Our study is also limited to English, and whether allocation transfers to other 
 As in other trace-based distillation, allocation reweights the teacher's steps but does not correct or shorten them, so the student still inherits errors in the traces, and the capacity gap between teacher and student is addressed only through the trace adaptation we build on \citep{liu2026palign}.
 Finally, answer gain is computed once with the frozen student and a fixed probe, and we apply it only within supervised fine-tuning; other probes, updating the gains during training, and combining allocation with preference-based or reinforcement-learning objectives are natural extensions.
 
-\section*{Ethics Statement}
-We train and evaluate on public mathematical reasoning datasets and models.
-The method changes only how existing teacher traces are weighted and introduces no new data collection.
-All experiments ran on a single GPU.
+% \section*{Ethics Statement}
+% We train and evaluate on public mathematical reasoning datasets and models.
+% The method changes only how existing teacher traces are weighted and introduces no new data collection.
+% All experiments ran on a single GPU.
 
 % Bibliography entries for the entire Anthology, followed by custom entries
 %\bibliography{custom,anthology-overleaf-1,anthology-overleaf-2}
@@ -654,8 +652,7 @@ We therefore train every model with DeepSpeed ZeRO-2 \citep{rajbhandari2020zero}
     Max sequence length & 32,768 tokens \\
     Fine-tuning & full (1.5B), LoRA (7B, 8B) \\
     LoRA & $r=16$, $\alpha=16$, dropout 0.05 \\
-    Precision & bf16 compute, fp32 masters \\
-    Optimizer & AdamW, ZeRO-2 offload \\
+    Optimizer & AdamW \\
     Weights & $\tau=1$, $c=2$, $\lambda=0.5$ \\
     \bottomrule
   \end{tabular}
@@ -693,11 +690,6 @@ Because $v_k$ is clipped at $c$, $S_{\max}$ holds every step whose standardized 
 With the normalizer $Z$ of Eq.~\ref{eq:loss} unchanged, the response-token part of the objective equals masked SFT on $S_{\max}$ with the kept tokens of each trace rescaled by $L/L_{\max}$, where $L=\sum_j\ell_j$ and $L_{\max}=\sum_{j\in S_{\max}}\ell_j$; because this factor differs across traces and the end-of-sequence term keeps weight 1, the loss is not a uniformly rescaled masked SFT.
 With $\lambda<1$ there is no such limit, because every step keeps weight at least $1-\lambda$.
 
-\section{Relation to Advantage-Weighted Regression}
-\label{app:awr}
-Advantage-weighted regression \citep{peng2019awr} fits a KL-constrained improved policy by likelihood weighted with $\exp(A/\beta)$, where $A$ is a return minus a value baseline under the sampling policy.
-Eqs.~\ref{eq:z}--\ref{eq:weights} borrow this form, with the prefix as the state, step $k$ as the action and a credit signal $u_k$ in place of $A$ \citep[see also][]{qin2025iwsft}; standardization, clipping, mass normalization and shrinkage are design choices that AWR's derivation does not cover.
-We use AWR as motivation, not as a guarantee: the benefit of reallocating supervision depends on how well $u_k$ reflects a step's contribution.
 
 \section{Probability-Scaled Objectives on Stitched Traces}
 \label{app:dft}
@@ -708,7 +700,6 @@ Under the evaluation protocol of \S\ref{sec:setup}, every DFT variant scores bel
   \centering
   \small
   \setlength{\tabcolsep}{3pt}
-  \resizebox{\columnwidth}{!}{%
   \begin{tabular}{lc}
     \toprule
     Objective & p@1/p@3 \\
@@ -719,7 +710,7 @@ Under the evaluation protocol of \S\ref{sec:setup}, every DFT variant scores bel
     DFT everywhere & 37.30 / 48.10 \\
     NLL prefix, DFT cont. & 13.56 / 25.83 \\
     \bottomrule
-  \end{tabular}}
+  \end{tabular}
   \caption{Average pass@1 and pass@3 (\%)
 of probability-scaled objectives on
 DeepSeek-R1-Distill-Qwen-1.5B,

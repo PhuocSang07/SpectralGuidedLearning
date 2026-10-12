@@ -1,0 +1,226 @@
+
+We formulate supervision as a \emph{fixed-budget allocation} problem: every step remains supervised, but steps that help the student recover the answer receive more of the trace's learning budget. The objective changes \emph{where} supervision goes, not \emph{how much} there is (Figure~\ref{fig:method}).
+
+\subsection{Answer-Likelihood Gain}
+\label{sec:gain}
+Consider a training example $(x,y)$ with steps $s_{1:K}$ (\S\ref{sec:selection}) that together cover every response token, including the final answer, and a gold answer $a^*=(a_1,\ldots,a_N)$. Only the end-of-sequence token lies outside the steps.
+
+Let $q_0=p_{\theta_0}$ be the student before fine-tuning, frozen and used only to score the traces. For each reasoning prefix, we append the same fixed answer probe $\pi$ and evaluate the log-likelihood of the gold answer:
+\begin{equation}
+b_k = \log q_0(a^*\mid x,s_{1:k},\pi),
+\quad
+u_k = b_k-b_{k-1},
+\label{eq:gain}
+\end{equation}
+where $s_{1:0}$ is empty and $b_0=\log q_0(a^*\mid x,\pi)$.
+
+We call $u_k$ the \emph{answer-likelihood gain} of step $k$. We call a step \emph{decisive} when it has a large positive gain relative to the other steps in the same trace. This is an operational notion defined by the frozen student $q_0$ and probe $\pi$: a decisive step need not be logically necessary, causally responsible, or even correct.
+
+The gains decompose the trace-level change in answer log-likelihood exactly, $\sum_{k=1}^{K}u_k=b_K-b_0$.
+
+\paragraph{Probe.}
+We use the fixed probe 
+\[
+\begin{aligned}
+\pi ={} & \texttt{\textbackslash n\textbackslash nTherefore, } \\
+        & \texttt{the final answer is \textbackslash boxed\{}
+\end{aligned}
+\]
+to ask what answer the student would produce after the reasoning prefix. The gold answer $a^*$ is the answer span in the trace's final \boxedtok{}, including the closing brace. Its log-likelihood is evaluated by teacher forcing, $\log q_0(a^*\mid\cdot) = \sum_{n=1}^{N} \log q_0(a_n\mid\cdot,a_{<n})$, without sampling.
+
+\paragraph{Interpretation.}
+The gain measures answer recoverability, not reasoning quality: a step that repeats the answer can receive a large gain, and a useful derivation a small one if the frozen student does not immediately turn it into a higher answer likelihood.
+All gains are computed once before fine-tuning, with no rollouts, reward model, gradients or step labels, and prefixes of a trace share context, so prefix caching makes scoring cheap.
+
+\subsection{Budget-Preserving Soft Allocation}
+\label{sec:weights}
+We convert the gains into positive weights in four operations: within-trace standardization, clipped exponential scoring, token-mass normalization and shrinkage.
+
+\paragraph{Relative score and exponential allocation.}
+We first standardize the gains within each trace:
+\begin{equation}
+\begin{aligned}
+z_k &= \frac{u_k-\mu_u}{\sigma_u+\epsilon},
+\\
+v_k &= \operatorname{clip}(z_k,-c,c),
+\\
+r_k &= e^{v_k/\tau},
+\end{aligned}
+\label{eq:z}
+\end{equation}
+where $\mu_u$ and $\sigma_u$ are the mean and population standard deviation of the gains within the trace. Standardizing within the trace makes the allocation depend on the relative value of its steps, not on the scale of gains across traces. The clip limits outliers, and $\tau$ controls how sharply supervision concentrates on high-gain steps. If $\sigma_u<\epsilon$, the trace gets uniform weights.
+
+\paragraph{Token-mass normalization.}
+A step with $\ell_k$ tokens contributes $\ell_k r_k$ to the loss mass, so we normalize by token mass:
+\begin{equation}
+\hat w_k = r_k \frac{\sum_j\ell_j} {\sum_j\ell_jr_j}.
+\label{eq:mass}
+\end{equation}
+By construction, $\sum_k\ell_k\hat w_k=\sum_k\ell_k$. We finally shrink the allocation toward uniform SFT:
+\begin{equation}
+w_k = (1-\lambda)+\lambda\hat w_k,
+\qquad
+\lambda\in[0,1].
+\label{eq:weights}
+\end{equation}
+Hence
+\begin{equation}
+\sum_k\ell_kw_k = \sum_k\ell_k,
+\label{eq:budget}
+\end{equation}
+while $w_k\ge 1-\lambda>0$ for $\lambda<1$; $\lambda=0$ recovers uniform SFT.
+
+The normalized allocation also admits a variational
+interpretation. Let $m_k=\ell_k/L$, where
+$L=\sum_j\ell_j$, and define $p_k=m_k\hat w_k$ as
+the fraction of the token-weight budget assigned to
+step $k$ before shrinkage. This Gibbs distribution,
+$p_k\propto m_k\exp(v_k/\tau)$, is the unique maximizer
+of $\sum_kp_kv_k-\tau\,\mathrm{KL}(p\|m)$ over the
+probability simplex $\Delta^K$
+\citep{wainwright2008graphical}. It thus trades off
+favoring high-scoring steps against deviating from the
+original token-mass distribution $m$; the final weights
+$w_k$ further shrink this allocation toward uniform SFT.
+
+Unless stated otherwise, we use $c=2$, $\tau=1$, $\lambda=0.5$ and $\epsilon=10^{-8}$.
+Then $r_k\in[e^{-c/\tau},e^{c/\tau}]\approx[0.14,7.39]$ and, since $e^{-2c/\tau}\le\hat w_k\le e^{2c/\tau}$, $w_k\in[0.5+0.5e^{-4},\,0.5+0.5e^{4}]\approx[0.51,27.80]$.
+Table~\ref{tab:toy} works through a toy trace.
+
+
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{crrrrrr}
+    \toprule
+    Step & $u_k$ & $z_k$ & $v_k$ & $r_k$ & $\hat w_k$ & $w_k$ \\
+    \midrule
+    1 & $-0.69$ & $-0.96$ & $-0.96$ & 0.38 & 0.23 & 0.61 \\
+    2 & $\phantom{+}0.00$ & $-0.42$ & $-0.42$ & 0.66 & 0.39 & 0.70 \\
+    3 & $+2.30$ & $+1.38$ & $+1.38$ & 3.97 & 2.38 & 1.69 \\
+    \bottomrule
+  \end{tabular}
+  \caption{A toy trace of three equal-length steps ($c=2$, $\tau=1$, $\lambda=0.5$). The step that lowers the answer's probability is still supervised, and a step with zero gain gets a weight below 1, because weights are relative to the other steps of the trace; the weights average 1.}
+  \label{tab:toy}
+\end{table}
+
+
+\subsection{Weighted SFT Objective}
+\label{sec:objective}
+The resulting weights are applied to the token losses of each step, while the end-of-sequence token retains unit weight:
+\begin{equation}
+\begin{split}
+\mathcal{L} &=
+-\frac{1}{Z}
+\sum_{(x,y)\in\mathcal{B}}
+\Bigg[
+\sum_{k=1}^{K}
+w_k
+\sum_{t\in s_k}
+\log p_\theta(y_t\mid x,y_{<t}) \\
+&+
+\log p_\theta(\texttt{<eos>}\mid x,y)
+\Bigg],
+\end{split}
+\label{eq:loss}
+\end{equation}
+where $\mathcal{B}$ is the optimizer batch and $Z = \sum_{(x,y)\in\mathcal{B}} \left( \sum_{k=1}^{K}\ell_k+1 \right)$ counts the supervised tokens, as in uniform SFT.
+The budget of Eq.~\ref{eq:budget} constrains loss coefficients, not gradients, so reallocation can still change the magnitude and direction of the update.
+Algorithm~\ref{alg:alg} summarizes the procedure.
+
+\paragraph{Composing with selection.}
+\label{sec:compose}
+The weights need only a segmented trace, its gold answer and the frozen student, so they apply to curated, multi-teacher or student-adapted traces as they are. With a selective mask, Eq.~\ref{eq:iwc} keeps $M_k$, computes $w_k$ over the kept steps and counts only kept tokens in $Z$: selection decides what is learned and allocation how much.
+
+\begin{algorithm}[t]
+\caption{Answer-gain allocation}
+\label{alg:alg}
+\small
+\begin{algorithmic}[1]
+\Require dataset $\mathcal{D}=\{(x,s_{1:K},a^*)\}$, student $p_{\theta_0}$, probe $\pi$, $c$, $\tau$, $\lambda$
+\Ensure fine-tuned student $p_\theta$
+\State $q_0\gets p_{\theta_0}$, frozen
+\For{each $(x,s_{1:K},a^*)\in\mathcal{D}$} \Comment{offline, once}
+  \State $b_k\gets\log q_0(a^*\mid x,s_{1:k},\pi)$, $k=0,\dots,K$
+  \State $u_k\gets b_k-b_{k-1}$ \Comment{Eq.~\ref{eq:gain}}
+  \State $r_k\gets\exp\!\big(\operatorname{clip}(z_k,-c,c)/\tau\big)$ \Comment{Eq.~\ref{eq:z}}
+  \State $w_k\gets(1-\lambda)+\lambda\, r_k\frac{\sum_j\ell_j}{\sum_j\ell_jr_j}$ \Comment{Eqs.~\ref{eq:mass},~\ref{eq:weights}}
+\EndFor
+\State Train $p_\theta$ from $\theta_0$ on $\mathcal{D}$ with $\mathcal{L}$ \Comment{Eq.~\ref{eq:loss}}
+\State \Return $p_\theta$
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsection{Why Normalize?}
+\label{sec:why-norm}
+
+We motivate token-mass normalization as a way to separate
+within-trace allocation from trace-dependent loss scaling.
+Raw exponential scores affect both, whereas normalization
+preserves each trace's step-token weight budget relative
+to uniform SFT. We formalize this distinction through a
+variational view.
+
+Let $L=\sum_k\ell_k$ be the total number of tokens in a
+trace, and let $m_k=\ell_k/L$ denote the fraction of
+tokens belonging to step $k$. Given the clipped score
+$v_k$ from Eq.~\ref{eq:z}, define the raw exponential
+weight $r_k=\exp(v_k/\tau)$. The effective mass of these
+raw scores is
+\begin{equation}
+A_\tau=\sum_k m_k r_k.
+\label{eq:effective-mass}
+\end{equation}
+Intuitively, $A_\tau$ is the average raw weight under
+the trace's token-mass distribution. Using the raw scores
+directly would assign a total step-token weight of
+$LA_\tau$ to the trace. 
+
+The key benefit of normalization is that it separates
+within-trace allocation from the total scale of the
+raw scores. By construction,
+\begin{equation}
+\sum_km_kr_k=A_\tau,\quad
+\sum_km_k\hat w_k=\sum_km_kw_k=1.
+\label{eq:mass-summary}
+\end{equation}
+Thus, the raw scores have a trace-dependent effective
+mass $A_\tau$, whereas both normalized weights and
+their shrunk versions preserve a unit budget under the
+token-mass distribution. Equivalently,
+\[
+\sum_k\ell_k\hat w_k
+=\sum_k\ell_kw_k=L.
+\]
+The total step-token weight therefore matches that of
+uniform SFT for each trace. The end-of-sequence token,
+which retains unit weight, is excluded from this budget.
+
+Before shrinkage, $r_k=A_\tau\hat w_k$. Hence, for any
+per-step losses $a_k$,
+\begin{equation}
+\sum_k\ell_k r_k a_k
+=A_\tau\sum_k\ell_k\hat w_k a_k.
+\label{eq:raw-scale}
+\end{equation}
+Because $A_\tau$ depends on the trace's clipped score
+profile and relative step lengths, raw exponential
+weighting can change the relative contributions of
+training examples in addition to reallocating
+supervision across their steps. Token-mass normalization
+removes this additional trace-dependent scaling from
+the pre-shrinkage loss coefficients. Shrinkage toward
+uniform SFT preserves the same budget, but neither
+normalization nor shrinkage constrains gradient norms
+or guarantees identical optimizer updates.
+
+As $\tau\to\infty$, $\hat w_k\to1$, recovering uniform
+SFT. As $\tau\to0^+$, the allocation concentrates on
+$S_{\max}=\arg\max_kv_k$, with ties receiving mass in
+proportion to their token lengths. With $\lambda=1$,
+this limit yields budget-preserving hard selection
+(Appendix~\ref{app:limit}). We evaluate the empirical
+effect of budget preservation in \S\ref{sec:analysis}.
+

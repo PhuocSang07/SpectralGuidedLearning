@@ -56,12 +56,7 @@ A step with $\ell_k$ tokens contributes $\ell_k r_k$ to the loss mass, so we nor
 \hat w_k = r_k \frac{\sum_j\ell_j} {\sum_j\ell_jr_j}.
 \label{eq:mass}
 \end{equation}
-By construction,
-\begin{equation}
-\sum_k\ell_k\hat w_k = \sum_k\ell_k.
-\label{eq:budget_hat}
-\end{equation}
-We finally shrink the allocation toward uniform SFT:
+By construction, $\sum_k\ell_k\hat w_k=\sum_k\ell_k$. We finally shrink the allocation toward uniform SFT:
 \begin{equation}
 w_k = (1-\lambda)+\lambda\hat w_k,
 \qquad
