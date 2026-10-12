@@ -36,6 +36,8 @@
 \usepackage{xcolor}
 \usepackage{array}
 \usepackage{threeparttable}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 
 \newcommand{\boxedtok}{\texttt{\textbackslash boxed\{\}}}
 \newcommand{\eop}{\texttt{<End\_of\_Prefix>}}
@@ -124,24 +126,21 @@ Uniform SFT uses $M_k=w_k=1$.
 Data-side methods select before training, by keeping, deleting or rewriting steps; objective-side methods set $M_k$ in the loss.
 
 \paragraph{Building and adapting traces.}
-s1 and LIMO show that about a thousand carefully chosen traces suffice for strong reasoning \citep{muennighoff2025s1,ye2025limo}, and CoRD assembles traces step by step from three teachers, scoring candidate steps by the answer likelihood that a 32B meta-prover assigns after them \citep{yun2026cord}.
-P-ALIGN \citep{liu2026palign} truncates each teacher trace at the shortest prefix that the student judges sufficient and lets the student write the continuation.
-Step-entropy compression \citep{li2026stepentropy} replaces the 80\% lowest-entropy steps with a \texttt{[SKIP]} token, although a low-entropy step can still be decisive, and SPIRIT \citep{cui2025spirit} removes or merges steps whose removal barely raises perplexity.
-These methods edit the traces and then train every remaining token uniformly, and several need repeated student generations or judgments for each trace.
-Small students may learn less from long CoT than from shorter chains \citep{li2025smallstruggle}, can degrade before they improve when long-CoT data is limited \citep{luo2025valley}, and can be trained on traces whose redundant steps are pruned without losing accuracy \citep{wang2025efficientlong}; P-ALIGN's adaptation addresses this capacity gap, and allocation acts on the traces it produces.
+s1 and LIMO show that about a thousand curated traces suffice for strong reasoning \citep{muennighoff2025s1,ye2025limo}.
+Other methods change the traces themselves: CoRD assembles them step by step from several teachers \citep{yun2026cord}, P-ALIGN \citep{liu2026palign} truncates each teacher trace at the shortest prefix that the student judges sufficient and lets the student write the continuation, and step-entropy compression and SPIRIT prune low-entropy or low-perplexity steps \citep{li2026stepentropy,cui2025spirit}.
+Small students may learn less from long CoT than from shorter chains \citep{li2025smallstruggle}, can degrade when long-CoT data is limited \citep{luo2025valley}, and can be trained on pruned traces without losing accuracy \citep{wang2025efficientlong}.
+All of these edit the data and then train every remaining token uniformly; allocation instead keeps each trace fixed and changes how its loss is distributed.
 
 \paragraph{Selecting what enters the loss.}
-SGL \citep{fan2026sgl} scores each step by its spectral strength, its leverage on a low-rank consensus subspace of the loss gradients, and masks the loss of the steps outside the smallest set that reaches a preset share of the trace's total strength.
-Segment-Selective SFT \citep{wang2026segattr} keeps the segments that carry most of the integrated-gradient attribution toward the answer, subject to a consistency cut.
-Both decisions are binary: a step just below the threshold receives no gradient, and what survives is trained uniformly (\S\ref{sec:selection-analysis}).
-Their signals are also costly: per-token gradients and an SVD per response in SGL, and integrated gradients with 50 interpolation steps per trace in Segment-Selective SFT.
-Rho-1 \citep{lin2024rho1} and critical-token fine-tuning \citep{ruan2025criticaltoken} likewise choose which tokens are trained and weight them uniformly, EDIT \citep{dai2024edit} trains on the key tokens that separate a correct CoT from a near-identical wrong one, KPOD \citep{feng2024kpod} learns per-token weights from an answer-prediction loss, and Reasoning Scaffolding \citep{wen2026scaffolding} adds an auxiliary task that predicts a semantic label for each step.
+SGL \citep{fan2026sgl} scores steps by their leverage on a low-rank subspace of the loss gradients, and Segment-Selective SFT \citep{wang2026segattr} by integrated-gradient attribution toward the answer.
+Both mask the loss outside the kept steps, so a step just below the threshold receives no gradient and what survives is trained uniformly (\S\ref{sec:selection-analysis}), and both need gradients for every response.
+At the token level, Rho-1, critical-token fine-tuning, EDIT and KPOD select or weight the tokens that matter for the answer \citep{lin2024rho1,ruan2025criticaltoken,dai2024edit,feng2024kpod}, and Reasoning Scaffolding adds an auxiliary step-labeling task \citep{wen2026scaffolding}.
 Allocation is orthogonal to these choices: it could weight whatever a selector keeps (\S\ref{sec:compose}).
 
 \paragraph{Soft reweighting.}
-Soft objectives keep every token and reweight its loss, but mostly per token and by the model's own confidence or gradient utility, not per step and by progress toward the answer.
-VCORE \citep{gong2026vcore} reweights tokens by gradient utility and rescales the update to match the variance of uniform weighting, whereas our normalization preserves each trace's token mass.
-Dynamic Fine-Tuning (DFT; \citealp{wu2026dft}) scales each token's loss by its detached probability, ASFT \citep{zhu2026asft} anchors it with a KL term, and DEFT and TrimSFT gate each token by the concentration of the predicted distribution or by its logit gap \citep{wang2026deft,jia2026trimsft}; such objectives help only when the model is already strong \citep{li2026beyondll}, and on the stitched traces we study (\S\ref{sec:setup}) every DFT variant stays below uniform SFT (Appendix~\ref{app:dft}).
+Closest to our setting, VCORE \citep{gong2026vcore} reallocates supervision across the tokens of a CoT by gradient utility and rescales the update to match the variance of uniform weighting; our weights are instead set per step by answer gain and preserve each trace's token mass.
+Other soft objectives reweight tokens by the model's own confidence: DFT \citep{wu2026dft} scales each token's loss by its probability, ASFT \citep{zhu2026asft} adds a KL anchor to it, and TrimSFT \citep{jia2026trimsft} gates tokens by their logit gap.
+Such objectives help mainly when the model is already strong \citep{li2026beyondll}, and on our stitched traces every DFT variant stays below uniform SFT (Appendix~\ref{app:dft}).
 Our exponential step weights take the form of advantage-weighted regression (AWR; \citealp{peng2019awr}), with the answer gain in place of an advantage (Appendix~\ref{app:awr}).
 
 \paragraph{Answer-likelihood step credit.}
@@ -154,23 +153,6 @@ Answer gain is related in spirit to $\mathcal{V}$-information \citep{xu2020usabl
 \label{sec:method}
 % \input{method_v1}
 \input{method_v2}
-
-\begin{table}[t]
-  \centering
-  \small
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{crrrrrr}
-    \toprule
-    Step & $u_k$ & $z_k$ & $v_k$ & $r_k$ & $\hat w_k$ & $w_k$ \\
-    \midrule
-    1 & $-0.69$ & $-0.96$ & $-0.96$ & 0.38 & 0.23 & 0.61 \\
-    2 & $\phantom{+}0.00$ & $-0.42$ & $-0.42$ & 0.66 & 0.39 & 0.70 \\
-    3 & $+2.30$ & $+1.38$ & $+1.38$ & 3.97 & 2.38 & 1.69 \\
-    \bottomrule
-  \end{tabular}
-  \caption{A toy trace of three equal-length steps ($c=2$, $\tau=1$, $\lambda=0.5$). The step that lowers the answer's probability is still supervised, and a step with zero gain gets a weight below 1, because weights are relative to the other steps of the trace; the weights average 1.}
-  \label{tab:toy}
-\end{table}
 
 \section{Experiments}
 \label{sec:experiments}
@@ -471,6 +453,13 @@ Across the three students, allocation improves average pass@3 over \uniformpalig
   \label{tab:abl}
 \end{table*}
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/score_analysis_a.pdf}
+  \caption{Within-trace Spearman correlation between answer gain and step predictability (the frozen student's mean token log-probability of a step) on the 966 training traces of the 1.5B student. The observed distribution matches the one of two independent random rankings of each trace's steps (grey), so the two scores are essentially uncorrelated.}
+  \label{fig:score-analysis}
+\end{figure}
+
 \begin{table*}[t]
   \centering
   \small
@@ -582,6 +571,7 @@ For Qwen2.5-7B-Instruct and Qwen3-8B the three highest-gain steps carry a median
 Table~\ref{tab:abl} keeps the weight construction and replaces the answer gain by other step scores.
 The clearest contrast is with random assignment, which permutes the gains within each trace and falls below uniform SFT (40.60 / 49.48 against 40.76 / 52.03), so the improvement depends on which steps are up-weighted, not on the shape of the weights alone.
 Weighting difficult steps, the alternative our title contrasts with, is lower than answer gain on both metrics (41.88 / 53.42 against 42.78 / 54.70), while weighting easy steps comes close on pass@1 (42.68) but not on pass@3 (53.67).
+The two scores rank steps almost independently (Figure~\ref{fig:score-analysis}): their within-trace Spearman correlation has a median of $-0.02$, and only 9\% of traces fall outside the range of two independent rankings, against 5\% expected.
 Differences of about one point should be read with care, since AIME24 and AIME25 have only 30 problems each.
 Keeping the steps that only restate the answer at unit weight, so that only the other steps are reallocated, keeps most of the pass@3 gain (53.74) but not the pass@1 gain (40.51); much of the pass@1 improvement therefore comes from up-weighting these answer-restating steps.
 The highest-gain step is not always such a step: in the trace of Figure~\ref{fig:example} (Appendix~\ref{app:example}), the largest weight goes to a derivation that does not contain the answer.

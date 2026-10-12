@@ -78,6 +78,23 @@ Unless stated otherwise, we use $c=2$, $\tau=1$, $\lambda=0.5$ and $\epsilon=10^
 Then $r_k\in[e^{-c/\tau},e^{c/\tau}]\approx[0.14,7.39]$ and, since $e^{-2c/\tau}\le\hat w_k\le e^{2c/\tau}$, $w_k\in[0.5+0.5e^{-4},\,0.5+0.5e^{4}]\approx[0.51,27.80]$.
 Table~\ref{tab:toy} works through a toy trace.
 
+\begin{table}[t]
+  \centering
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{crrrrrr}
+    \toprule
+    Step & $u_k$ & $z_k$ & $v_k$ & $r_k$ & $\hat w_k$ & $w_k$ \\
+    \midrule
+    1 & $-0.69$ & $-0.96$ & $-0.96$ & 0.38 & 0.23 & 0.61 \\
+    2 & $\phantom{+}0.00$ & $-0.42$ & $-0.42$ & 0.66 & 0.39 & 0.70 \\
+    3 & $+2.30$ & $+1.38$ & $+1.38$ & 3.97 & 2.38 & 1.69 \\
+    \bottomrule
+  \end{tabular}
+  \caption{A toy trace of three equal-length steps ($c=2$, $\tau=1$, $\lambda=0.5$). The step that lowers the answer's probability is still supervised, and a step with zero gain gets a weight below 1, because weights are relative to the other steps of the trace; the weights average 1.}
+  \label{tab:toy}
+\end{table}
+
 \paragraph{Allocation view.}
 Let $m_k=\ell_k/\sum_j\ell_j$ and $p_k=m_k\hat w_k$. Then the pre-shrinkage allocation can be written as $p_k = m_ke^{v_k/\tau}/\sum_jm_je^{v_j/\tau}$. For a fixed utility $v$, this is the solution of $\max_p\sum_kp_kv_k-\tau\,\mathrm{KL}(p\,\|\,m)$ over distributions $p$ on the $K$ steps, which trades expected utility against deviation from the token-mass distribution $m$; the KL is over learning mass across steps, not the policy--reference KL of KL-regularized SFT.
 
@@ -104,7 +121,27 @@ w_k
 \end{equation}
 where $\mathcal{B}$ is the optimizer batch and $Z = \sum_{(x,y)\in\mathcal{B}} \left( \sum_{k=1}^{K}\ell_k+1 \right)$ counts the supervised tokens, as in uniform SFT.
 The budget of Eq.~\ref{eq:budget} constrains loss coefficients, not gradients, so reallocation can still change the magnitude and direction of the update.
+Algorithm~\ref{alg:alg} summarizes the procedure.
 
 \paragraph{Composing with selection.}
 \label{sec:compose}
 The weights need only a segmented trace, its gold answer and the frozen student, so they apply to curated, multi-teacher or student-adapted traces as they are. With a selective mask, Eq.~\ref{eq:iwc} keeps $M_k$, computes $w_k$ over the kept steps and counts only kept tokens in $Z$: selection decides what is learned and allocation how much.
+
+\begin{algorithm}[t]
+\caption{Answer-gain allocation}
+\label{alg:alg}
+\small
+\begin{algorithmic}[1]
+\Require dataset $\mathcal{D}=\{(x,s_{1:K},a^*)\}$, student $p_{\theta_0}$, probe $\pi$, $c$, $\tau$, $\lambda$
+\Ensure fine-tuned student $p_\theta$
+\State $q_0\gets p_{\theta_0}$, frozen
+\For{each $(x,s_{1:K},a^*)\in\mathcal{D}$} \Comment{offline, once}
+  \State $b_k\gets\log q_0(a^*\mid x,s_{1:k},\pi)$, $k=0,\dots,K$
+  \State $u_k\gets b_k-b_{k-1}$ \Comment{Eq.~\ref{eq:gain}}
+  \State $r_k\gets\exp\!\big(\operatorname{clip}(z_k,-c,c)/\tau\big)$ \Comment{Eq.~\ref{eq:z}}
+  \State $w_k\gets(1-\lambda)+\lambda\, r_k\frac{\sum_j\ell_j}{\sum_j\ell_jr_j}$ \Comment{Eqs.~\ref{eq:mass},~\ref{eq:weights}}
+\EndFor
+\State Train $p_\theta$ from $\theta_0$ on $\mathcal{D}$ with $\mathcal{L}$ \Comment{Eq.~\ref{eq:loss}}
+\State \Return $p_\theta$
+\end{algorithmic}
+\end{algorithm}
