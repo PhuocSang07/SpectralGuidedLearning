@@ -156,71 +156,59 @@ The weights need only a segmented trace, its gold answer and the frozen student,
 \subsection{Why Normalize?}
 \label{sec:why-norm}
 
-We motivate token-mass normalization as a way to separate
-within-trace allocation from trace-dependent loss scaling.
-Raw exponential scores affect both, whereas normalization
-preserves each trace's step-token weight budget relative
-to uniform SFT. We formalize this distinction through a
-variational view.
+Token-mass normalization separates within-trace
+reallocation from trace-dependent loss scaling. We
+formalize this distinction by comparing the total
+weight and loss contributions induced by raw and
+normalized scores.
 
-Let $L=\sum_k\ell_k$ be the total number of tokens in a
-trace, and let $m_k=\ell_k/L$ denote the fraction of
+Let $L=\sum_k\ell_k$ be the total number of tokens in
+a trace, and let $m_k=\ell_k/L$ denote the fraction of
 tokens belonging to step $k$. Given the clipped score
 $v_k$ from Eq.~\ref{eq:z}, define the raw exponential
-weight $r_k=\exp(v_k/\tau)$. The effective mass of these
-raw scores is
+weight $r_k=\exp(v_k/\tau)$ and its effective mass:
 \begin{equation}
-A_\tau=\sum_k m_k r_k.
+A_\tau=\sum_km_kr_k.
 \label{eq:effective-mass}
 \end{equation}
-Intuitively, $A_\tau$ is the average raw weight under
-the trace's token-mass distribution. Using the raw scores
-directly would assign a total step-token weight of
-$LA_\tau$ to the trace. 
-
-The key benefit of normalization is that it separates
-within-trace allocation from the total scale of the
-raw scores. By construction,
+Thus, using raw scores directly assigns a total
+step-token weight of $LA_\tau$ to the trace, whereas
+token-mass normalization gives $\hat w_k=r_k/A_\tau$.
+Both the normalized weights and their shrunk versions
+preserve the uniform-SFT token-weight budget:
 \begin{equation}
-\sum_km_kr_k=A_\tau,\quad
-\sum_km_k\hat w_k=\sum_km_kw_k=1.
+\begin{aligned}
+\sum_km_k\hat w_k&=\sum_km_kw_k=1, \\
+\sum_k\ell_k\hat w_k&=\sum_k\ell_kw_k=L.
+\end{aligned}
 \label{eq:mass-summary}
 \end{equation}
-Thus, the raw scores have a trace-dependent effective
-mass $A_\tau$, whereas both normalized weights and
-their shrunk versions preserve a unit budget under the
-token-mass distribution. Equivalently,
-\[
-\sum_k\ell_k\hat w_k
-=\sum_k\ell_kw_k=L.
-\]
-The total step-token weight therefore matches that of
-uniform SFT for each trace. The end-of-sequence token,
-which retains unit weight, is excluded from this budget.
+These identities apply to step tokens; the end-of-sequence
+token retains unit weight and is excluded from this budget.
 
-Before shrinkage, $r_k=A_\tau\hat w_k$. Hence, for any
-per-step losses $a_k$,
+To see how normalization affects the loss, let $a_k$
+denote the mean token loss of step $k$, excluding the
+end-of-sequence token. Since $r_k=A_\tau\hat w_k$,
 \begin{equation}
-\sum_k\ell_k r_k a_k
-=A_\tau\sum_k\ell_k\hat w_k a_k.
+\sum_k\ell_kr_ka_k
+=A_\tau\sum_k\ell_k\hat w_ka_k.
 \label{eq:raw-scale}
 \end{equation}
-Because $A_\tau$ depends on the trace's clipped score
-profile and relative step lengths, raw exponential
-weighting can change the relative contributions of
-training examples in addition to reallocating
-supervision across their steps. Token-mass normalization
-removes this additional trace-dependent scaling from
-the pre-shrinkage loss coefficients. Shrinkage toward
-uniform SFT preserves the same budget, but neither
-normalization nor shrinkage constrains gradient norms
-or guarantees identical optimizer updates.
+The factor $A_\tau$ depends on the trace's clipped score
+profile and relative step lengths. Consequently, raw
+exponential weighting changes both the allocation of
+supervision across steps and the relative loss
+contributions of different traces. Normalization removes
+this additional trace-dependent scaling, while shrinkage
+preserves the same budget by interpolating with uniform
+SFT. Neither operation constrains gradient norms or
+guarantees identical optimizer updates.
 
 As $\tau\to\infty$, $\hat w_k\to1$, recovering uniform
-SFT. As $\tau\to0^+$, the allocation concentrates on
-$S_{\max}=\arg\max_kv_k$, with ties receiving mass in
-proportion to their token lengths. With $\lambda=1$,
-this limit yields budget-preserving hard selection
-(Appendix~\ref{app:limit}). We evaluate the empirical
-effect of budget preservation in \S\ref{sec:analysis}.
-
+SFT. As $\tau\to0^+$, the pre-shrinkage allocation
+concentrates on $S_{\max}=\arg\max_kv_k$, with ties
+receiving mass in proportion to their token lengths.
+When $\lambda=1$, this limit yields budget-preserving
+hard selection (Appendix~\ref{app:limit}). We evaluate
+the empirical effect of budget preservation in
+\S\ref{sec:analysis}.
