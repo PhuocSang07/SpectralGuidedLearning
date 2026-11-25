@@ -1,0 +1,13 @@
+# Segment-Selective SFT on P-ALIGN's 966 stitched traces (the data ALERD trains on), so selection and
+# allocation are compared on the same targets. Same recipe as r1-qwen-1.5b.yaml otherwise.
+#   ssft run r1-qwen-1.5b-palign
+defaults: [r1-qwen-1.5b.yaml]
+run_suffix: -palign
+track: ${model.key}-ssft-palign
+build_dir: data/ssft-palign-${segment_mode}
+stages:
+  traces:
+    args:
+      dataset: references/P-ALIGN/data/palign_sft_qwen2.5-7b.json.gz
+      question-field: input
+      trace-field: output

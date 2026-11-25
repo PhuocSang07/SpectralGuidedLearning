@@ -35,7 +35,9 @@ def last_boxed(text: str) -> str | None:
     return None
 
 
-def convert_rows(rows, trace_field: str, answer_source: str, max_answer_chars: int) -> tuple[list[dict], dict]:
+def convert_rows(
+    rows, trace_field: str, answer_source: str, max_answer_chars: int, question_field: str = "question"
+) -> tuple[list[dict], dict]:
     kept, stats = [], {"no_trace": 0, "no_answer": 0, "answer_too_long": 0, "trace_disagrees_with_gt": 0}
     for row in rows:
         trace = (row.get(trace_field) or "").strip()
@@ -53,7 +55,7 @@ def convert_rows(rows, trace_field: str, answer_source: str, max_answer_chars: i
             continue
         if boxed is not None and ground_truth and boxed != ground_truth:
             stats["trace_disagrees_with_gt"] += 1
-        kept.append({"question": row["question"].strip(), "solution": trace, "answer": answer})
+        kept.append({"question": row[question_field].strip(), "solution": trace, "answer": answer})
     return kept, stats
 
 
@@ -80,6 +82,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dataset", default="simplescaling/s1K-1.1", help="HF id, snapshot dir or local jsonl")
     parser.add_argument("--split", default="train")
     parser.add_argument("--trace-field", default="deepseek_thinking_trajectory")
+    parser.add_argument("--question-field", default="question",
+                        help="problem column (P-ALIGN alpaca rows: input)")
     parser.add_argument("--answer-source", default="trace", choices=["trace", "gt"],
                         help="trace = last \\boxed{} of the trace (default); gt = s1K's ground-truth field")
     parser.add_argument("--max-answer-chars", type=int, default=200)
@@ -94,7 +98,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
     rows, stats = convert_rows(load_rows(args.dataset, args.split), args.trace_field,
-                               args.answer_source, args.max_answer_chars)
+                               args.answer_source, args.max_answer_chars, args.question_field)
     if args.max_samples > 0:
         rows = rows[: args.max_samples]
     if args.segment_mode != "none":

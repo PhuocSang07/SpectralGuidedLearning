@@ -1,0 +1,19 @@
+# Position-only control: the answer gain is replaced by the step's relative position k/(n-1) and
+# goes through the same standardize / clip / exp / token-mass / shrinkage construction, so weights
+# rise with position and nothing else (sgl.signals.position_signal).
+defaults: [iwc-gain.yaml]
+position_mode: position
+signal_parquet: ${data_dir}/signals/signal-${position_mode}.parquet
+train_variant: iwc-stable-${position_mode}-nogate-l05
+pipeline: [prepare, capture, answer_gain, gain_signal, position_signal, weights, train, eval]
+stages:
+  position_signal:
+    module: sgl.signals.position_signal
+    creates: ${signal_parquet}
+    args:
+      signal: ${data_dir}/signals/signal-answer-gain.parquet
+      mode: ${position_mode}
+      output: ${signal_parquet}
+# tau = 1 as in the paper's main ALERD rows (the shared _iwc.yaml default is 2)
+iwc:
+  temperature: 1.0

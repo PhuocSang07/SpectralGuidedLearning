@@ -1,0 +1,9 @@
+defaults: [../tracks/r1-qwen-1.5b-s1k.yaml, ../methods/iwc-gain.yaml]
+name: iwc-gain-l05
+stages:
+  answer_gain:
+    args:
+      max-model-len: 32768
+# tau = 1 as in the paper's main ALERD rows (the shared _iwc.yaml default is 2)
+iwc:
+  temperature: 1.0

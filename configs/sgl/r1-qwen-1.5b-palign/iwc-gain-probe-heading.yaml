@@ -1,0 +1,4 @@
+defaults: [../tracks/r1-qwen-1.5b-palign.yaml, ../methods/iwc-gain-probe.yaml]
+name: iwc-gain-probe-heading
+gain_tag: probe-heading
+probe: "\n\n**Final Answer**\n\\boxed{"

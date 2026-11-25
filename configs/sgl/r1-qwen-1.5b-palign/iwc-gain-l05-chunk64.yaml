@@ -1,0 +1,11 @@
+# The answer-gain arm with 64-token windows as steps: no text structure at all.
+defaults: [../tracks/r1-qwen-1.5b-palign.yaml, ../methods/iwc-gain.yaml]
+name: iwc-gain-l05-chunk64
+data_dir: data/${track}-chunk64
+stages:
+  prepare:
+    args:
+      segmenter: chunk64
+# tau = 1 as in the paper's main ALERD rows (the shared _iwc.yaml default is 2)
+iwc:
+  temperature: 1.0

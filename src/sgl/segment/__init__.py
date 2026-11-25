@@ -20,6 +20,9 @@ SEGMENTERS = {
     "paragraph": paragraph_segments,
     "cue": cue_segments,
 }
+# Token-window "segmenters": steps of a fixed number of tokens, cut in token space by
+# sentence.step_token_spans (a robustness control that ignores the text structure entirely).
+TOKEN_CHUNKS = {"chunk32": 32, "chunk64": 64}
 
 
 def split(text: str, mode: str = "sentence") -> list[str]:
@@ -33,6 +36,7 @@ def split(text: str, mode: str = "sentence") -> list[str]:
 
 __all__ = [
     "SEGMENTERS",
+    "TOKEN_CHUNKS",
     "encode_with_offsets",
     "palign_sentences",
     "record_step_spans",

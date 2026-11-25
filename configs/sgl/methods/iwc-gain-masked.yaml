@@ -1,0 +1,19 @@
+# Leak-free answer gain: the answer is masked wherever the trace states it (sgl.signals.answer_mask)
+# before the prefixes are scored, so a step cannot gain just by already containing the answer.
+# Same allocation as iwc-gain (lambda 0.5, tau 2, clip 2, no gate).
+defaults: [iwc-gain.yaml]
+gain_tag: masked
+signal_parquet: ${data_dir}/signals/signal-answer-gain-${gain_tag}.parquet
+train_variant: iwc-stable-gain-${gain_tag}-nogate-l05
+stages:
+  answer_gain:
+    creates: ${data_dir}/signals/step_answer_gain-${gain_tag}.json
+    args:
+      output: ${data_dir}/signals/step_answer_gain-${gain_tag}.json
+      mask-answer: true
+  gain_signal:
+    args:
+      gains: ${data_dir}/signals/step_answer_gain-${gain_tag}.json
+# tau = 1 as in the paper's main ALERD rows (the shared _iwc.yaml default is 2)
+iwc:
+  temperature: 1.0

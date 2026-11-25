@@ -1,0 +1,4 @@
+# Position-residual answer gain: gain minus the corpus mean gain of its relative-position decile,
+# i.e. the part of the gain that position does not explain, through the same allocation.
+defaults: [iwc-position.yaml]
+position_mode: residual

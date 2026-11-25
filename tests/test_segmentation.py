@@ -3,6 +3,8 @@ exactly predictable; the real-tokenizer round-trip is checked by sgl.data.prepar
 
 import re
 
+import pytest
+
 from sgl.segment.sentence import segment_response_token_spans, solution_step_start, split_into_step_texts
 
 
@@ -145,3 +147,27 @@ def test_spans_stay_contiguous_when_a_token_straddles_a_boundary():
     assert spans[0][0] == 2 and spans[-1][1] == 2 + len(response_ids)
     for previous, following in zip(spans, spans[1:]):
         assert previous[1] == following[0]
+
+
+def test_token_chunks_cut_in_token_space_and_cover_every_token():
+    from sgl.segment.sentence import step_token_spans
+
+    starts = list(range(70))  # 70 one-character tokens; the text is ignored by chunk modes
+    ends = [s + 1 for s in starts]
+    assert step_token_spans("x" * 70, starts, offset=5, segmenter="chunk32", token_ends=ends) == [
+        (5, 37), (37, 69), (69, 75)]
+    with pytest.raises(ValueError):
+        step_token_spans("x" * 70, starts, segmenter="chunk32")
+
+
+def test_token_chunks_never_cut_inside_a_character():
+    from sgl.segment import TOKEN_CHUNKS
+    from sgl.segment.sentence import step_token_spans
+
+    # " ≡" as byte-level BPE: token 2 covers chars 2-4, token 3 starts inside it at char 3
+    starts, ends = [0, 1, 2, 3, 4, 5], [1, 2, 4, 4, 5, 6]
+    TOKEN_CHUNKS["chunk3"] = 3
+    try:
+        assert step_token_spans("ab ≡cd", starts, segmenter="chunk3", token_ends=ends) == [(0, 4), (4, 6)]
+    finally:
+        del TOKEN_CHUNKS["chunk3"]
