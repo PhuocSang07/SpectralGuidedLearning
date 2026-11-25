@@ -1,0 +1,17 @@
+# Answer gain read through another probe string (arms set `probe` and `gain_tag`), to check that the
+# step ranking and the result do not hinge on the wording of the default probe.
+defaults: [iwc-gain.yaml]
+signal_parquet: ${data_dir}/signals/signal-answer-gain-${gain_tag}.parquet
+train_variant: iwc-stable-gain-${gain_tag}-nogate-l05
+stages:
+  answer_gain:
+    creates: ${data_dir}/signals/step_answer_gain-${gain_tag}.json
+    args:
+      output: ${data_dir}/signals/step_answer_gain-${gain_tag}.json
+      probe: ${probe}
+  gain_signal:
+    args:
+      gains: ${data_dir}/signals/step_answer_gain-${gain_tag}.json
+# tau = 1 as in the paper's main ALERD rows (the shared _iwc.yaml default is 2)
+iwc:
+  temperature: 1.0

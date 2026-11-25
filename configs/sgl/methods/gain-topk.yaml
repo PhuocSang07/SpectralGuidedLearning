@@ -1,0 +1,12 @@
+# Hard selection on the answer gain: keep each trace's highest-gain steps up to `keep_fraction` of
+# its step tokens at unit weight and drop the rest. 0.59 matches the token budget the SGL spectral
+# gate keeps on these traces (it drops 41%), so allocation and selection share signal and budget.
+defaults: [iwc-gain.yaml]
+keep_fraction: 0.59
+train_variant: gain-topk-${keep_fraction}
+iwc:
+  variant: gain-topk
+stages:
+  weights:
+    args:
+      keep-fraction: ${keep_fraction}

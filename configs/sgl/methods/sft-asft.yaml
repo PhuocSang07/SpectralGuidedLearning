@@ -1,0 +1,8 @@
+# ASFT (Zhu et al., ICLR 2026): DFT on every response token plus a KL(initial model || policy)
+# anchor per supervised token, weight 0.03 as the upstream README recommends for bf16.
+defaults: [sft.yaml]
+stages:
+  train:
+    args:
+      objective: dft
+      kl-anchor-weight: 0.03

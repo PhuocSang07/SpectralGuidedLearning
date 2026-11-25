@@ -1,0 +1,4 @@
+defaults: [../tracks/r1-qwen-1.5b-palign.yaml, ../methods/iwc-gain-probe.yaml]
+name: iwc-gain-probe-so
+gain_tag: probe-so
+probe: "\n\nSo the answer is \\boxed{"

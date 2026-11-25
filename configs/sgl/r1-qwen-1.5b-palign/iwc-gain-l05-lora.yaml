@@ -1,0 +1,5 @@
+defaults: [../tracks/r1-qwen-1.5b-palign-lora.yaml, ../methods/iwc-gain.yaml]
+name: iwc-gain-l05-lora
+# tau = 1 as in the paper's main ALERD rows (the shared _iwc.yaml default is 2)
+iwc:
+  temperature: 1.0

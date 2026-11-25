@@ -1,0 +1,12 @@
+# The answer-gain arm with Segment-Selective SFT's paragraph split instead of sentences. Its own data
+# dir: the segmented records, gains and weights all depend on the step unit.
+defaults: [../tracks/r1-qwen-1.5b-palign.yaml, ../methods/iwc-gain.yaml]
+name: iwc-gain-l05-paragraph
+data_dir: data/${track}-paragraph
+stages:
+  prepare:
+    args:
+      segmenter: paragraph
+# tau = 1 as in the paper's main ALERD rows (the shared _iwc.yaml default is 2)
+iwc:
+  temperature: 1.0

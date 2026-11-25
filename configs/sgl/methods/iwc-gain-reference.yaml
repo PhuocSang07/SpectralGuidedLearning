@@ -1,0 +1,19 @@
+# Answer gain toward the dataset's reference answer (s1K-1.1) instead of the trace's own last
+# \boxed{}: P-ALIGN's student continuation can end on a different answer. Samples without a usable
+# reference keep the trace answer. The answer is also masked in the prefixes, so neither the trace's
+# nor the reference's answer string can be copied.
+defaults: [iwc-gain-masked.yaml]
+gain_tag: reference
+pipeline: [prepare, capture, reference_answers, answer_gain, gain_signal, weights, train, eval]
+stages:
+  reference_answers:
+    module: sgl.data.reference_answers
+    creates: ${data_dir}/signals/reference-answers.json
+    args:
+      data-path: ${data_dir}/train-segmented.jsonl
+      dataset: simplescaling/s1K-1.1
+      output: ${data_dir}/signals/reference-answers.json
+  answer_gain:
+    args:
+      answer-source: reference
+      reference-answers: ${data_dir}/signals/reference-answers.json

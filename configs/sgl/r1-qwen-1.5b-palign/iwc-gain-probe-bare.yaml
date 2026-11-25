@@ -1,0 +1,4 @@
+defaults: [../tracks/r1-qwen-1.5b-palign.yaml, ../methods/iwc-gain-probe.yaml]
+name: iwc-gain-probe-bare
+gain_tag: probe-bare
+probe: "\\boxed{"
