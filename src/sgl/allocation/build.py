@@ -48,6 +48,24 @@ _STABLE_VARIANTS = {
 # steps dropped from the loss (continuation-only SFT, the b_P -> 0 limit without inflating weights).
 _REGION_VARIANTS = ("region-iwc", "region-gain", "sarw", "region-cont")
 
+# Hard-selection control on the same signal: keep each trace's highest-signal steps up to a token
+# budget at unit weight and drop the rest -- what a keep-or-drop method would do with the gain.
+TOPK_VARIANT = "gain-topk"
+
+
+def top_signal_steps(signal: list[float], lengths: list[int], keep_fraction: float) -> list[int]:
+    """Indices (in order) of the highest-signal steps whose tokens first reach keep_fraction of the trace."""
+    if not 0.0 < keep_fraction <= 1.0:
+        raise ValueError("keep_fraction must be in (0, 1]")
+    budget = keep_fraction * sum(lengths)
+    kept, mass = [], 0
+    for index in sorted(range(len(signal)), key=lambda i: (-signal[i], i)):
+        if mass >= budget:
+            break
+        kept.append(index)
+        mass += lengths[index]
+    return sorted(kept)
+
 
 def build_example(
     record: dict,
@@ -62,6 +80,7 @@ def build_example(
     seed: int = 42,
     regions: list[str] | None = None,
     region_ratio: float = 1.0,
+    keep_fraction: float = 1.0,
 ) -> tuple[dict, dict]:
     """Build one weighted record and its selection/allocation diagnostics."""
     step_spans = record_step_spans(record)
@@ -71,6 +90,10 @@ def build_example(
             f"entropies={len(entropies)}"
         )
     selected = select_steps_by_energy(strengths, threshold)
+    if variant == TOPK_VARIANT:
+        gated = set(selected)
+        lengths = [end - start for start, end in step_spans]
+        selected = [index for index in top_signal_steps(entropies, lengths, keep_fraction) if index in gated]
     if variant == "region-cont":
         if regions is None or len(regions) != len(step_spans):
             raise ValueError(f"record {record['id']}: {variant} needs one region per step")
@@ -86,7 +109,7 @@ def build_example(
             selected_entropies, selected_lengths, temperature, interpolation, clip, epsilon,
             seed + record["id"],
         )
-    elif variant == "region-cont":
+    elif variant in ("region-cont", TOPK_VARIANT):
         selected_weights = [1.0] * len(selected)
     elif variant in _REGION_VARIANTS:
         if regions is None or len(regions) != len(step_spans):
@@ -154,6 +177,7 @@ def emit_dataset(
     seed: int = 42,
     regions: dict[int, list[str]] | None = None,
     region_ratio: float = 1.0,
+    keep_fraction: float = 1.0,
 ) -> list[dict]:
     """Write one IWC arm and return per-record diagnostics."""
     all_stats = []
@@ -163,7 +187,7 @@ def emit_dataset(
             example, stats = build_example(
                 record, strengths, entropies, threshold, variant, temperature,
                 interpolation, clip, epsilon, seed,
-                regions[record["id"]] if regions is not None else None, region_ratio,
+                regions[record["id"]] if regions is not None else None, region_ratio, keep_fraction,
             )
             handle.write(json.dumps(example) + "\n")
             all_stats.append(stats)
@@ -216,7 +240,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--variants",
         help="comma-separated subset of iwc,iwc-stable,iwc-stable-lambda0,iwc-stable-shuffled,"
-        "iwc-stable-reverse,region-iwc,region-gain,sarw (default: iwc,iwc-stable)",
+        "iwc-stable-reverse,region-iwc,region-gain,sarw,gain-topk (default: iwc,iwc-stable)",
+    )
+    parser.add_argument(
+        "--keep-fraction", type=float,
+        help="gain-topk: fraction of each trace's step tokens kept, highest signal first (default 1.0)",
     )
     parser.add_argument(
         "--tokenizer",
@@ -269,6 +297,7 @@ def main(argv: list[str] | None = None) -> None:
         "region_signal": args.region_signal,
         "region_gamma": args.region_gamma,
         "region_tail_fraction": args.region_tail_fraction,
+        "keep_fraction": args.keep_fraction,
     }
     config.update({key: value for key, value in overrides.items() if value is not None})
     config.setdefault("energy_threshold_p", 0.95)
@@ -332,7 +361,7 @@ def main(argv: list[str] | None = None) -> None:
         stats = emit_dataset(
             records, signals, output_path, config["energy_threshold_p"], variant,
             config["temperature"], config["interpolation"], config["clip"], config["epsilon"],
-            config["seed"], regions, region_ratio,
+            config["seed"], regions, region_ratio, config.get("keep_fraction", 1.0),
         )
         summaries[variant] = summarize(stats)
         print(
