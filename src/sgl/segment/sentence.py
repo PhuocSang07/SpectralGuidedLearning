@@ -65,15 +65,34 @@ def step_token_spans(
     token_starts: list[int],
     offset: int = 0,
     segmenter: str = "sentence",
+    token_ends: list[int] | None = None,
 ) -> list[tuple[int, int]]:
     """Map the response's step boundaries onto token indices, shifted by `offset`.
 
     A token belongs to the step holding its first character: a boundary landing inside a token
     leaves that token in the earlier step, since `bisect_left` returns the first token starting
     at or after the boundary. Zero-token steps (two boundaries falling within one token) are
-    dropped so every span is non-empty. `segmenter` names a lossless rule in sgl.segment.
+    dropped so every span is non-empty. `segmenter` names a lossless rule in sgl.segment, or a
+    token-window mode of sgl.segment.TOKEN_CHUNKS, which also needs `token_ends`.
     """
-    from sgl.segment import split
+    from sgl.segment import TOKEN_CHUNKS, split
+
+    if segmenter in TOKEN_CHUNKS:  # fixed-size token windows, blind to the text
+        # Byte-level BPE can split one character over several tokens (" ≡" -> "Ġâī" + "¡", the
+        # second token starting inside the first one's characters). A cut before such a token would
+        # decode half a character, so a window only ends where the next token starts at or after
+        # the previous token's end.
+        if token_ends is None or len(token_ends) != len(token_starts):
+            raise ValueError(f"segmenter {segmenter!r} needs the end offset of every token")
+        size, n = TOKEN_CHUNKS[segmenter], len(token_starts)
+        spans, start = [], 0
+        while start < n:
+            end = min(start + size, n)
+            while end < n and token_starts[end] < token_ends[end - 1]:
+                end += 1
+            spans.append((offset + start, offset + end))
+            start = end
+        return spans
 
     cuts, position = [], 0
     for text in split(response, segmenter):

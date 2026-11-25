@@ -16,7 +16,7 @@ from datasets import load_dataset
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from sgl.segment import SEGMENTERS
+from sgl.segment import SEGMENTERS, TOKEN_CHUNKS
 from sgl.segment.sentence import encode_with_offsets, step_token_spans
 
 # Must stay byte-identical to benchmarks.MATH_PROMPT so the student sees the same instruction
@@ -124,7 +124,13 @@ def build_record(
     if len(prompt_ids) + len(response_ids) > max_tokens:
         return None
 
-    step_spans = step_token_spans(response, token_starts, offset=len(prompt_ids), segmenter=segmenter)
+    token_ends = None
+    if segmenter in TOKEN_CHUNKS:  # token windows must not cut inside a character: they need token ends
+        token_ends = [end for _, end in tokenizer(
+            response, add_special_tokens=False, return_offsets_mapping=True)["offset_mapping"]]
+    step_spans = step_token_spans(
+        response, token_starts, offset=len(prompt_ids), segmenter=segmenter, token_ends=token_ends,
+    )
     # The stop token has to be part of the target, or the model is only ever supervised to
     # continue past its final answer and never to end the turn. It sits outside
     # response_token_span (which stays text-only so step spans still round-trip) and outside
@@ -334,8 +340,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="long_cot = thinking trajectory + final write-up (default); answer = ground-truth solution only",
     )
     parser.add_argument(
-        "--segmenter", choices=sorted(SEGMENTERS),
-        help="step segmentation rule (default sentence; paragraph/cue are Segment-Selective SFT's)",
+        "--segmenter", choices=sorted(SEGMENTERS) + sorted(TOKEN_CHUNKS),
+        help="step segmentation rule (default sentence; paragraph/cue are Segment-Selective SFT's; "
+        "chunkN = N-token windows)",
     )
     parser.add_argument(
         "--instruction-separator",
