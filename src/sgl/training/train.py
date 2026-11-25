@@ -25,7 +25,7 @@ from transformers import (
 
 from sgl.training.collator import MaskedSFTCollator
 from sgl.training.dataset import MaskedSFTDataset
-from sgl.training.losses import OBJECTIVE_NLL, OBJECTIVES, masked_cross_entropy
+from sgl.training.losses import OBJECTIVE_NLL, OBJECTIVES, masked_cross_entropy, reference_kl
 from sgl.training.transition_loss import default_transition_layer, find_decoder_layers
 from sgl.training.transition_trainer import TRANS_INPUT_KEYS, TransitionLossMixin, attach_predictor
 from sgl.training.utils import compensate_global_token_mean, set_training_seed
@@ -42,9 +42,14 @@ class MaskedSFTTrainer(Trainer):
 
     def __init__(
         self, *args, objective="nll", prefix_objective=None, cont_objective=None, junction_objective=None,
-        **kwargs,
+        kl_anchor_weight=0.0, reference_model=None, **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        # ASFT's anchor: + kl_anchor_weight * KL(reference || policy) per supervised token. The
+        # reference is the frozen initial model: a separate copy for full fine-tuning, the base
+        # under a disabled adapter for LoRA (reference_model=None).
+        self.kl_anchor_weight = kl_anchor_weight
+        self.reference_model = reference_model
         # Per-token objective: `objective` everywhere, optionally overridden on teacher-prefix
         # (token_source 1) / continuation (token_source 2) tokens -- provenance-aware SFT.
         self.objective = OBJECTIVES[objective]
@@ -76,6 +81,12 @@ class MaskedSFTTrainer(Trainer):
             outputs.logits, labels, denominator=num_items_in_batch, token_weights=token_weights,
             token_objective=token_objective,
         )
+        if self.kl_anchor_weight:
+            # same normalizer Z as the cross-entropy, so the anchor is a per-supervised-token mean
+            denominator = num_items_in_batch if num_items_in_batch is not None else (labels[:, 1:] != -100).sum()
+            kl = reference_kl(outputs.logits, self._reference_logits(model, inputs), labels)
+            denominator = torch.as_tensor(denominator, device=kl.device).float().clamp_min(1.0)
+            loss = loss + self.kl_anchor_weight * kl / denominator
         # ``num_items_in_batch`` is a token count gathered across DDP ranks.  Gradients are
         # averaged by DDP, so mirror Trainer.compute_loss's compensation and recover the
         # global sum/Z objective instead of shrinking it by world size.
@@ -86,6 +97,16 @@ class MaskedSFTTrainer(Trainer):
             num_processes=self.accelerator.num_processes,
         )
         return (loss, outputs) if return_outputs else loss
+
+    @torch.no_grad()
+    def _reference_logits(self, model, inputs) -> torch.Tensor:
+        if self.reference_model is not None:
+            device = next(model.parameters()).device
+            if next(self.reference_model.parameters()).device != device:
+                self.reference_model.to(device)
+            return self.reference_model(**inputs).logits
+        with self.accelerator.unwrap_model(model).disable_adapter():
+            return model(**inputs).logits
 
 
 class TransitionSFTTrainer(TransitionLossMixin, MaskedSFTTrainer):
@@ -180,6 +201,11 @@ def build_parser() -> argparse.ArgumentParser:
     # Per-token objective (default nll = plain masked SFT). dft = -sg(p) log p (arXiv 2508.05629).
     parser.add_argument("--objective", choices=sorted(OBJECTIVES), help="objective on every supervised token")
     parser.add_argument(
+        "--kl-anchor-weight", type=float,
+        help="ASFT anchor: add this weight times KL(initial model || policy) per supervised token "
+        "(ASFT = --objective dft --kl-anchor-weight 0.03; default 0 = off)",
+    )
+    parser.add_argument(
         "--prefix-objective", choices=sorted(OBJECTIVES),
         help="override on teacher-prefix tokens (token_source 1, sgl.transforms.provenance)",
     )
@@ -261,6 +287,7 @@ def main(argv: list[str] | None = None) -> None:
         "use_lora": args.use_lora,
         "model_dtype": args.model_dtype,
         "objective": args.objective,
+        "kl_anchor_weight": args.kl_anchor_weight,
         "prefix_objective": args.prefix_objective,
         "cont_objective": args.cont_objective,
         "junction_objective": args.junction_objective,
@@ -337,8 +364,17 @@ def main(argv: list[str] | None = None) -> None:
         model.print_trainable_parameters()
         print(f"trainable param dtype: {next(p for p in model.parameters() if p.requires_grad).dtype}")
 
+    reference_model = None
+    if config.get("kl_anchor_weight") and not config.get("use_lora"):
+        reference_model = AutoModelForCausalLM.from_pretrained(
+            config["model_name"], dtype=next(model.parameters()).dtype,
+            attn_implementation=config.get("attn_implementation", "sdpa"),
+        ).eval().requires_grad_(False)
+
     trainer_cls = MaskedSFTTrainer
     trainer_kwargs = {
+        "kl_anchor_weight": config.get("kl_anchor_weight") or 0.0,
+        "reference_model": reference_model,
         "objective": config.get("objective") or "nll",
         "prefix_objective": config.get("prefix_objective"),
         "cont_objective": config.get("cont_objective"),
@@ -347,7 +383,8 @@ def main(argv: list[str] | None = None) -> None:
     print(
         f"objective: {trainer_kwargs['objective']} (prefix override: {trainer_kwargs['prefix_objective']}, "
         f"continuation override: {trainer_kwargs['cont_objective']}, "
-        f"junction override: {trainer_kwargs['junction_objective']})"
+        f"junction override: {trainer_kwargs['junction_objective']}, "
+        f"KL anchor weight: {trainer_kwargs['kl_anchor_weight']})"
     )
     if use_trans:
         num_layers = len(find_decoder_layers(model))

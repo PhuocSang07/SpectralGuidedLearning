@@ -86,3 +86,32 @@ def masked_cross_entropy(
     if denominator is None:
         denominator = (shift_labels != IGNORE_INDEX).sum()
     return token_loss / torch.as_tensor(denominator, device=token_loss.device).float().clamp_min(1.0)
+
+
+def _chunk_kl(policy_logits: torch.Tensor, reference_logits: torch.Tensor) -> torch.Tensor:
+    log_policy = F.log_softmax(policy_logits.float(), dim=-1)
+    log_reference = F.log_softmax(reference_logits.float(), dim=-1)
+    return (log_reference.exp() * (log_reference - log_policy)).sum()
+
+
+def reference_kl(
+    logits: torch.Tensor, reference_logits: torch.Tensor, labels: torch.Tensor, chunk_size: int = 1024
+) -> torch.Tensor:
+    """Summed full-vocabulary KL(reference || policy) over the supervised next-token positions.
+
+    The anchor term of ASFT (Zhu et al., ICLR 2026; upstream train_v2.py, mode "asft":
+    F.kl_div(log_softmax(policy), softmax(reference)) summed over the vocabulary). It is a sum, so the
+    caller divides by the same supervised-token count Z as the cross-entropy. Positions are processed
+    in chunks under activation checkpointing so the fp32 vocabulary-sized intermediates of a long
+    sequence are never all alive at once.
+    """
+    from torch.utils.checkpoint import checkpoint
+
+    supervised = labels[:, 1:] != IGNORE_INDEX
+    policy = logits[:, :-1][supervised]
+    reference = reference_logits[:, :-1][supervised].detach()
+    total = logits.new_zeros((), dtype=torch.float32)
+    for start in range(0, policy.size(0), chunk_size):
+        end = start + chunk_size
+        total = total + checkpoint(_chunk_kl, policy[start:end], reference[start:end], use_reentrant=False)
+    return total
